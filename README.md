@@ -20,9 +20,9 @@ Once this builds, you can jump into the container (which has ReACT installed) us
 docker run -v /Users/bbose/Desktop/myfolder:/home -i -t mybuild
 ```
 
-This will also automatically take all the local files in /Users/bbose/Desktop/myfolder to the /home folder within the container. Anything placed in the home folder from within the container will then automatically show up locally. This lets you transfer ReACT output produced within the container to the local system. 
+This will also automatically take all the local files in `/Users/bbose/Desktop/myfolder` to the `/home` folder within the container. Anything placed in the home folder from within the container will then automatically show up locally. This lets you transfer ReACT output produced within the container to the local system. 
 
-I've tested this works on the tests and example files within the reactions/examples and reactions/tests directories. You can use the following command to run them
+I've tested this works on the tests and example files within the `reactions/examples` and `reactions/tests` directories. You can use the following command to run them
 
 ```
 g++ -I/ReACT/reactions/include -L/ReACT/reactions/lib  spt.cpp -lgsl -lcopter
