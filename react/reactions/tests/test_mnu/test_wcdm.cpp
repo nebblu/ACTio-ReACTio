@@ -111,15 +111,16 @@ double As = 2.392e-09;
 double massb = 50.;
 
 // store params for passing into React functions
-double vars[8];
+double vars[7];
     vars[0] = 1./(myz+1.); //  scale factor
     vars[1] = Omega_m;
-    vars[2] = w0; //  modified gravity param or w0 (see SpecialFunctions.cpp)
-    vars[3] = wa;  // extra, in the CPL case it is wa
-    vars[4] = 1.; // extra
+    vars[2] = Omega_nu;
     vars[5] = massb; // number of mass bins between 5<Log10[M]<18
-    vars[6] = Omega_nu;
 
+double extpars[maxpars];
+extpars[0] = w0; //  modified gravity param or w0 (see SpecialFunctions.cpp)
+extpars[1] = wa;  // extra, in the CPL case it is wa
+extpars[2] = 1.; // extra
 
 IOW iow;
 
@@ -157,7 +158,7 @@ SPT spt(Cm, P_cb, epsrel);
 
 
 //initialise spherical collapse quantities and reaction quantities
-halo.initialise(vars,mgcamb,modg,mymodel);
+halo.initialise(vars,extpars,mgcamb,modg,mymodel);
 halo.phinit_pseudo(vars,mgcamb);
 
 

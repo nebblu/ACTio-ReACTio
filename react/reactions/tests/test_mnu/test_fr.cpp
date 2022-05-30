@@ -110,15 +110,16 @@ double As = 2.199e-9; // initial amplitude of fluctuations
 double massb = 50.; // number of mass bins between 5<Log10[M]<18
 
 // store params for passing into React functions
-double vars[8];
+double vars[7];
     vars[0] = 1./(myz+1.); //  scale factor
     vars[1] = Omega_m;
-    vars[2] = mg; //  modified gravity param
-    vars[3] = 1.;  // extra
-    vars[4] = 1.; // extra
+    vars[2] = Omega_nu;
     vars[5] = massb; // number of mass bins between 5<Log10[M]<18
-    vars[6] = Omega_nu;
 
+double extpars[maxpars];
+extpars[0] = mg; //  modified gravity param
+extpars[1] = 1.;  // extra
+extpars[2] = 1.; // extra
 
 IOW iow;
 
@@ -156,7 +157,7 @@ SPT spt(Cm, P_cb, epsrel);
 
 
 //initialise spherical collapse quantities and reaction quantities
-halo.initialise(vars,mgcamb,modg,mymodel);
+halo.initialise(vars,extpars,mgcamb,modg,mymodel);
 halo.phinit_pseudo(vars,mgcamb);
 
 
