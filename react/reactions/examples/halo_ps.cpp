@@ -31,62 +31,64 @@ using std::istringstream;
 /* Example code to output the halo model powerspectrum for modified gravity */
 
 int main(int argc, char* argv[]) {
+
   // Which gravity or dark energy model?
   // 1: GR  2: f(R) 3: DGP 4: quintessence 5: CPL
   int mymodel = 2;
 
   // Modified gravity active?
   bool modg = true;
-  // Is the transfer being fed to ReACT of the target cosmology? If false, the transfer should be LCDM at z=0.
+  // Is the transfer being fed to ReACT of the target cosmology?
+  // If false, the transfer should be LCDM at z=0.
   bool mgcamb = false;
 
-	 //output file name
-    const char* output = "ps_f5_z0.dat";
-    const char* cstr = "transfers/Matteo_fr";
-// 0: scale factor, 1: omega_total, 2-4: mg param (1e-10 ~ GR for default mg functions ), 5: number of points in halo-mass loop in scol_init , 30 works well.
-double vars[8];
 
-  // chosen redshift
-    double myz = 0.;
-  // chosen omega_matter (total)
-    double omega0 = 0.3072;
-  // MG parameter (for f(R) this is |fr0|)
-    double mgpar = 1e-5;
+   // cosmo file for P_L(k)
+   const char* cstr = "transfers/Matteo_fr";
+   // Keep it z=0 to keep Copter's Growth @ 1
+   real z = 0;
+   // Relative error in magnitude integrations
+   real epsrel = 1e-3;
+   // Initialise all classes
+   Cosmology C(cstr);
+   LinearPS P_l(C, z);
+   HALO halo(C, P_l,P_l,P_l,P_l, epsrel);
+   SPT spt(C, P_l, epsrel);
+   IOW iow;
 
-    vars[0] = 1./(1.+myz);
-    vars[1] =  omega0;
-    vars[2] = mgpar;
-    vars[3] = 1.; // wa for CPL
-    vars[4] = 1.; // unusedd
-    vars[5] = 50.; // number of mass bins
-    vars[6] = 0.0; // omega_neutrinos
+   // chosen redshift
+      double myz = 0.;
+   // chosen omega_matter (total)
+     double omegam0 = 0.3072;
+   // chosen omega_nu (total)
+     double omeganu0 = 0.;
 
-    /* Open output file */
-    FILE* fp = fopen(output, "w");
+   // extended model parameters
+   double extpars[maxpars]; // Currently maxed out at 20 extra params
+   extpars[0] = 1e-5; // fr0 for f(R)
 
-    // Keep it z=0 to keep Copter's Growth @ 1
-    real z = 0;
-    // Relative error in magnitude integrations
-    real epsrel = 1e-3;
+   // Base parameters
+    double pars[7];
+    pars[0] = 1./(1.+myz); // scale factor
+    pars[1] = omegam0;  // chosen omega_matter (total)
+    pars[2] = omeganu0;  // chosen omega_matter (total)
+    pars[5] = 50.; // number of mass bins for spherical collapse solver
+    pars[6] = 0.0; // omega_neutrinos
 
-    Cosmology C(cstr);
-    LinearPS P_l(C, z);
-    HALO halo(C, P_l,P_l,P_l,P_l, epsrel);
-    SPT spt(C, P_l, epsrel);
+//initialise spherical collapse quantities and reaction quantities
+halo.initialise(pars,extpars,mgcamb,modg,mymodel);
 
-    IOW iow;
-    real p1,p2,p3,p4,p5,p6;
+/* Output section */
 
+//output file name
+const char* output = "halo_ps.dat";
 
-// initialise wCDM/LCDM lin growth for PS normalisation
-iow.initnorm(vars,mymodel);
-/// initialise delta_c(M), a_vir(M), delta_avir(M) and v(M)
-halo.scol_init(vars,mgcamb,mymodel);
-halo.scol_initp(vars,mgcamb);
-halo.react_init_nu(vars,mgcamb,modg,mymodel);
+/* Open output file */
+FILE* fp = fopen(output, "w");
 
-//#pragma omp parallel for
-int Nk =100;
+real p1,p2,p3,p4,p5,p6;
+
+int Nk =10;
 double kmin = 0.001;
 double kmax = 10.;
 
@@ -94,9 +96,9 @@ double kmax = 10.;
 
   real k = kmin * exp(i*log(kmax/kmin)/(Nk-1));
 
-      p1 =  halo.one_halo(k, vars);
-      p2 =  halo.one_halop(k, vars);
-      p3 =  halo.reaction_nu(k, vars, mgcamb);
+      p1 =  halo.one_halo(k, pars); // one halo term : real
+      p2 =  halo.one_halop(k, pars); // one halo term : pseudo
+      p3 =  halo.reaction_nu(k, pars, mgcamb); // halo model reaction
 
      printf("%d %e %e %e %e \n", i, k, p1,p2,p3); // print to terminal
      fprintf(fp,"%e %e %e %e \n", k, p1,p2, p3); // print to file

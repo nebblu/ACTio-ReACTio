@@ -28,70 +28,78 @@ using namespace std;
 
 int main() {
 
-	 //output file name
-    const char* output = "check.dat";
-    const char* cstr = "transfers/wmap9b";
+
+  // Which gravity or dark energy model?
+  // 1: GR  2: f(R) 3: DGP 4: quintessence 5: CPL
+  int mymodel = 3;
+
+  // Keep it z=0 to keep Copter's Growth @ 1
+  real z = 0;
+  // Relative error in magnitude integrations
+  real epsrel = 1e-3;
+
+  // cosmo file for P_L(k)
+  const char* cstr = "transfers/wmap9b";
+
+  // Initialise all classes
+  Cosmology C(cstr);
+  LinearPS P_l(C, z);
+  BSPT bspt(C, P_l, epsrel);
+  SPT spt(C, P_l, epsrel);
+  IOW iow;
+
+  // chosen redshift
+   double myz = 0.541;
+  // chosen omega_matter (total)
+   double omega0 = 0.279;
+  // MG parameter (for f(R) this is |fr0| and for nDGP this is Omega_rc)
+   double mgpar = 0.25;
 
 
-    //const char* cstr = "transfers/test";
+   // base parameter values
+   double pars[7];
+   pars[0] = 1./(1.+myz); // scale factor
+   pars[1] =  omega0; // total matter fraction
+   pars[2] =  0.0; // total massive neutrino fraction
 
-    /* Open output file */
-    FILE* fp = fopen(output, "w");
-
-    // Which gravity or dark energy model?
-    // 1 for DGP, 2 for Hu-Sawicki,
-    int mymodel = 2;
-
-    // Keep it z=0 to keep Copter's Growth @ 1
-    real z = 0;
-    // Relative error in magnitude integrations
-    real epsrel = 1e-3;
-
-    int Nk =50;
-    double kmin = 0.01;
-    double kmax = 3.;
-
-    Cosmology C(cstr);
-    LinearPS P_l(C, z);
-    HALO halo(C, P_l, P_l, P_l, epsrel);
-    BSPT bspt(C, P_l, epsrel);
-    SPT spt(C, P_l, epsrel);
-
-    IOW iow;
-    real b1,b2,b3,b4;
-
-    double vars[4];
+   // extended model parameters
+   double extpars[maxpars]; // Currently maxed out at 20 extra params
+   extpars[0] = mgpar;
 
 
-// 0: scale factor, 1: omega_total, 2: mg param (1e-10 ~ GR for default mg functions ), 3: =1 for DGP, =2 for f(R)
-    vars[0] = 1./(1.+0.541);
-    vars[1] = 0.279;
-    vars[2] = 1e-5;
+   // computation error parameters
+   double epars[4];
+   epars[0] = 1e-2; // 1-loop integral abs error
+   epars[1] = 1e-3; // ODE initial step size
+   epars[2] = 1e-3; // ODE abs error
+   epars[3] = 1e-3; // ODE rel error
 
-// initialise GR lin growth for PS normalisation
-iow.inite2(vars[0],vars[1],vars[2], 1.,1.,mymodel);
-spt.remp(fl_spt);
+
+// initialise GR or DGP lin growth for PS normalisation
+if (mymodel==3) {
+  iow.inite2(pars,extpars,mymodel);
+}
+else{
+  iow.inite2(pars,extpars,mymodel);
+}
+
 // initialise fitting function params (n_effective, k_nl, sigma_8)
-bspt.mypspline(vars[0],vars[1],1);
-double vars2[9];
+bspt.mypspline(pars,true);
 
-// redefine inputs (should fix this!)
-// 0 = omega0, 1 = mg1, 2=mg2, 3=mg3, 4=a, 5= 1 for DGP, 2 for Hu-Sawicki,
-// 6 = integration accuracy, 7,8 = ODE solver absolute and relative accuracy
-vars2[0] = vars[1];
+/* Output section */
 
-vars2[1] = vars[2];
-vars2[2] = 1.;
-vars2[3] = 1.;
+//output file name
+const char* output = "check.dat";
 
-vars2[4] = vars[0];
+/* Open output file */
+FILE* fp = fopen(output, "w");
 
-vars2[5] = (double)mymodel;
+real b1,b2,b3,b4;
 
-vars2[6] = 1e-2;
-vars2[7] = 1e-3;
-vars2[8] = 1e-3;
-
+// Number of k-modes you wish to output between kmin and kmax
+int Nk =10;
+double kmin = 0.01;
+double kmax = 0.5;
 
  for(int i =0; i < Nk;  i ++) {
 
@@ -102,9 +110,10 @@ vars2[8] = 1e-3;
  double mu = -0.5; // cosine of angle between k and k1
  double k1 = k;
 
- b1 = bspt.Btreen(vars2,k,k1,mu); // numerically computed tree level
- b2 = bspt.Bloopn(vars2,k,k1,mu); //numerically computed
- b3 = bspt.Bloop(1,k,k1,mu); //EdS approximated GR spectrum
+
+ b1 = bspt.Btreen(pars,extpars,mymodel,k,k1,mu); // numerically computed tree level
+ b2 = bspt.Bloopn(pars,extpars,epars,mymodel,k,k1,mu); //numerically computed
+ b3 = bspt.Bloop(3,k,k1,mu); //EdS approximated GR or DGP spectrum
  b4 = bspt.Bfit(k,k1,mu); // Gil-Marin/Namikawa et al fitting formula (GR and DGP only)
 
 

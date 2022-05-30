@@ -23,93 +23,86 @@
 using namespace std;
 vector<vector<double> > allDatamult;
 
-/* Example code to output the 1-loop powerspectrum for modified gravity in real and redshift space*/
+/* Example code to output the 1-loop powerspectrum for modified gravity in real space : exact numerical and EdS approximation */
 
 int main(int argc, char* argv[]) {
 
-    /* Set parameters */
-	// Input name of transfer_function/cosmology file.
-    const char* cstr = "transfers/fr_new";
+    // Which gravity or dark energy model?
+    // 1: GR  2: f(R) 3: DGP 4: quintessence 5: CPL
+    int mymodel = 3;
 
-	// Keep it z=0 to keep Copter's Growth @ 1
+    // Keep it z=0 to keep Copter's Growth @ 1
     real z = 0;
+    // Relative error in magnitude integrations
+    real epsrel = 1e-3;
 
-	// Relative error in magnitude integrations (and angular for some files)
-    const real epsrel = 1e-3;
+    // cosmo file for P_L(k)
+    const char* cstr = "transfers/dgp";
 
-	// Number of k-modes you wish to output between kmin and kmax
-    int Nk = 500;
-    real kmin = 0.0001;
-    real kmax = 0.5;
-
-	 //output file name
-    const char* output = "fr_new.dat";
-
-    /* Open output file */
-    FILE* fp = fopen(output, "w");
-
-    /* Calculate SPT power spectrum */
+    // Initialise all classes
     Cosmology C(cstr);
     LinearPS P_l(C, z);
     SPT spt(C, P_l, epsrel);
     IOW iow;
-    NoWigglePS now(C, z , EisensteinHu);
 
-// output variables
-real p1,p2,p3,p4,p5;
-  // Which gravity or dark energy model?
-  // 1: GR  2: f(R) 3: DGP 4: quintessence 5: CPL
-  int mymodel = 2;
+// chosen redshift
+   double myz = 1.;
+// chosen omega_matter (total)
+   double omega0 = 0.281;
+// MG parameter (for f(R) this is |fr0| and for nDGP this is Omega_rc)
+   double mgpar = 0.25;
 
-  // chosen redshift
-    double myz = 0.;
-  // chosen omega_matter (total)
-    double omega0 = 0.24;
-  // MG parameter (for f(R) this is |fr0|)
-    double mgpar = 1e-15;
+  // base parameter values
+  double pars[7];
+  pars[0] = 1./(1.+myz);
+  pars[1] =  omega0;
+  pars[2] =  0.;
 
-    // parameter values
-    double vars[7];
+  // extended model parameters
+  double extpars[maxpars]; // Currently maxed out at 20 extra params
+  extpars[0] = mgpar;
 
-    vars[0] = 1./(1.+myz);
-    vars[1] =  omega0;
-    vars[2] = mgpar;
-    vars[3] = 1.; // wa for CPL
-    vars[4] = 1.; // unusedd
-    vars[5] = 30.; // number of mass bins
-    vars[6] = 0.0; // omega_neutrinos
+// normalise the growth + calculate all growth factors
+  iow.inite(pars,extpars,mymodel);
 
+// error in 1-loop integrals
+double err = 1e-2;
 
-// normalise the growth
-iow.inite(vars[0],vars[1],vars[2],vars[3],vars[4],mymodel);
-spt.remp(fl_spt);
+/* Output section */
 
+//output file name
+const char* output = "dgp_eds_vs_full.dat";
 
-// Lagrangian bias params (See 1607.03149 for example) OR Q-bias params (see PRSD_mg in src/SPT.cpp).
-double bias[3];
-bias[0] = 1.; // b1
-bias[1] = 0.; // b2
-bias[2] = 0.; // stochasticity
+ /* Open output file */
+ FILE* fp = fopen(output, "w");
 
-double sigmav = 5.5; // velocity dispersion
-double err = 1e-2; //  absolute error in differential equation solver for numerical PT kernels
+real p1,p2,p3,p4,p5,p6,p7,p8,p9;
 
+// Number of k-modes you wish to output between kmin and kmax
+  int Nk = 50;
+  real kmin = 0.01;
+  real kmax = 0.5;
 
 for(int i =0; i <Nk;  i ++) {
 
     real k = kmin * exp(i*log(kmax/kmin)/(Nk-1));
 
-/* for more observables check out the SPT.h file in the src directory */
+/* for more quantities check out the SPT.h file in the src directory */
 
-  p1 = spt.PLOOPn2(0, vars, mymodel, k, 1e-3); // linear spectrum
-  p2 = spt.PLOOPn2(1, vars, mymodel, k, 1e-3); // 1-loop spectrum
-  p3 = spt.PRSD_mg(2,1,bias,vars, mymodel,sigmav,k,err); // TNS monopole
-  p4 = spt.PRSD_mg(2,2,bias,vars, mymodel,sigmav,k,err); // TNS quadrupole
-  p5 = spt.PRSD_mg(2,3,bias,vars, mymodel,sigmav,k,err); // TNS hexdecapole
+  // exact linear and 1-loop matter, cross and velocity spectra
+  p1 = spt.PLOOPn2(0, k, pars, extpars, err, mymodel); // linear spectrum
+  p2 = spt.PLOOPn2(1, k, pars, extpars, err, mymodel); // 1-loop dd spectrum
+  p3 = spt.PLOOPn2(2, k, pars, extpars, err, mymodel); // 1-loop dt spectrum
+  p4 = spt.PLOOPn2(3, k, pars, extpars, err, mymodel); // 1-loop tt spectrum
 
+  // EdS approximated equivalents
+  p5 = pow2(F1_nk/dnorm_spt)*P_l(k);
+  p6 = spt.PLOOP(k,4);
+  p7 = spt.PLOOP(k,5);
+  p8 = spt.PLOOP(k,6);
 
-     printf("%e %e %e %e %e %e \n", k, p1,p2,p3,p4,p5); // print to terminal
-     fprintf(fp,"%e %e %e %e %e %e  \n", k, p1,p2,p3,p4,p5 ); // print to file
+   printf("%e %e %e %e %e %e %e %e %e \n", k, p1,p2,p3,p4,p5,p6,p7,p8); // print to terminal
+   fprintf(fp,"%e %e %e %e %e %e %e %e %e  \n", k, p1,p2,p3,p4,p5,p6,p7,p8 ); // print to file
 
   }
 

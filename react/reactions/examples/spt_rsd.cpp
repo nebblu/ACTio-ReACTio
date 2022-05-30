@@ -23,41 +23,27 @@
 using namespace std;
 
 /* Example code to output the 1-loop powerspectrum for modified gravity in real and redshift space*/
+
 int main(int argc, char* argv[]) {
 
-    /* Set parameters */
-	// Input name of transfer_function/cosmology file.
+    // Which gravity or dark energy model?
+    // 1: GR  2: f(R) 3: DGP 4: quintessence 5: CPL
+    int mymodel = 3;
+
+    // Keep it z=0 to keep Copter's Growth @ 1
+    real z = 0;
+    // Relative error in magnitude integrations
+    real epsrel = 1e-3;
+
+    // cosmo file for P_L(k)
     const char* cstr = "transfers/dgp";
 
-	// Keep it z=0 to keep Copter's Growth @ 1
-    real z = 0;
-
-	// Relative error in magnitude integrations (and angular for some files)
-    const real epsrel = 1e-3;
-
-	// Number of k-modes you wish to output between kmin and kmax
-    int Nk = 50;
-    real kmin = 0.01;
-    real kmax = 0.4;
-
-	 //output file name
-    const char* output = "DGP_P024_z0.dat";
-
-    /* Open output file */
-    FILE* fp = fopen(output, "w");
-
-    /* Calculate SPT power spectrum */
+    // Initialise all classes
     Cosmology C(cstr);
     LinearPS P_l(C, z);
     SPT spt(C, P_l, epsrel);
     IOW iow;
-    NoWigglePS now(C, z , EisensteinHu);
 
-  // output variables
-  real p1,p2,p3,p4,p5,p6,p7,p8,p9;
-  // Which gravity or dark energy model?
-  // 1: GR  2: f(R) 3: DGP 4: quintessence 5: CPL
-    int mymodel = 3;
 
   // chosen redshift
      double myz = 0.;
@@ -66,45 +52,72 @@ int main(int argc, char* argv[]) {
   // MG parameter (for f(R) this is |fr0| and for nDGP this is Omega_rc)
      double mgpar = 0.25;
 
-    // parameter values
-    double vars[7];
+    // base parameter values
+    double pars[7];
+    pars[0] = 1./(1.+myz); // scale factor
+    pars[1] =  omega0; // Omega_{m,0}
+    pars[2] =  0.; // Omega_{nu,0}
 
-    vars[0] = 1./(1.+myz);
-    vars[1] =  omega0;
-    vars[2] = mgpar;
-    vars[3] = 1.; // wa for CPL
-    vars[4] = 1.; // unusedd
-    vars[5] = 30.; // number of mass bins
-    vars[6] = 0.0; // omega_neutrinos
+    // extended model parameters
+    double extpars[maxpars]; // Currently maxed out at 20 extra params
+    extpars[0] = mgpar;
 
-    double bias[3];
-    bias[0] = 1.;
-    bias[1] = 0.;
-    bias[2] = 0.;
-
-    // normalise the input P_L to initial times
-    iow.inite(vars[0],vars[1],vars[2],vars[3],vars[4],mymodel);
-
-    // Calculate (linear) velocity dispersion for the 1-loop RSD spectrum (or for TNS this is a free parameter)
-    double pars[3];
-    pars[0] = spt.sigmav_init(vars, mymodel);
+    // initialise LCDM or wCDM lin growth for PS normalisation
+    iow.initnorm(pars,extpars,mymodel);
 
     // choose RSD model :
     // 0: Kaiser
     // 1: TNS with q-bias (see 1507.01592 for example)
     // 2: TNS with Lagrangian bias (incomplete!)
     // 3: SPT 1-loop RSD spectrum
-
     double rsd_model = 3;
+
+    // RSD parameters
+    double rsdpars[3];
+
+    // sigma_v for TNS (rsd_model = 1,2)
+    double mysigv = 5.;
+
+    if (rsd_model==3) {
+      //linear vel dispersion for 1-loop (rsd_model = 3)
+      rsdpars[0] = spt.sigmav_init(pars, extpars, mymodel); // calculates linear theory dispersion
+    }
+    else{
+      rsdpars[0] = mysigv;
+    }
+
+    // Lagrangian bias params (See 1607.03149 for example) OR Q-bias params (see PRSD_mg in src/SPT.cpp).
+    double bias[3];
+    bias[0] = 1.;
+    bias[1] = 0.;
+    bias[2] = 0.;
+
+    // absolute error in RSD integrals
+    double err = 1e-3;
+
+    /* Output section */
+
+    //output file name
+    const char* output = "DGP_P024_z0.dat";
+
+    /* Open output file */
+    FILE* fp = fopen(output, "w");
+
+    real p1,p2,p3,p4,p5,p6,p7,p8,p9;
+
+    int Nk =10;
+    double kmin = 0.01;
+    double kmax = 0.4;
+
 
 for(int i =0; i <Nk;  i ++) {
 
      real k = kmin * exp(i*log(kmax/kmin)/(Nk-1));
 
-    /* for more observables check out the SPT.h file in the src directory */
-      p1 = spt.PRSD_mg(rsd_model, 1, bias, vars, mymodel, pars, k, epsrel); // P0 SPT
-      p2 = spt.PRSD_mg(rsd_model, 2, bias, vars, mymodel, pars, k, epsrel); // P2 SPT
-      p3 = spt.PRSD_mg(rsd_model, 3, bias, vars, mymodel, pars, k, epsrel); // P4 SPT
+    /* for more quantities check out the SPT.h file in the src directory */
+      p1 = spt.PRSD_mg(rsd_model, 1, pars, extpars, rsdpars, bias, k, err, mymodel); // P0 SPT
+      p2 = spt.PRSD_mg(rsd_model, 2, pars, extpars, rsdpars, bias, k, err, mymodel); // P2 SPT
+      p3 = spt.PRSD_mg(rsd_model, 3, pars, extpars, rsdpars, bias, k, err, mymodel); // P4 SPT
 
      printf("%e %e %e %e  \n", k, p1,p2,p3); // print to terminal
      fprintf(fp,"%e %e %e %e  \n", k, p1,p2,p3); // print to file

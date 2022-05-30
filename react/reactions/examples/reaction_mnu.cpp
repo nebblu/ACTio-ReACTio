@@ -32,6 +32,7 @@ vector<vector<double> > mypk;
 
 
 /* Example code to output the reaction and halo spectra for mg + neutrinos */
+
 int main(int argc, char* argv[]) {
 
 // Which gravity or dark energy model?
@@ -44,7 +45,7 @@ double myz = 1.;
 //double Omega_nu = 0.00;  // neutrino fraction mv = 0.0ev
 double Omega_nu = 0.0053;  // neutrino fraction mv = 0.24
 
-// Modified gravity active? This allows k* and \mathcal{E} to take on non LCDM values.
+// Modified gravity active? This prompts the calculation of k_star and \mathcal{E}.
 bool modg = false;
 
 // Is the transfer being fed to ReACT of the target cosmology?
@@ -52,9 +53,6 @@ bool modg = false;
 // If true, the transfer function should be that of the real cosmology (with MG or/and massive neutrinos)
 // Note that ReACT does not calculate growth factors for massive neutrino cosmologies and so the real transfer function should be supplied.
 bool mgcamb = true;
-
-//output file name
-const char* output = "nu24_wcdm_z1.dat";
 
 // Load transfer function at z from MGCAMB with all species at some redshift for target cosmology
 ifstream fin("transfers/baha/baha_wcdm_mnu024_z1.dat");
@@ -106,6 +104,7 @@ array kil(*Nktl);
 // integration error
 real epsrel = 1e-3;
 
+
 /*Specify params*/
 
 /* Dustgrain */
@@ -123,17 +122,6 @@ double wa = 0.1;
 
 // number of mass bins between 5<Log10[M]<20
 double massb = 50.;
-
-// store params for passing into React functions
-double vars[8];
-    vars[0] = 1./(myz+1.); //  scale factor
-    vars[1] = Omega_m;
-    vars[2] = w0; //  modified gravity param or w0 (see SpecialFunctions.cpp)
-    vars[3] = wa;  // extra, in the CPL case it is wa
-    vars[4] = 1.; // extra
-    vars[5] = massb; // number of mass bins between 5<Log10[M]<18
-    vars[6] = Omega_nu;
-
 
 IOW iow;
 
@@ -170,25 +158,46 @@ HALO halo(Cm, P_l, P_cb, P_nu, P_cbl, epsrel);
 SPT spt(Cm, P_cb, epsrel);
 
 
-//initialise spherical collapse quantities and reaction quantities
-halo.initialise(vars,mgcamb,modg,mymodel);
-// initialise halofit parameters
-halo.phinit_pseudo(vars,mgcamb);
+// store params for passing into React functions
+double pars[7];
+    pars[0] = 1./(1.+myz); // scale factor
+    pars[1] = Omega_m;  // chosen omega_matter (total)
+    pars[2] = Omega_nu; // omega_neutrinos
+    pars[5] = massb; // number of mass bins for spherical collapse solver
 
-double p1,p2,p3,p4,p5;
-int Nk = 500;
+// extended model parameters
+double extpars[maxpars]; // Currently maxed out at 20 extra params
+    extpars[0] = w0;
+    extpars[1] = wa;
+    extpars[2] = 0.;
+
+
+//initialise spherical collapse quantities and reaction quantities
+halo.initialise(pars,extpars,mgcamb,modg,mymodel);
+// initialise halofit parameters
+halo.phinit_pseudo(pars,mgcamb);
+
+
+/* Output section */
+
+//output file name
+const char* output = "reaction_nu.dat";
+
+/* Open output file */
+FILE* fp = fopen(output, "w");
+
+real p1,p2,p3,p4,p5,p6;
+
+int Nk = 10;
 double kmin = 1e-4;
 double kmax = 100.;
-
- /* Open output file */
- FILE* fp = fopen(output, "w");
 
  for(int i =0; i <Nk;  i ++) {
 
       real k = kmin* exp(i*log(kmax/kmin)/(Nk-1));
 
       p1 = P_l(k); // Linear spectrum
-      p2 = halo.reaction_nu(k,vars, mgcamb); // halo model reaction
+      p2 = halo.reaction_nu(k,pars, mgcamb); // halo model reaction
       p3 = halo.PHALO_pseudo(k,mgcamb); // halofit pseudo spectrum
 
       printf("%e %e %e %e %e  \n", k, p1,p2, p3,p3*p2); // output to terminal
