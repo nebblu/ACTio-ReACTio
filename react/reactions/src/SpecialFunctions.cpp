@@ -27,6 +27,19 @@
 using std::cref;
 using std::bind;
 
+
+/* All modified gravity functions and ODE solvers for density and velocity SPT kernels up to 3rd order */
+
+/* We also include analytic EdS kernels for GR and nDGP up to 3rd and 4th order (inite and inite2)
+/* See 1606.02520, 1808.01120, 2005.12184  for more details */
+
+// Throughout the values of pars, extpars and model are:
+// pars: base parameters. Currently used: 0: scale factor, 1: total matter fraction today, 2: total massive neutrino fraction today
+// extpars: extended parameters. extpars[0] = Omega_rc for nDGP, fr0 for f(R), w0 for CPL, extpars[1] = wa for CPL
+// model selects MG or DE model (1 = GR, MG: 2 = f(R), 3 = DGP, DE models: 4 = quintessence, 5 = CPL, 6 = HyP)
+
+
+
 /* BACKGROUND QUANTITIES - LCDM - assumed in modified gravity computations */
 
 // Normalized Hubble parameter H
@@ -80,7 +93,7 @@ static double omega_var_hyp(double w0, double wa, double a){
 // QUINTESSENCE ---- p1 = w0
 // CPL --- p1 = w_0, p2 = w_a
 // HYP --- p1 only free param
-double HAg(double a, double omega0, double p1, double p2, double p3, int model){
+double HAg(double a, double omega0, double extpars[], int model){
 	double A, omegaf, omegaL;
 	switch(model) {
 		case 1:
@@ -97,21 +110,21 @@ double HAg(double a, double omega0, double p1, double p2, double p3, int model){
 
 			case 4:
 			/* QUINTESSENCE */
-			A = -3.*(1.+p1);
+			A = -3.*(1.+extpars[0]);
 			omegaf = pow(a,A);
 			omegaL= (1.-omega0)*omegaf;
 			return  sqrt(omega0/pow(a,3)+omegaL);
 
 			case 5:
 			/* CPL */
-			A = -3.*(1.+p1+p2);
-			omegaf = pow(a,A)*exp(3.*(-1.+a)*p2);
+			A = -3.*(1.+extpars[0]+extpars[1]);
+			omegaf = pow(a,A)*exp(3.*(-1.+a)*extpars[1]);
 			omegaL= (1.-omega0)*omegaf;
 			return  sqrt(omega0/pow(a,3)+omegaL);
 
 			case 6:
 			/* HYP */
-			A = omega_var_hyp(p1,p2,a);
+			A = omega_var_hyp(extpars[0],extpars[1],a);
 			omegaf = exp(A);
 			omegaL= (1.-omega0)*omegaf;
 			return  sqrt(omega0/pow(a,3)+omegaL);
@@ -123,7 +136,7 @@ double HAg(double a, double omega0, double p1, double p2, double p3, int model){
 }
 
 // aH dH/da / H0^2
-double HA1g(double a, double omega0, double p1, double p2, double p3, int model){
+double HA1g(double a, double omega0, double extpars[], int model){
 	double A, omegaf, omegaL;
 	switch(model) {
 		case 1:
@@ -140,21 +153,21 @@ double HA1g(double a, double omega0, double p1, double p2, double p3, int model)
 
 			case 4:
 		/*QUINTESSENCE*/
-		A = -3.*(1.+p1);
+		A = -3.*(1.+extpars[0]);
 		omegaf = pow(a,A);
 		omegaL= (1.-omega0)*omegaf;
 		return -3*omega0/(2.*pow(a,3)) + A*omegaL/2.;
 
 		 case 5:
 	  /* CPL */
-		A = -3.*(1.+p1+p2);
-	  omegaf = pow(a,A)*exp(3*(-1.+a)*p2);
+		A = -3.*(1.+extpars[0]+extpars[1]);
+	  omegaf = pow(a,A)*exp(3*(-1.+a)*extpars[1]);
 		omegaL= (1.-omega0)*omegaf;
-	  return -3.*omega0/(2.*pow(a,3)) + (A+3.*a*p2)*omegaL/2.;
+	  return -3.*omega0/(2.*pow(a,3)) + (A+3.*a*extpars[1])*omegaL/2.;
 
 		case 6:
 	  /*HYP*/
-		A = omega_var_hyp(p1,p2,a);
+		A = omega_var_hyp(extpars[0],extpars[1],a);
 		omegaf = exp(A);
 	  omegaL= (1.-omega0)*omegaf;
 		return -3.*omega0/(2.*pow(a,3)) + A*a*omegaL/2.;
@@ -167,17 +180,19 @@ double HA1g(double a, double omega0, double p1, double p2, double p3, int model)
 
 
 //HA2g = -dH/dt/H^2 = -a dH/da / H
-double HA2g(double a, double omega0, double p1, double p2, double p3, int model){
-   	return -HA1g(a,omega0,p1,p2,p3,model)/pow2(HAg(a,omega0,p1,p2,p3,model));
+double HA2g(double a, double omega0, double extpars[], int model){
+   	return -HA1g(a,omega0,extpars,model)/pow2(HAg(a,omega0,extpars,model));
 }
 
 //3/(2H^2) * Omega_m
-double HA2g2(double a, double omega0, double p1, double p2, double p3, int model){
-   	return 3.*omega0/(2.*pow2(HAg(a,omega0,p1,p2,p3, model))*pow(a,3));
+double HA2g2(double a, double omega0, double extpars[], int model){
+   	return 3.*omega0/(2.*pow2(HAg(a,omega0,extpars, model))*pow(a,3));
 }
 
-// Dark energy contribution to spherical collapse
-double  WEFF(double a, double omega0, double p1, double p2, double p3, int model){
+
+
+// Dark energy contribution to virial theorem - see Eq.A9 of 1812.05594
+double  WEFF(double a, double omega0, double extpars[], int model){
 	double h2;
 	switch(model) {
 		case 1:
@@ -194,12 +209,12 @@ double  WEFF(double a, double omega0, double p1, double p2, double p3, int model
 
 		 case 4:
 		/* QUINTESSENCE*/
-		return -(1.-omega0)*(1.+3.*p1);
+		return -(1.-omega0)*(1.+3.*extpars[0]);
 
 		case 5:
 		/*CPL*/
-		 h2 = pow2(HAg(a,omega0,p1,p2,p3,model));
-		 return -(1.+3.*(p1+(1.-a)*p2))*(h2-omega0/pow3(a));
+		 h2 = pow2(HAg(a,omega0,extpars,model));
+		 return -(1.+3.*(extpars[0]+(1.-a)*extpars[1]))*(h2-omega0/pow3(a));
 
 		 case 6:
 		 /* Hyp 5/04/2021: WORK IN PROGRESS - NEED TO DERIVE WEFF FOR HYP MODEL! SET TO LCDM  */
@@ -229,18 +244,11 @@ inline double beta(double a, double omega0, double omegarc){
 /* PERTURBATIVE POISSON EQUATION FUNCTIONS UP TO 3RD ORDER */
 //p1,p2,p3 are theory parameters
 //k1,k2,k3 are the mode magnitudes
-//u1 angle between k2 and k3; u2 between k1 and k2; u3 between k1 and k3
-
-
-// default is 3 model params. Add in parameters p4,p5,... as required.
-// Note on theories with more than 3 parameters:
-// 1) Add in extra parameters to param_type3 structure below
-// 2) Add in extra parameters to params of funcn1 system of ODEs
-// 3) Add in extra parameters to initn function and in params passed by function to solver (this is right after initial conditions are passed)
+//u1 cosine of the angle between k2 and k3; u2 between k1 and k2; u3 between k1 and k3
 
 // model; 1: GR, 2: f(R) Hu Sawicki, n=1  3: DGP normal branch
 
-double mu(double a, double k0, double omega0, double p1, double p2, double p3, int model){
+double mu(double a, double k0, double omega0, double extpars[], int model){
 	double h0 = 1./2997.92458;
 	double var1;
 	switch(model) {
@@ -248,9 +256,9 @@ double mu(double a, double k0, double omega0, double p1, double p2, double p3, i
 						return  1. ; // GR
 		case 2:
 						var1 = pow2(k0/a);
-	  				return 1. + var1/(3.*(var1+pow3(omega0/pow3(a)-4.*(omega0-1.))/(2.*p1/pow2(h0)*pow2(4.-3.*omega0)))); //f(R) Hu- Sawicki
+	  				return 1. + var1/(3.*(var1+pow3(omega0/pow3(a)-4.*(omega0-1.))/(2.*extpars[0]/pow2(h0)*pow2(4.-3.*omega0)))); //f(R) Hu- Sawicki
     case 3:
-						return 1.+1./(3.*beta(a,omega0,p1)); //nDGP
+						return 1.+1./(3.*beta(a,omega0,extpars[0])); //nDGP
 		case 4:
 						return  1. ; // QUINTESSENCE
 		case 5:
@@ -264,7 +272,7 @@ double mu(double a, double k0, double omega0, double p1, double p2, double p3, i
 }
 
 
-double gamma2(double a, double omega0, double k0, double k1, double k2, double u1, double p1, double p2, double p3, int model){
+double gamma2(double a, double omega0, double k0, double k1, double k2, double u1, double extpars[], int model){
 	double h0 = 1./2997.92458;
 	double var1,var2,var3,var4,var5,var6;
 	switch(model) {
@@ -275,21 +283,23 @@ double gamma2(double a, double omega0, double k0, double k1, double k2, double u
 						var2 = pow3(var1);
 						var3 = pow2(h0);
 						var4 = pow2(3.*omega0-4.);
-						var5 = pow3(omega0-4.*var1*(omega0-1.))/(2.*var2*p1/var3*var4);
+						var5 = pow3(omega0-4.*var1*(omega0-1.))/(2.*var2*extpars[0]/var3*var4);
 						var6 = pow2(k0/a);
 							 return -(9.*var6*pow2(omega0/var1)*pow(omega0-4.*var1*(-1.+omega0),5))/
-									    (48.*pow(var1,5)*pow2(p1/var3)*pow2(HA(a,omega0))*pow2(var4)
+									    (48.*pow(var1,5)*pow2(extpars[0]/var3)*pow2(HA(a,omega0))*pow2(var4)
 									   *(var6+var5)
 									   *(pow2(k1/a)+var5)
 							 		   *(pow2(k2/a)+var5)); //f(R) Hu- Sawicki
 		case 3:
-						return -1./(HA(a,omega0)*HA(a,omega0)*24.*pow(beta(a,omega0,p1),3)*p1)*pow(omega0/(a*a*a),2)*ker1(u1); //nDGP
+						return -1./(HA(a,omega0)*HA(a,omega0)*24.*pow(beta(a,omega0,extpars[0]),3)*extpars[0])*pow(omega0/(a*a*a),2)*ker1(u1); //nDGP
 		case 4:
 						return  0. ; // QUINTESSENCE
 		case 5:
 						return  0. ; // CPL
 		case 6:
 						return  0. ; // HYP
+		case 7:
+						return  0. ; // EFTofDE linear approximation
 		default:
 		warning("SpecialFunctions: invalid model choice, model = %d \n", model);
 				return 0;
@@ -297,7 +307,7 @@ double gamma2(double a, double omega0, double k0, double k1, double k2, double u
 }
 
 // partially symmetric gamma3 (in last 2 arguments) for DGP
-double gamma3(double a, double omega0, double k0, double k1, double k2, double k3, double u1,double u2, double u3, double p1, double p2, double p3, int model){
+double gamma3(double a, double omega0, double k0, double k1, double k2, double k3, double u1,double u2, double u3, double extpars[], int model){
 	double h0 = 1./2997.92458;
 	double var1,var2,var3,var4,var5,var6,var7,var8,var9,var10,var11,k23 ;
 
@@ -309,13 +319,13 @@ double gamma3(double a, double omega0, double k0, double k1, double k2, double k
 						var2 = pow3(var1);
 						var3 = pow2(h0);
 						var4 = pow2(3.*omega0-4.);
-						var5 = pow3(omega0-4.*var1*(omega0-1.))/(2.*var2*p1/var3*var4);
+						var5 = pow3(omega0-4.*var1*(omega0-1.))/(2.*var2*extpars[0]/var3*var4);
 						var6 = pow(var1,5);
 						var7 = var6*pow2(var1);
 						k23 = sqrt(k2*k2+k3*k3+2.*k2*k3*u1);
 						var8 = pow2(k0/a);
 						var9 = pow2(k23/a);
-						var10 = pow2(p1/var3);
+						var10 = pow2(extpars[0]/var3);
 						var11 = pow2(var4);
 
 						  return 1./3.*(var8*pow2(1./HA(a,omega0))*pow3(omega0/var1)/(36.
@@ -324,16 +334,18 @@ double gamma3(double a, double omega0, double k0, double k1, double k2, double k
 						 										*(pow2(k2/a)+var5)
 						 										*(pow2(k3/a)+var5)
 						 				 					  *(var9+var5))
-						 		 								*(-45./8.*(var9+var5)/(var7*var10*(p1/var3))*pow(omega0-4.*var1*(omega0-1.),7)/var11/var4
+						 		 								*(-45./8.*(var9+var5)/(var7*var10*(extpars[0]/var3))*pow(omega0-4.*var1*(omega0-1.),7)/var11/var4
 						 		   							+pow2(9./(4.*var6*var10)*pow(omega0-4.*var1*(omega0-1.),5)/var11)));  // Hu-Sawicki
 	  case 3:
-							return 1./(HA(a,omega0)*HA(a,omega0)*144.*pow(beta(a,omega0,p1),5)*pow(p1,2))*pow(omega0/(a*a*a),3)*ker1(u1)*ker1((k2*u2+k3*u3)/sqrt(k2*k2+2.*k2*k3*u1+k3*k3)); //nDGP
+							return 1./(HA(a,omega0)*HA(a,omega0)*144.*pow(beta(a,omega0,extpars[0]),5)*pow(extpars[0],2))*pow(omega0/(a*a*a),3)*ker1(u1)*ker1((k2*u2+k3*u3)/sqrt(k2*k2+2.*k2*k3*u1+k3*k3)); //nDGP
 		case 4:
 						return  0. ; // QUINTESSENCE
 		case 5:
 						return  0. ; // CPL
 		case 6:
 						return  0. ; // HYP
+		case 7:
+						return 0. ; // EFTofDE linear approximation
 		default:
 		warning("SpecialFunctions: invalid model choice, model = %d \n", model);
 				return 0;
@@ -343,7 +355,7 @@ double gamma3(double a, double omega0, double k0, double k1, double k2, double k
 
 /// Modified gravity function for spherical collapse (see for example A.1 of appendix of 1812.05594) ////
 
-double mymgF(double a, double yh, double yenv, double Rth, double omega0, double p1, double p2, double p3,  double delta_initial, int model){
+double mymgF(double a, double yh, double yenv, double Rth, double omega0, double extpars[], double delta_initial, int model){
 	double h0 = 1./2997.92;
 	double dod, dod2, dRRth, fr0, var1, term1, term2;
 	double betadgp,xm3,xterm,delta;
@@ -352,7 +364,7 @@ double mymgF(double a, double yh, double yenv, double Rth, double omega0, double
 						return  0. ; // GR
 	  case 2:
 		/* f(R)  - Hu-Sawicki model, n =1 */
-						fr0 = p1/h0/h0;
+						fr0 = extpars[0]/h0/h0;
 						var1 = pow2(3.*omega0 -4.);
 
 						term1 = 1./pow2(omega0/pow3(yenv * a) + 4. - 4.*omega0);
@@ -367,11 +379,11 @@ double mymgF(double a, double yh, double yenv, double Rth, double omega0, double
 
 	 case 3:
 	 				/*DGP normal branch*/
-		      betadgp = beta(a,omega0,p1);
+		      betadgp = beta(a,omega0,extpars[0]);
 
 		      delta = (1.+delta_initial)/pow3(yh) - 1.;
 
-		      xterm = 9.*pow2(betadgp)*p1/(2.*omega0/pow3(a)*delta);
+		      xterm = 9.*pow2(betadgp)*extpars[0]/(2.*omega0/pow3(a)*delta);
 
 		      xm3 = 1./xterm;
 
@@ -383,7 +395,8 @@ double mymgF(double a, double yh, double yenv, double Rth, double omega0, double
 						return  0. ; // CPL
 		case 6:
 						return  0. ; // HYP
-
+		case 7:
+						return  0. ; // PPF
 		default:
 					warning("SpecialFunctions: invalid model choice, model = %d \n", model);
 				  return 0;
@@ -403,6 +416,7 @@ double mymgF(double a, double yh, double yenv, double Rth, double omega0, double
 
 /////////////////// Differential Equation Solvers for SPT kernels  ///////////////////
 
+///////////////////// NUMERICAL 1-LOOP SPECTRA  ///////////////////////////
 
 /* Kernels */
 
@@ -487,90 +501,118 @@ double G3_nkp;
 
 
 
-///////// Numerical kernel solvers  - for 1-loop power spectra //////////////
+///////// Numerical kernel solvers up to 3rd order  //////////////
 
 /* Euler and Continuity equations for numerical kernels */
 
 /* Parameters passed to system of Euler and continuity equations*/
 // k (magnitude) and x (angular) values for the system of equations
-// k1.k2=k1k2x2 , k1.k3 = k1k3x3, k2.k3=k2k3x1
-// EDIT : Add in new gravity parameters to this list as required (par1 is the nDGP parameter omega_rc as default)
+// args hold wave vector magnitudes of sums
+// beta and alpha are precomputed alpha and beta kernels.
+// extpars array holds beyond LCDM parameters
+// omega0 = Omega_{m,0}
+// omeganu = Omega_{nu,0}
+// maxpars - maximum number of extended parameters - specified in SpecialFunctions.h
 struct param_type3 {
-  real kk1;
-  real xx1;
-	real kk2;
-  real xx2;
-	real kk3;
-  real xx3;
-	real omega00;
-	real par1;
-	real par2;
-	real par3;
-  real arg1;
-  real arg2;
-  real arg3;
-  real arg4;
-	real omeganu;
+  double kv[3]; // 0: |k1|, 1: |k2|, 2: |k3|
+  double xv[3]; // 0: k2.k3, 1: k1.k2 , 2: k1.k3
+  double args[4]; // 0: |k1-k2| , 1: |k2+k3| , 2: |k1+k3|, 3: |k1+k2|
+	double beta[8]; // beta arguments
+ 	double alpha[12]; // alpha arguments
+  double omega0; // can be replaced by pars[maxbasepars] ....
+	double omeganu; // can be replaced by pars[maxbasepars] ....
+	double extpars[maxpars];
 	int model;
 };
 
 
-// system of equations for modified gravity (1606.02520 )
+// System of linear equations with linear modification mu
+int funcn_lin(double a, const double G[], double F[], void *params)
+{
+  param_type3 p = *(param_type3 *)(params);
 
+	double hade1 = HA2g(a,p.omega0,p.extpars,p.model);
+	double hade2 = HA2g2(a,p.omega0,p.extpars,p.model);
+	double omegacb = p.omega0 - p.omeganu;
+
+	double rescale = omegacb/p.omega0;
+
+	double mu1 = mu(a,p.kv[0],p.omega0,p.extpars,p.model);
+
+	/* 1st order */
+	//1. F1/G1(k)
+	F[0] = -G[1]/a;
+	F[1] =1./a*(-(2.-hade1)*G[1]-hade2*G[0]*mu1*rescale);
+
+	return GSL_SUCCESS;
+}
+
+
+// Calculate linear growth factors in a given model specified by extpars[]
+void IOW::initn_lin(double pars[], double extpars[], double k, int model)
+{
+
+				double A = pars[0]; // target scale factor
+				double omega0 = pars[1]; // total matter fraction
+				double omeganu = pars[2]; // massive neutrino fraction
+
+				double a = 3e-5;
+
+				// Non-Eds ICs
+			  double G[2] = { a,-a};
+
+			/*Parameters passed to system of equations */
+      struct param_type3 mypars;
+
+				mypars.kv[0]=k;
+				mypars.omega0 = omega0;
+				mypars.omeganu = omeganu;
+				mypars.model = model;
+				for (int i=0; i<maxpars;i++){
+					mypars.extpars[i] = 	extpars[i];
+				}
+
+			gsl_odeiv2_system sys = {funcn_lin, jac, 2, &mypars};
+
+			//  this gives the system, the method, the initial interval step, the absolute error and the relative error.
+				gsl_odeiv2_driver * d =
+				gsl_odeiv2_driver_alloc_y_new (&sys, gsl_odeiv2_step_rk8pd,
+										   1e-4, 1e-4, 1e-4);
+
+				int status1 = gsl_odeiv2_driver_apply (d, &a, A, G);
+
+				/*Allocation of array values */
+
+			//F1(k;a), G1(k;a)
+			F1_nk = G[0] ;
+			G1_nk = G[1] ;
+
+			gsl_odeiv2_driver_free(d);
+
+}
+
+
+
+// System of equations for modified gravity up to 3rd order (see 1606.02520 )
 int funcn1(double a, const double G[], double F[], void *params)
 {
 	param_type3 p = *(param_type3 *)(params);
-	real k1 = p.kk1;
-	real x1= p.xx1;
-	real k2 = p.kk2;
-	real x2= p.xx2;
-	real k3 = p.kk3;
-	real x3= p.xx3;
-	real omega0 = p.omega00;
-	real p1 = p.par1;
-	real p2 = p.par2;
-	real p3 = p.par3;
-  real karg1 = p.arg1;
-  real karg2 = p.arg2;
-//  real karg3 = p.arg3;
-  real karg4 = p.arg4;
-	double omeganu = p.omeganu;
-	int mod = p.model;
 
+	double omegacb = p.omega0 - p.omeganu;
 
-	double omegacb = omega0 - omeganu;
+	/* Background quantities */
+	double hade1 = HA2g(a,p.omega0,p.extpars,p.model);
+	double hade2 = HA2g2(a,p.omega0,p.extpars,p.model);
 
-  double a1,a2,a5,a6,a7,a8,a10,a11,a13,a14;
-  double b1,b3,b4,b6,b7;
+	/* Poisson modifications - linear order */
 	double mu1,mu2,mu3,mu4;
+	mu1 = mu(a,p.kv[0],p.omega0,p.extpars,p.model);
+	mu2 = mu(a,p.kv[1],p.omega0,p.extpars,p.model);
+	mu3 = mu(a,p.args[0],p.omega0,p.extpars,p.model);
+	mu4 = mu(a,p.args[3],p.omega0,p.extpars,p.model);
 
-	double hade1 = HA2g(a,omega0,p1,p2,p3,mod);
-	double hade2 = HA2g2(a,omega0,p1,p2,p3,mod);
-
-  a1 = alpha(k2,karg1,(k1*x2-k2)/karg1);
-  a2 = alpha(karg1,k2,(k1*x2-k2)/karg1);
-  a5 = alpha(k2,k1,x2);
-  a6 = alpha(k1,k2,x2);
-  a7 = alpha(k3,k1,x3);
-  a8 = alpha(k1,k3,x3);
-
-  a10 = alpha(k3,karg4,(k1*x3+k2*x1)/karg4);
-  a11 = alpha(k2,karg2,(k3*x1+k1*x2)/karg2);
-  a13 = alpha(karg4,k3,(k1*x3+k2*x1)/karg4);
-  a14 = alpha(karg2,k2,(k3*x1+k1*x2)/karg2);
-
-  b1 = beta1(k2,karg1,(k1*x2-k2)/karg1);
-  b3 = beta1(k1,k2,x2);
-  b4 = beta1(k1,k3,x3);
-  b6 = beta1(k3,karg4,(k1*x3+k2*x1)/karg4);
-  b7 = beta1(k2,karg2,(k3*x1+k1*x2)/karg2);
-
-	mu1 = mu(a,k1,omega0,p1,p2,p3,mod);
-	mu2 = mu(a,k2,omega0,p1,p2,p3,mod);
-	mu3 = mu(a,karg1,omega0,p1,p2,p3,mod);
-	mu4 = mu(a,karg4,omega0,p1,p2,p3,mod);
-
-	double rescale = omegacb/omega0;
+	// Poisson sourced by CB density, not total matter
+	double rescale = omegacb/p.omega0;
 
 	/* 1st order */
 	//1. F1/G1(k)
@@ -587,109 +629,66 @@ int funcn1(double a, const double G[], double F[], void *params)
 
 	/* 2nd order */
 	//4. F2/G2(p,k-p) (P22)
-	F[6] =1./a*(-(a1*G[5]*G[2]+a2*G[3]*G[4])/2.-G[7]);
-	F[7] =1./a*(-(2.-hade1)*G[7]-hade2*G[6]*mu1*rescale - gamma2(a, omega0, k1, k2,karg1,(k1*x2-k2)/karg1,p1,p2,p3,mod)*G[4]*G[2] - b1*G[5]*G[3]);
+	F[6] =1./a*(-(p.alpha[0]*G[5]*G[2]+p.alpha[1]*G[3]*G[4])/2.-G[7]);
+	F[7] =1./a*(-(2.-hade1)*G[7]-hade2*G[6]*mu1*rescale - gamma2(a, p.omega0, p.kv[0], p.kv[1],p.args[0],(p.kv[0]*p.xv[1]-p.kv[1])/p.args[0],p.extpars,p.model)*G[4]*G[2] - p.beta[0]*G[5]*G[3]);
 
 	//5. F2/G2(p,k)
-	F[8] =1./a*(-(a5*G[5]*G[0]+a6*G[1]*G[4])/2.-G[9]) ;
-	F[9] =1./a*(-(2.-hade1)*G[9]-hade2*G[8]*mu4*rescale - gamma2(a, omega0, karg4, k2,k1,x2,p1,p2,p3,mod)*G[4]*G[0]-b3*G[5]*G[1]);
+	F[8] =1./a*(-(p.alpha[2]*G[5]*G[0]+p.alpha[3]*G[1]*G[4])/2.-G[9]) ;
+	F[9] =1./a*(-(2.-hade1)*G[9]-hade2*G[8]*mu4*rescale - gamma2(a, p.omega0, p.args[3], p.kv[1],p.kv[0],p.xv[1],p.extpars,p.model)*G[4]*G[0]-p.beta[1]*G[5]*G[1]);
 
 	//6. F2/G2(-p,k)=F2/G2(p,-k)
-	F[10] =1./a*(-(a7*G[5]*G[0]+a8*G[1]*G[4])/2.-G[11]) ;
-	F[11] =1./a*(-(2.-hade1)*G[11]-hade2*G[10]*mu3*rescale -gamma2(a, omega0, karg1, k3,k1,x3,p1,p2,p3,mod)*G[4]*G[0]-b4*G[5]*G[1]);
+	F[10] =1./a*(-(p.alpha[4]*G[5]*G[0]+p.alpha[5]*G[1]*G[4])/2.-G[11]) ;
+	F[11] =1./a*(-(2.-hade1)*G[11]-hade2*G[10]*mu3*rescale -gamma2(a, p.omega0, p.args[0], p.kv[2],p.kv[0],p.xv[2],p.extpars,p.model)*G[4]*G[0]-p.beta[2]*G[5]*G[1]);
 
 	//7. 3rd order  ~ F3/G3(k,p,-p)
-	F[12] = - 1./(3.*a)*(a10*G[8]*G[5]
-						+ a11*G[10]*G[5]
+	F[12] = - 1./(3.*a)*(p.alpha[6]*G[8]*G[5]
+						+ p.alpha[7]*G[10]*G[5]
 
-						+ a13*G[9]*G[4]
-						+ a14*G[11]*G[4]
+						+ p.alpha[8]*G[9]*G[4]
+						+ p.alpha[9]*G[11]*G[4]
 
 						+3.*G[13]) ;
 
 
 	F[13] =1./(3.*a)*(-3.*(2.-hade1)*G[13]-3.*hade2*G[12]*mu1*rescale
 
-					 -2.*b6*G[5]*G[9]
+					 -2.*p.beta[3]*G[5]*G[9]
+					 -2.*p.beta[4]*G[5]*G[11]
 
-					 -2.*b7*G[5]*G[11]
+					 -2.*gamma2(a, p.omega0, p.kv[0], p.kv[2],p.args[3],(p.kv[0]*p.xv[2]+p.kv[1]*p.xv[0])/p.args[3],p.extpars,p.model)*G[4]*G[8]
+					 -2.*gamma2(a, p.omega0, p.kv[0], p.kv[1],p.args[1],(p.kv[2]*p.xv[0]+p.kv[0]*p.xv[1])/p.args[1],p.extpars,p.model)*G[4]*G[10]
 
-					 -2.*gamma2(a, omega0, k1, k3,karg4,(k1*x3+k2*x1)/karg4,p1,p2,p3,mod)*G[4]*G[8]
-					 -2.*gamma2(a, omega0, k1, k2,karg2,(k3*x1+k1*x2)/karg2,p1,p2,p3,mod)*G[4]*G[10]
-
-					   -(gamma3(a, omega0, k1, k1,k2,k3,x1,x2,x3,p1,p2,p3,mod)
-					   + gamma3(a, omega0, k1, k3,k1,k2,x2,x3,x1,p1,p2,p3,mod)
-					   + gamma3(a, omega0, k1, k2,k3,k1,x3,x1,x2,p1,p2,p3,mod))*G[4]*G[4]*G[0]);
+					   -(gamma3(a, p.omega0, p.kv[0], p.kv[0],p.kv[1],p.kv[2],p.xv[0],p.xv[1],p.xv[2],p.extpars,p.model)
+					   + gamma3(a, p.omega0, p.kv[0], p.kv[2],p.kv[0],p.kv[1],p.xv[1],p.xv[2],p.xv[0],p.extpars,p.model)
+					   + gamma3(a, p.omega0, p.kv[0], p.kv[1],p.kv[2],p.kv[0],p.xv[2],p.xv[0],p.xv[1],p.extpars,p.model))*G[4]*G[4]*G[0]);
 
 
 	return GSL_SUCCESS;
 }
 
 
-// same as system above but with gamma2 = gamma3 = 0 (for pseudo spectrum @ 1-loop order (1812.05594 ))
-
-int funcn1_pseudo(double a, const double G[], double F[], void *params)
+// same as system above but with gamma2 = gamma3 = 0
+// for pseudo spectrum @ 1-loop order in unscreened approximation (1812.05594 )
+int funcn1_unscr(double a, const double G[], double F[], void *params)
 {
 	param_type3 p = *(param_type3 *)(params);
-	real k1 = p.kk1;
-	real x1= p.xx1;
-	real k2 = p.kk2;
-	real x2= p.xx2;
-	real k3 = p.kk3;
-	real x3= p.xx3;
-	real omega0 = p.omega00;
-	real p1 = p.par1;
-	real p2 = p.par2;
-	real p3 = p.par3;
-  real karg1 = p.arg1;
-  real karg2 = p.arg2;
-//  real karg3 = p.arg3;
-  real karg4 = p.arg4;
-	double omeganu = p.omeganu;
-	int mod = p.model;
 
-	double omegacb = omega0 - omeganu;
+	double omegacb = p.omega0 - p.omeganu;
+
+	/* Background quantities */
+	double hade1 = HA2g(a,p.omega0,p.extpars,p.model);
+	double hade2 = HA2g2(a,p.omega0,p.extpars,p.model);
 
 
-  double a1,a2,a5,a6,a7,a8,a10,a11,a13,a14;
-  double b1,b3,b4,b6,b7;
 	double mu1,mu2,mu3,mu4;
-	double hade1 = HA2g(a,omega0,p1,p2,p3,mod);
-	double hade2 = HA2g2(a,omega0,p1,p2,p3,mod);
 
-  a1 = alpha(k2,karg1,(k1*x2-k2)/karg1);
-  a2 = alpha(karg1,k2,(k1*x2-k2)/karg1);
-  a5 = alpha(k2,k1,x2);
-  a6 = alpha(k1,k2,x2);
-  a7 = alpha(k3,k1,x3);
-  a8 = alpha(k1,k3,x3);
+	// unscreened approximation
+	mu1 = mu(a,p.kv[0],p.omega0,p.extpars,p.model);
+	mu2 = mu(a,p.kv[1],p.omega0,p.extpars,p.model);
+	mu3 = mu(a,p.args[0],p.omega0,p.extpars,p.model);
+	mu4 = mu(a,p.args[3],p.omega0,p.extpars,p.model);
 
-  a10 = alpha(k3,karg4,(k1*x3+k2*x1)/karg4);
-  a11 = alpha(k2,karg2,(k3*x1+k1*x2)/karg2);
-  a13 = alpha(karg4,k3,(k1*x3+k2*x1)/karg4);
-  a14 = alpha(karg2,k2,(k3*x1+k1*x2)/karg2);
-
-  b1 = beta1(k2,karg1,(k1*x2-k2)/karg1);
-  b3 = beta1(k1,k2,x2);
-  b4 = beta1(k1,k3,x3);
-  b6 = beta1(k3,karg4,(k1*x3+k2*x1)/karg4);
-  b7 = beta1(k2,karg2,(k3*x1+k1*x2)/karg2);
-
-
-// Full pseudo
-	mu1 = 1;
-	mu2 = 1;
-	mu3 = 1;
-	mu4 = 1;
-
-// unscreened approximation
-	// mu1 = mu(a,k1,omega0,p1,p2,p3,mod);
-	// mu2 = mu(a,k2,omega0,p1,p2,p3,mod);
-	// mu3 = mu(a,karg1,omega0,p1,p2,p3,mod);
-	// mu4 = mu(a,karg4,omega0,p1,p2,p3,mod);
-
-
-	double rescale = omegacb/omega0;
+	double rescale = omegacb/p.omega0;
 
 	/* 1st order */
 
@@ -708,42 +707,47 @@ int funcn1_pseudo(double a, const double G[], double F[], void *params)
 	/* 2nd order */
 
 	//4. F2/G2(p,k-p) (P22)
-	F[6] =1./a*(-(a1*G[5]*G[2]+a2*G[3]*G[4])/2.-G[7]);
-	F[7] =1./a*(-(2.-hade1)*G[7]-hade2*G[6]*mu1*rescale - b1*G[5]*G[3]);
+	F[6] =1./a*(-(p.alpha[0]*G[5]*G[2]+p.alpha[1]*G[3]*G[4])/2.-G[7]);
+	F[7] =1./a*(-(2.-hade1)*G[7]-hade2*G[6]*mu1*rescale - p.beta[0]*G[5]*G[3]);
 
 
 	//5. F2/G2(p,k)
-	F[8] =1./a*(-(a5*G[5]*G[0]+a6*G[1]*G[4])/2.-G[9]) ;
-	F[9] =1./a*(-(2.-hade1)*G[9]-hade2*G[8]*mu4*rescale -b3*G[5]*G[1]);
+	F[8] =1./a*(-(p.alpha[2]*G[5]*G[0]+p.alpha[3]*G[1]*G[4])/2.-G[9]) ;
+	F[9] =1./a*(-(2.-hade1)*G[9]-hade2*G[8]*mu4*rescale -p.beta[1]*G[5]*G[1]);
 
 	//6. F2/G2(-p,k)=F2/G2(p,-k)
-	F[10] =1./a*(-(a7*G[5]*G[0]+a8*G[1]*G[4])/2.-G[11]) ;
-	F[11] =1./a*(-(2.-hade1)*G[11]-hade2*G[10]*mu3*rescale -b4*G[5]*G[1]);
+	F[10] =1./a*(-(p.alpha[4]*G[5]*G[0]+p.alpha[5]*G[1]*G[4])/2.-G[11]) ;
+	F[11] =1./a*(-(2.-hade1)*G[11]-hade2*G[10]*mu3*rescale -p.beta[2]*G[5]*G[1]);
 
 	//7. 3rd order  ~ F3/G3(k,p,-p)
-	F[12] = - 1./(3.*a)*(a10*G[8]*G[5]
-						+ a11*G[10]*G[5]
+	F[12] = - 1./(3.*a)*(p.alpha[6]*G[8]*G[5]
+						+ p.alpha[7]*G[10]*G[5]
 
-						+ a13*G[9]*G[4]
-						+ a14*G[11]*G[4]
+						+ p.alpha[8]*G[9]*G[4]
+						+ p.alpha[9]*G[11]*G[4]
 
 						+3.*G[13]) ;
 
 
 	F[13] =1./(3.*a)*(-3.*(2.-hade1)*G[13]-3.*hade2*G[12]*mu1*rescale
 
-					 -2.*b6*G[5]*G[9]
+					 -2.*p.beta[3]*G[5]*G[9]
 
-					 -2.*b7*G[5]*G[11]);
+					 -2.*p.beta[4]*G[5]*G[11]);
 
 
 	return GSL_SUCCESS;
 }
 
 
-/// the new solver for numerical equations - optimised and solved in SPT.cpp's ploopn2 functions
-void IOW::initn2(double A, double k[], double x[], double kargs[], double omega0, double par1, double par2, double par3, double omeganu, int model)
+/// Solver for density and velocity kernels up to 3rd order
+// see SPT.cpp ploopn2_mgdd for values of k,x,kargs arguments
+void IOW::initn2(double pars[], double extpars[], double k[], double x[], double kargs[], int model)
 {
+
+				double A = pars[0]; // target scale factor
+				double omega0 = pars[1]; // total matter fraction
+				double omeganu = pars[2]; // massive neutrino fraction
 
 			// Initial scale factor for solving system of equations
 				double a = 0.0001;
@@ -752,10 +756,44 @@ void IOW::initn2(double A, double k[], double x[], double kargs[], double omega0
 			  double G[14] = { a,-a,a,-a,a,-a,0.,0.,0.,0.,0.,0.,0.,0.};
 
 			/*Parameters passed to system of equations */
-      // EDIT : If more than one gravity parameter is used, add them after p1
-				struct param_type3 my_params1 = {k[0],x[0],k[1],x[1],k[2],x[2],omega0, par1, par2, par3,kargs[0],kargs[1],kargs[2],kargs[3],omeganu, model};
+				struct param_type3 mypars;
 
-				gsl_odeiv2_system sys = {funcn1, jac, 14, &my_params1};
+					// set all parameters
+						for(int i=0; i<3;i++){
+							mypars.kv[i]=k[i];
+							mypars.xv[i]=x[i];
+							mypars.args[i]=kargs[i];
+						}
+						  mypars.args[3]=kargs[3];
+
+						// calculate alpha and beta kernels
+							mypars.alpha[0] = alpha(k[1],kargs[0],(k[0]*x[1]-k[1])/kargs[0]);
+							mypars.alpha[1] = alpha(kargs[0],k[1],(k[0]*x[1]-k[1])/kargs[0]);
+							mypars.alpha[2] = alpha(k[1],k[0],x[1]);
+							mypars.alpha[3] = alpha(k[0],k[1],x[1]);
+							mypars.alpha[4] = alpha(k[2],k[0],x[2]);
+							mypars.alpha[5] = alpha(k[0],k[2],x[2]);
+							mypars.alpha[6] = alpha(k[2],kargs[3],(k[0]*x[2]+k[1]*x[0])/kargs[3]);
+							mypars.alpha[7] = alpha(k[1],kargs[1],(k[2]*x[0]+k[0]*x[1])/kargs[1]);
+							mypars.alpha[8] = alpha(kargs[3],k[2],(k[0]*x[2]+k[1]*x[0])/kargs[3]);
+							mypars.alpha[9] = alpha(kargs[1],k[1],(k[2]*x[0]+k[0]*x[1])/kargs[1]);
+
+							mypars.beta[0] = beta1(k[1],kargs[0],(k[0]*x[1]-k[1])/kargs[0]);
+							mypars.beta[1] = beta1(k[0],k[1],x[1]);
+							mypars.beta[2] = beta1(k[0],k[2],x[2]);
+							mypars.beta[3] = beta1(k[2],kargs[3],(k[0]*x[2]+k[1]*x[0])/kargs[3]);
+							mypars.beta[4] = beta1(k[1],kargs[1],(k[2]*x[0]+k[0]*x[1])/kargs[1]);
+
+
+							mypars.omega0 = omega0;
+						  mypars.omeganu = omeganu;
+							mypars.model = model;
+
+							for (int i=0; i<maxpars;i++){
+								mypars.extpars[i] = 	extpars[i];
+							}
+
+				gsl_odeiv2_system sys = {funcn1, jac, 14, &mypars};
 
 			//  this gives the system, the method, the initial interval step, the absolute error and the relative error.
 				gsl_odeiv2_driver * d =
@@ -803,22 +841,60 @@ void IOW::initn2(double A, double k[], double x[], double kargs[], double omega0
 
 
 
-/// Solver for pseudo power spectrum (set of equations omit screening functions gamma_2 and gamma_3 - see funcn1_pseudo)
-
-void IOW::initn2_pseudo(double A, double k[], double x[], double kargs[], double omega0, double par1, double par2, double par3, double omeganu, int model)
+/// Solver for pseudo power spectrum in unscreened approximation
+// set of equations omit screening functions gamma_2 and gamma_3 - see funcn1_pseudo
+void IOW::initn2_unscr(double pars[], double extpars[], double k[], double x[], double kargs[], int model)
 {
 
-			// Initial scale factor for solving system of equations
-				double a = 0.0001;
+					double A = pars[0]; // target scale factor
+					double omega0 = pars[1]; // total matter fraction
+					double omeganu = pars[2]; // massive neutrino fraction
 
-        // Non-Eds ICs
-			  double G[14] = { a,-a,a,-a,a,-a,0.,0.,0.,0.,0.,0.,0.,0.};
+				// Initial scale factor for solving system of equations
+					double a = 0.0001;
 
-			/*Parameters passed to system of equations */
-      // EDIT : If more than one gravity parameter is used, add them after p1
-				struct param_type3 my_params1 = {k[0],x[0],k[1],x[1],k[2],x[2],omega0, par1, par2, par3,kargs[0],kargs[1],kargs[2],kargs[3],omeganu, model};
+	        // Non-Eds ICs
+				  double G[14] = { a,-a,a,-a,a,-a,0.,0.,0.,0.,0.,0.,0.,0.};
 
-				gsl_odeiv2_system sys = {funcn1_pseudo, jac, 14, &my_params1};
+				/*Parameters passed to system of equations */
+					struct param_type3 mypars;
+
+						// set all parameters
+							for(int i=0; i<3;i++){
+								mypars.kv[i]=k[i];
+								mypars.xv[i]=x[i];
+								mypars.args[i]=kargs[i];
+							}
+							  mypars.args[3]=kargs[3];
+
+							// calculate alpha and beta kernels
+								mypars.alpha[0] = alpha(k[1],kargs[0],(k[0]*x[1]-k[1])/kargs[0]);
+								mypars.alpha[1] = alpha(kargs[0],k[1],(k[0]*x[1]-k[1])/kargs[0]);
+								mypars.alpha[2] = alpha(k[1],k[0],x[1]);
+								mypars.alpha[3] = alpha(k[0],k[1],x[1]);
+								mypars.alpha[4] = alpha(k[2],k[0],x[2]);
+								mypars.alpha[5] = alpha(k[0],k[2],x[2]);
+								mypars.alpha[6] = alpha(k[2],kargs[3],(k[0]*x[2]+k[1]*x[0])/kargs[3]);
+								mypars.alpha[7] = alpha(k[1],kargs[1],(k[2]*x[0]+k[0]*x[1])/kargs[1]);
+								mypars.alpha[8] = alpha(kargs[3],k[2],(k[0]*x[2]+k[1]*x[0])/kargs[3]);
+								mypars.alpha[9] = alpha(kargs[1],k[1],(k[2]*x[0]+k[0]*x[1])/kargs[1]);
+
+								mypars.beta[0] = beta1(k[1],kargs[0],(k[0]*x[1]-k[1])/kargs[0]);
+								mypars.beta[1] = beta1(k[0],k[1],x[1]);
+								mypars.beta[2] = beta1(k[0],k[2],x[2]);
+								mypars.beta[3] = beta1(k[2],kargs[3],(k[0]*x[2]+k[1]*x[0])/kargs[3]);
+								mypars.beta[4] = beta1(k[1],kargs[1],(k[2]*x[0]+k[0]*x[1])/kargs[1]);
+
+
+								mypars.omega0 = omega0;
+							  mypars.omeganu = omeganu;
+								mypars.model = model;
+
+								for (int i=0; i<maxpars;i++){
+									mypars.extpars[i] = 	extpars[i];
+								}
+
+				gsl_odeiv2_system sys = {funcn1_unscr, jac, 14, &mypars};
 
 			//  this gives the system, the method, the initial interval step, the absolute error and the relative error.
 				gsl_odeiv2_driver * d =
@@ -866,27 +942,86 @@ void IOW::initn2_pseudo(double A, double k[], double x[], double kargs[], double
 
 
 // Used to store kernel values for various redshifts for lensing computation (see HALO.cpp and SPT.cpp - react_init and PLOOPn2 functions respectively)
-// BILL MOD
-void IOW::initn3(double redshifts[], int noz, double k[], double x[], double kargs[], double omega0, double par1, double par2, double par3,double mykernelarray[][20], double omeganu, int model){
+// redshifts[]: array holding the redshift values
+// noz : number of redshifts
+//k[],x[],kargs[] hold various wave vector magnitude and angular quantities
+// mykernelarray[][20] holds the computed kernels needed for the 1-loop computation. first dimension should be noz.
+void IOW::initn3(double pars[], double extpars[], double redshifts[], int noz, double k[], double x[], double kargs[], double mykernelarray[][20], int model){
+
 				if(redshifts[0]>2.5){
 					warning("SpecialFunctions: highest z unstable, should be 2.5 or less: z max = %e \n", redshifts[0]);
 				}
+
+			//	double A = pars[0]; // target scale factor - not needed here
+				double omega0 = pars[1]; // total matter fraction
+				double omeganu = pars[2]; // massive neutrino fraction
 
 			// Initial scale factor for solving system of equations
 				double a = 0.0001;
 				double ap = 0.0001;
 
-        // Non-Eds ICs
-			  double G[14] = { a,-a,a,-a,a,-a,0.,0.,0.,0.,0.,0.,0.,0.};
+				// Non-Eds ICs
+				double G[14] = { a,-a,a,-a,a,-a,0.,0.,0.,0.,0.,0.,0.,0.};
 				double Gp[14] = { a,-a,a,-a,a,-a,0.,0.,0.,0.,0.,0.,0.,0.};
 
-
 			/*Parameters passed to system of equations */
-      // EDIT : If more than one gravity parameter is used, add them after p1
-				struct param_type3 my_params1 = {k[0],x[0],k[1],x[1],k[2],x[2],omega0, par1, par2, par3,kargs[0],kargs[1],kargs[2],kargs[3],omeganu, model};
+				struct param_type3 mypars,mypars_pseudo;
 
-				gsl_odeiv2_system sys = {funcn1, jac, 14, &my_params1};
-				gsl_odeiv2_system sysp = {funcn1_pseudo, jac, 14, &my_params1};
+					// set all parameters
+						for(int i=0; i<3;i++){
+							mypars.kv[i]=k[i];
+							mypars.xv[i]=x[i];
+							mypars.args[i]=kargs[i];
+							mypars_pseudo.kv[i]=k[i];
+							mypars_pseudo.xv[i]=x[i];
+							mypars_pseudo.args[i]=kargs[i];
+						}
+							mypars.args[3]=kargs[3];
+							mypars_pseudo.args[3]=kargs[3];
+
+						// calculate alpha and beta kernels
+							mypars.alpha[0] = alpha(k[1],kargs[0],(k[0]*x[1]-k[1])/kargs[0]);
+							mypars.alpha[1] = alpha(kargs[0],k[1],(k[0]*x[1]-k[1])/kargs[0]);
+							mypars.alpha[2] = alpha(k[1],k[0],x[1]);
+							mypars.alpha[3] = alpha(k[0],k[1],x[1]);
+							mypars.alpha[4] = alpha(k[2],k[0],x[2]);
+							mypars.alpha[5] = alpha(k[0],k[2],x[2]);
+							mypars.alpha[6] = alpha(k[2],kargs[3],(k[0]*x[2]+k[1]*x[0])/kargs[3]);
+							mypars.alpha[7] = alpha(k[1],kargs[1],(k[2]*x[0]+k[0]*x[1])/kargs[1]);
+							mypars.alpha[8] = alpha(kargs[3],k[2],(k[0]*x[2]+k[1]*x[0])/kargs[3]);
+							mypars.alpha[9] = alpha(kargs[1],k[1],(k[2]*x[0]+k[0]*x[1])/kargs[1]);
+
+							mypars.beta[0] = beta1(k[1],kargs[0],(k[0]*x[1]-k[1])/kargs[0]);
+							mypars.beta[1] = beta1(k[0],k[1],x[1]);
+							mypars.beta[2] = beta1(k[0],k[2],x[2]);
+							mypars.beta[3] = beta1(k[2],kargs[3],(k[0]*x[2]+k[1]*x[0])/kargs[3]);
+							mypars.beta[4] = beta1(k[1],kargs[1],(k[2]*x[0]+k[0]*x[1])/kargs[1]);
+
+							for(int i=0; i<10;i++){
+								mypars_pseudo.alpha[i]=	mypars.alpha[i];
+							}
+							for(int i=0; i<5;i++){
+								mypars_pseudo.beta[i]=	mypars.beta[i];
+							}
+
+							mypars.omega0 = omega0;
+							mypars.omeganu = omeganu;
+							mypars_pseudo.omega0 = omega0;
+							mypars_pseudo.omeganu = omeganu;
+
+							mypars.model = model;
+							mypars_pseudo.model = 1; // GR used to compute loops
+
+							for (int i=0; i<maxpars;i++){
+								mypars.extpars[i] = 	extpars[i];
+							}
+
+				gsl_odeiv2_system sys = {funcn1, jac, 14, &mypars};
+				gsl_odeiv2_system sysp = {funcn1, jac, 14, &mypars_pseudo};
+
+				// For unscreened approximation:
+				// mypars_pseudo.model = model; //
+				// gsl_odeiv2_system sysp = {funcn1_unscr, jac, 14, &mypars_pseudo};
 
 			//  this gives the system, the method, the initial interval step, the absolute error and the relative error.
 				gsl_odeiv2_driver * d =
@@ -981,190 +1116,146 @@ double ai,af,aip,afp;
 		  gsl_odeiv2_driver_free(dp);
 }
 
-// system of linear equations with linear modification mu
-int funcn_lin(double a, const double G[], double F[], void *params)
-{
-  param_type3 p = *(param_type3 *)(params);
-	real k1 = p.kk1;
-	real omega0 = p.omega00;
-	real p1 = p.par1;
-	real p2 = p.par2;
-  real p3 = p.par3;
-	int mod = p.model;
-
-	double hade1 = HA2g(a,omega0,p1,p2,p3,mod);
-	double hade2 = HA2g2(a,omega0,p1,p2,p3,mod);
-
-	/* 1st order */
-	//1. F1/G1(k)
-	F[0] = -G[1]/a;
-	F[1] =1./a*(-(2.-hade1)*G[1]-hade2*G[0]*mu(a,k1,omega0,p1,p2,p3,mod));
-
-	return GSL_SUCCESS;
-}
-
-
-// Include MG extension
-void IOW::initn_lin(double A, double k, double omega0, double par1, double par2, double par3, int model)
-{
-				double a = 3e-5;
-
-// Non-Eds ICs
-			  double G[2] = { a,-a};
-
-			/*Parameters passed to system of equations */
-      struct param_type3 my_params1 = {k,1.,1.,1.,1.,1.,omega0, par1, par2, par3,1,1.,1.,1., 0., model};
-
-			gsl_odeiv2_system sys = {funcn_lin, jac, 2, &my_params1};
-
-			//  this gives the system, the method, the initial interval step, the absolute error and the relative error.
-				gsl_odeiv2_driver * d =
-				gsl_odeiv2_driver_alloc_y_new (&sys, gsl_odeiv2_step_rk8pd,
-										   1e-4, 1e-4, 1e-4);
-
-				int status1 = gsl_odeiv2_driver_apply (d, &a, A, G);
-
-				/*Allocation of array values */
-
-			//F1(k;a), G1(k;a)
-			F1_nk = G[0] ;
-			G1_nk = G[1] ;
-
-			gsl_odeiv2_driver_free(d);
-
-}
 
 
 
 /// Solver that includes the additional 2nd order kernel needed for the AB terms of the TNS rsd model
-
 int funcn_rsd(double a, const double G[], double F[], void *params)
 {
+
 	param_type3 p = *(param_type3 *)(params);
-	real k1 = p.kk1;
-	real x1= p.xx1;
-	real k2 = p.kk2;
-	real x2= p.xx2;
-	real k3 = p.kk3;
-	real x3= p.xx3;
-	real omega0 = p.omega00;
-	real p1 = p.par1;
-	real p2 = p.par2;
-	real p3 = p.par3;
-  real karg1 = p.arg1;
-  real karg2 = p.arg2;
-//  real karg3 = p.arg3;
-  real karg4 = p.arg4;
-	int mod = p.model;
 
-  double a1,a2,a3,a4,a5,a6,a7,a8,a10,a11,a13,a14;
-  double b1,b2,b3,b4,b6,b7;
-	double mu1,mu2,mu3;
+	double omegacb = p.omega0 - p.omeganu;
 
-	double hade1 = HA2g(a,omega0,p1,p2,p3,mod);
-	double hade2 = HA2g2(a,omega0,p1,p2,p3,mod);
+	/* Background quantities */
+	double hade1 = HA2g(a,p.omega0,p.extpars,p.model);
+	double hade2 = HA2g2(a,p.omega0,p.extpars,p.model);
 
-  a1 = alpha(k2,karg1,(k1*x2-k2)/karg1);
-  a2 = alpha(karg1,k2,(k1*x2-k2)/karg1);
-	a3 = alpha(k1,karg1,(k2*x2-k1)/karg1);
-  a4 = alpha(karg1,k1,(k2*x2-k1)/karg1);
-  a5 = alpha(k2,k1,x2);
-  a6 = alpha(k1,k2,x2);
-  a7 = alpha(k3,k1,x3);
-  a8 = alpha(k1,k3,x3);
+	/* Poisson modifications - linear order */
+	double mu1,mu2,mu3,mu4;
+	mu1 = mu(a,p.kv[0],p.omega0,p.extpars,p.model);
+	mu2 = mu(a,p.kv[1],p.omega0,p.extpars,p.model);
+	mu3 = mu(a,p.args[0],p.omega0,p.extpars,p.model);
+	mu4 = mu(a,p.args[3],p.omega0,p.extpars,p.model);
 
-  a10 = alpha(k3,karg4,(k1*x3+k2*x1)/karg4);
-  a11 = alpha(k2,karg2,(k3*x1+k1*x2)/karg2);
-  a13 = alpha(karg4,k3,(k1*x3+k2*x1)/karg4);
-  a14 = alpha(karg2,k2,(k3*x1+k1*x2)/karg2);
-
-  b1 = beta1(k2,karg1,(k1*x2-k2)/karg1);
-	b2 = beta1(k1,karg1,(k2*x2-k1)/karg1);
-  b3 = beta1(k1,k2,x2);
-  b4 = beta1(k1,k3,x3);
-  b6 = beta1(k3,karg4,(k1*x3+k2*x1)/karg4);
-  b7 = beta1(k2,karg2,(k3*x1+k1*x2)/karg2);
-
-	mu1 = mu(a,k1,omega0,p1,p2,p3,mod);
-	mu2 = mu(a,k2,omega0,p1,p2,p3,mod);
-	mu3 = mu(a,karg1,omega0,p1,p2,p3,mod);
+	// Poisson sourced by CB density, not total matter
+	double rescale = omegacb/p.omega0;
 
 	/* 1st order */
 
 	//1. F1/G1(k)
 	F[0] = -G[1]/a;
-	F[1] =1./a*(-(2.-hade1)*G[1]-hade2*G[0]*mu1);
+	F[1] =1./a*(-(2.-hade1)*G[1]-hade2*G[0]*mu1*rescale);
 
 	//2. F1/G1(k-p)
 	F[2] = -G[3]/a;
-	F[3] =1./a*(-(2.-hade1)*G[3]-hade2*G[2]*mu3);
+	F[3] =1./a*(-(2.-hade1)*G[3]-hade2*G[2]*mu3*rescale);
 
 	//3. F1/G1(p)
 	F[4] = -G[5]/a;
-	F[5] =1./a*(-(2.-hade1)*G[5]-hade2*G[4]*mu2);
+	F[5] =1./a*(-(2.-hade1)*G[5]-hade2*G[4]*mu2*rescale);
 
 	/* 2nd order */
-
 	//4. F2/G2(p,k-p) (P22)
-	F[6] =1./a*(-(a1*G[5]*G[2]+a2*G[3]*G[4])/2.-G[7]);
-	F[7] =1./a*(-(2.-hade1)*G[7]-hade2*G[6]*mu1 - gamma2(a, omega0, k1, k2,karg1,(k1*x2-k2)/karg1,p1,p2,p3,mod)*G[4]*G[2] - b1*G[5]*G[3]);
-
+	F[6] =1./a*(-(p.alpha[0]*G[5]*G[2]+p.alpha[1]*G[3]*G[4])/2.-G[7]);
+	F[7] =1./a*(-(2.-hade1)*G[7]-hade2*G[6]*mu1*rescale - gamma2(a, p.omega0, p.kv[0], p.kv[1],p.args[0],(p.kv[0]*p.xv[1]-p.kv[1])/p.args[0],p.extpars,p.model)*G[4]*G[2] - p.beta[0]*G[5]*G[3]);
 
 	//5. F2/G2(p,k)
-	F[8] =1./a*(-(a5*G[5]*G[0]+a6*G[1]*G[4])/2.-G[9]) ;
-	F[9] =1./a*(-(2.-hade1)*G[9]-hade2*G[8]*mu(a,karg4,omega0,p1,p2,p3,mod) - gamma2(a, omega0, karg4, k2,k1,x2,p1,p2,p3,mod)*G[4]*G[0]-b3*G[5]*G[1]);
+	F[8] =1./a*(-(p.alpha[2]*G[5]*G[0]+p.alpha[3]*G[1]*G[4])/2.-G[9]) ;
+	F[9] =1./a*(-(2.-hade1)*G[9]-hade2*G[8]*mu4*rescale - gamma2(a, p.omega0, p.args[3], p.kv[1],p.kv[0],p.xv[1],p.extpars,p.model)*G[4]*G[0]-p.beta[1]*G[5]*G[1]);
 
 	//6. F2/G2(-p,k)=F2/G2(p,-k)
-	F[10] =1./a*(-(a7*G[5]*G[0]+a8*G[1]*G[4])/2.-G[11]) ;
-	F[11] =1./a*(-(2.-hade1)*G[11]-hade2*G[10]*mu3 -gamma2(a, omega0, karg1, k3,k1,x3,p1,p2,p3,mod)*G[4]*G[0]-b4*G[5]*G[1]);
+	F[10] =1./a*(-(p.alpha[4]*G[5]*G[0]+p.alpha[5]*G[1]*G[4])/2.-G[11]) ;
+	F[11] =1./a*(-(2.-hade1)*G[11]-hade2*G[10]*mu3*rescale -gamma2(a, p.omega0, p.args[0], p.kv[2],p.kv[0],p.xv[2],p.extpars,p.model)*G[4]*G[0]-p.beta[2]*G[5]*G[1]);
 
 	//7. 3rd order  ~ F3/G3(k,p,-p)
-	F[12] = - 1./(3.*a)*(a10*G[8]*G[5]
-						+ a11*G[10]*G[5]
+	F[12] = - 1./(3.*a)*(p.alpha[6]*G[8]*G[5]
+						+ p.alpha[7]*G[10]*G[5]
 
-						+ a13*G[9]*G[4]
-						+ a14*G[11]*G[4]
+						+ p.alpha[8]*G[9]*G[4]
+						+ p.alpha[9]*G[11]*G[4]
 
 						+3.*G[13]) ;
 
 
-	F[13] =1./(3.*a)*(-3.*(2.-hade1)*G[13]-3.*hade2*G[12]*mu1
+	F[13] =1./(3.*a)*(-3.*(2.-hade1)*G[13]-3.*hade2*G[12]*mu1*rescale
 
-					 -2.*b6*G[5]*G[9]
+					 -2.*p.beta[3]*G[5]*G[9]
+					 -2.*p.beta[4]*G[5]*G[11]
 
-					 -2.*b7*G[5]*G[11]
+					 -2.*gamma2(a, p.omega0, p.kv[0], p.kv[2],p.args[3],(p.kv[0]*p.xv[2]+p.kv[1]*p.xv[0])/p.args[3],p.extpars,p.model)*G[4]*G[8]
+					 -2.*gamma2(a, p.omega0, p.kv[0], p.kv[1],p.args[1],(p.kv[2]*p.xv[0]+p.kv[0]*p.xv[1])/p.args[1],p.extpars,p.model)*G[4]*G[10]
 
-					 -2.*gamma2(a, omega0, k1, k3,karg4,(k1*x3+k2*x1)/karg4,p1,p2,p3,mod)*G[4]*G[8]
-					 -2.*gamma2(a, omega0, k1, k2,karg2,(k3*x1+k1*x2)/karg2,p1,p2,p3,mod)*G[4]*G[10]
-
-					   -(gamma3(a, omega0, k1, k1,k2,k3,x1,x2,x3,p1,p2,p3,mod)
-					   + gamma3(a, omega0, k1, k3,k1,k2,x2,x3,x1,p1,p2,p3,mod)
-					   + gamma3(a, omega0, k1, k2,k3,k1,x3,x1,x2,p1,p2,p3,mod))*G[4]*G[4]*G[0]);
-
+					   -(gamma3(a, p.omega0, p.kv[0], p.kv[0],p.kv[1],p.kv[2],p.xv[0],p.xv[1],p.xv[2],p.extpars,p.model)
+					   + gamma3(a, p.omega0, p.kv[0], p.kv[2],p.kv[0],p.kv[1],p.xv[1],p.xv[2],p.xv[0],p.extpars,p.model)
+					   + gamma3(a, p.omega0, p.kv[0], p.kv[1],p.kv[2],p.kv[0],p.xv[2],p.xv[0],p.xv[1],p.extpars,p.model))*G[4]*G[4]*G[0]);
 
  	//8. F2/G2(-k,k-p)
- 	F[14] =1./a*(-(a3*G[1]*G[2]+a4*G[3]*G[0])/2.-G[15]);
- 	F[15] =1./a*(-(2.-hade1)*G[15]-hade2*G[14]*mu2 - gamma2(a, omega0, k2, k1, karg1,(k2*x2-k1)/karg1,p1,p2,p3,mod)*G[2]*G[0] - b2*G[3]*G[1]);
+ 	F[14] =1./a*(-(p.alpha[10]*G[1]*G[2]+p.alpha[11]*G[3]*G[0])/2.-G[15]);
+ 	F[15] =1./a*(-(2.-hade1)*G[15]-hade2*G[14]*mu2 - gamma2(a, p.omega0, p.kv[1], p.kv[0], p.args[0],(p.kv[1]*p.xv[1]-p.kv[0])/ p.args[0],p.extpars,p.model)*G[2]*G[0] - p.beta[5]*G[3]*G[1]);
 
 	return GSL_SUCCESS;
 }
 
 
 /// the new solver for numerical equations - optimised and solved in SPT.cpp's ploopn2 functions
-void IOW::initn_rsd(double A, double k[], double x[], double kargs[], double omega0, double par1, double par2, double par3, int model)
+void IOW::initn_rsd(double pars[], double extpars[], double k[], double x[], double kargs[], int model)
 {
 
-			// Initial scale factor for solving system of equations
-				double a = 0.0001;
+			double A = pars[0]; // target scale factor
+			double omega0 = pars[1]; // total matter fraction
+			double omeganu = pars[2]; // massive neutrino fraction
 
-        // Non-Eds ICs
-			  double G[16] = { a,-a,a,-a,a,-a,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
+		// Initial scale factor for solving system of equations
+			double a = 0.0001;
 
-			/*Parameters passed to system of equations */
-      // EDIT : If more than one gravity parameter is used, add them after p1
-				struct param_type3 my_params1 = {k[0],x[0],k[1],x[1],k[2],x[2],omega0, par1, par2, par3,kargs[0],kargs[1],kargs[2],kargs[3],0.,model};
+			// Non-Eds ICs
+			double G[16] = { a,-a,a,-a,a,-a,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
 
-				gsl_odeiv2_system sys = {funcn_rsd, jac, 16, &my_params1};
+		/*Parameters passed to system of equations */
+			struct param_type3 mypars;
+
+				// set all parameters
+					for(int i=0; i<3;i++){
+						mypars.kv[i]=k[i];
+						mypars.xv[i]=x[i];
+						mypars.args[i]=kargs[i];
+					}
+						mypars.args[3]=kargs[3];
+
+					// calculate alpha and beta kernels
+						mypars.alpha[0] = alpha(k[1],kargs[0],(k[0]*x[1]-k[1])/kargs[0]);
+						mypars.alpha[1] = alpha(kargs[0],k[1],(k[0]*x[1]-k[1])/kargs[0]);
+						mypars.alpha[2] = alpha(k[1],k[0],x[1]);
+						mypars.alpha[3] = alpha(k[0],k[1],x[1]);
+						mypars.alpha[4] = alpha(k[2],k[0],x[2]);
+						mypars.alpha[5] = alpha(k[0],k[2],x[2]);
+						mypars.alpha[6] = alpha(k[2],kargs[3],(k[0]*x[2]+k[1]*x[0])/kargs[3]);
+						mypars.alpha[7] = alpha(k[1],kargs[1],(k[2]*x[0]+k[0]*x[1])/kargs[1]);
+						mypars.alpha[8] = alpha(kargs[3],k[2],(k[0]*x[2]+k[1]*x[0])/kargs[3]);
+						mypars.alpha[9] = alpha(kargs[1],k[1],(k[2]*x[0]+k[0]*x[1])/kargs[1]);
+						// additional kernels for TNS
+						mypars.alpha[10] = alpha(k[0],kargs[0],(k[1]*x[1]-k[0])/kargs[0]);
+						mypars.alpha[11] = alpha(kargs[0],k[0],(k[1]*x[1]-k[0])/kargs[0]);
+
+
+						mypars.beta[0] = beta1(k[1],kargs[0],(k[0]*x[1]-k[1])/kargs[0]);
+						mypars.beta[1] = beta1(k[0],k[1],x[1]);
+						mypars.beta[2] = beta1(k[0],k[2],x[2]);
+						mypars.beta[3] = beta1(k[2],kargs[3],(k[0]*x[2]+k[1]*x[0])/kargs[3]);
+						mypars.beta[4] = beta1(k[1],kargs[1],(k[2]*x[0]+k[0]*x[1])/kargs[1]);
+						// additional kernels for TNS
+						mypars.beta[5] = beta1(k[0],kargs[0],(k[1]*x[1]-k[0])/kargs[0]);
+
+						mypars.omega0 = omega0;
+						mypars.omeganu = omeganu;
+						mypars.model = model;
+
+						for (int i=0; i<maxpars;i++){
+							mypars.extpars[i] = 	extpars[i];
+						}
+
+				gsl_odeiv2_system sys = {funcn_rsd, jac, 16, &mypars};
 
 			//  this gives the system, the method, the initial interval step, the absolute error and the relative error.
 				gsl_odeiv2_driver * d =
@@ -1216,35 +1307,38 @@ void IOW::initn_rsd(double A, double k[], double x[], double kargs[], double ome
 }
 
 
-/*cosmological parameters for evolution factors (applied to analytic solutions) */
+
+
+
+/* Parameters passed to linear system of Euler and continuity equations in LCDM/wCDM/CPL*/
+// extpars array holds beyond LCDM parameters
+// omega0 = Omega_{m,0}
+// omeganu = Omega_{nu,0}
+// maxpars - maximum number of extended parameters - specified in SpecialFunctions.h
 struct param_type2 {
-	real omega00;
-  real par1;
-	real par2;
-	real par3;
-  int par4;
-	real par5;
+	double omega0;
+	double omeganu;
+	double extpars[maxpars];
 	int model;
 };
 
 
-/* System of equations for wCDM/CPL normalization*/
 
-int funcn2(double a, const double G[], double F[], void *params)
+/* System of equations for LCDM/wCDM/CPL normalization - if using CAMB input linear @ z=0*/
+int funcnorm(double a, const double G[], double F[], void *params)
 {
-	param_type2 p = *(param_type2 *)(params);
-	real omega0 = p.omega00;
-	real p1 = p.par1;
-  real p2 = p.par2;
-	real p3 = p.par3;
-	real omeganu = p.par5;
-	int mod = p.model;
+		param_type2 p = *(param_type2 *)(params);
 
-	double omegacb = omega0-omeganu;
+		double omegacb = p.omega0 - p.omeganu;
 
-	double hub1 = pow2(HAg(a,omega0,p1,p2,p3,mod));
-	double hub2 = HA1g(a,omega0,p1,p2,p3,mod);
-	double ap5 = pow(a,5);
+		/* Background quantities */
+		double hub1 = pow2(HAg(a,p.omega0,p.extpars,p.model));
+		double hub2 = HA1g(a,p.omega0,p.extpars,p.model);
+		double ap5 = pow(a,5);
+
+		// Poisson sourced by CB density, not total matter
+	//	double rescale = omegacb/p.omega0;
+
 
 	F[0] = G[1];
 	F[1] = -1./a*(3.+hub2/hub1)*G[1] + 3./2.*omegacb/(hub1*ap5)*G[0];
@@ -1253,37 +1347,55 @@ int funcn2(double a, const double G[], double F[], void *params)
 }
 
 
-// correction to virial concentration in real case - see HALO.cpp
+// correction to virial concentration in wCDM case - see HALO.cpp
 double g_de;
+
 // Normalisation for power spectra with and without evolving DE
-// vars[0] = scale factor
-// vars[1] = omega_m0
-// vars[2] = w0 (not used for modified gravity as Hubble function should be set to GR value - see funcn2)
-// vars[3] = wa (not used for modified gravity as Hubble function should be set to GR value - see funcn2)
-// vars[4] unused so far
-// vars[6] = omega_nu
-void IOW::initnorm(double vars[], int model) //double A, double omega0, double par1, double par2, double par3, int par4)
+// pars[0] = scale factor
+// pars[1] = omega_m0
+// pars[2] = omega_nu
+
+// extpars[0] = w0
+// extpars[1] = wa
+void IOW::initnorm(double pars[], double extpars[], int model) //double A, double omega0, double par1, double par2, double par3, int par4)
 {
+
+				double A = pars[0]; // target scale factor
+				double omega0 = pars[1]; // total matter fraction
+				double omeganu = pars[2]; // massive neutrino fraction
+
+			// Initial scale factor for solving system of equations
 			double a = 3e-5;
-	  	double G1[2] = {a,1.}; // initial conditions
-			struct param_type2 myparams, myparams2;
+
+				// Non-Eds ICs
+				double G1[2] = {a,1.}; // initial conditions
+
+			/*Parameters passed to system of equations */
+				struct param_type2 mypars, mypars2;
+
+							mypars.omega0 = omega0;
+							mypars.omeganu = omeganu;
+							mypars.model = model;
+
+							for (int i=0; i<maxpars;i++){
+								mypars.extpars[i] = 	extpars[i];
+							}
+
+			// Set up two systems - one to solve for target redshift and one for z=0 (to calculate g_de)
 			gsl_odeiv2_system sys1;
 			gsl_odeiv2_system sys2;
 			gsl_odeiv2_driver * d1;
 			gsl_odeiv2_driver * d2;
 			int status1,status2,status3;
 
-			//  Solution for wCDM linear growth @ a=1  for our normalisation of the linear power spectrum
-					myparams = {vars[1],vars[2],vars[3],vars[4],1,vars[6],model};
-
 			  // Solutions of evolution factors @ a=A
-			  	sys1 = {funcn2, jac, 2, &myparams};
+			  	sys1 = {funcnorm, jac, 2, &mypars};
 			  	d1 = gsl_odeiv2_driver_alloc_y_new (&sys1, gsl_odeiv2_step_rk8pd,
 			  								  1e-6, 1e-6, 1e-6);
 
 			  	status1 = gsl_odeiv2_driver_apply (d1, &a, 1. , G1);
 
-			  	dnorm_spt = G1[0]; // omega_cb + DE  background ....
+			  	dnorm_spt = G1[0]; // D(z=0) for Omega_cb + DE  background
 
 			  	gsl_odeiv2_driver_free(d1);
 
@@ -1292,35 +1404,40 @@ void IOW::initnorm(double vars[], int model) //double A, double omega0, double p
 			  	G1[0] = a;
 					G1[1] = 1.;
 
-					double mya = vars[0];
 
-			// LCDM growth @ a=A for Omega_cb
-					myparams2 = {vars[1],-1.,0.,0.,1, vars[6],1};
+					// LCDM growth @ a=A for Omega_cb
+					mypars2.omega0 = omega0;
+					mypars2.omeganu = omeganu;
+					mypars2.model = 1;
+
 			  // Solutions of evolution factors @ a=A
-			  	sys2 = {funcn2, jac, 2, &myparams2};
+			  	sys2 = {funcnorm, jac, 2, &mypars2};
 			  	d2 = gsl_odeiv2_driver_alloc_y_new (&sys2, gsl_odeiv2_step_rk8pd,
 			  								  1e-6, 1e-6, 1e-6);
 
-					status2 = gsl_odeiv2_driver_apply (d2, &a, mya , G1);
+					status2 = gsl_odeiv2_driver_apply (d2, &a, A , G1);
 
-				 	Dl_spt = G1[0]; // omega_cb + LCDM  background ....
+				 	Dl_spt = G1[0]; // D(z) for Omega_cb + LCDM  background
 
 			// Solutions of evolution factors @ a=1
-					status3 = gsl_odeiv2_driver_apply (d2, &mya, 1. , G1);
+					status3 = gsl_odeiv2_driver_apply (d2, &A, 1. , G1);
 
-					double dnorm_spt1 = G1[0];
+					double dnorm_spt1 = G1[0]; // D(z=0) for Omega_cb + LCDM  background
 
 					gsl_odeiv2_driver_free(d2);
 
-			// correction to virial concentration and P(k)
+			// correction to virial concentration
 					g_de = dnorm_spt1/dnorm_spt;
 }
 
 
 
-/* LCDM and DGP analytic solutions - EdS approximation */
 
-///// EVOLUTION FACTORS ////////
+
+
+///////////////////// Analytic (Einstein-de Sitter approx) 1-LOOP SPECTRUM in nDGP and GR ///////////////////////////
+
+///////////////////// EVOLUTION FACTORS up to 3rd order  /////////////////////
 
   // LCDM
 double Dl_spt;
@@ -1356,91 +1473,114 @@ double H_spt;
 double dnorm_spt;
 
 
+/* Evolution factor equations for separable DGP and LCDM solutions up to 3rd order   - see 0902.0618 */
 
-
-/* Differential equations for Analytic (EdS : nDGP and LCDM only) and Numerical cases */
-
-///EdS/////
-
-/* Evolution factor equations for separable DGP and LCDM solutions */
-int func(double a, const double G[], double F[], void *params){
+int func(double a, const double G[], double F[], void *params)
+{
 	param_type2 p = *(param_type2 *)(params);
-	real omega0 = p.omega00;
-	real p1 = p.par1;
-	real p2 = p.par2;
-	real p3 = p.par3;
-	int mod = p.model;
 
-  double hub1 = pow2(HA(a,omega0));
-  double ap5 = pow(a,5);
+	//double omegacb = p.omega0 - p.omeganu;
+
+	/* Background quantities */
+	double hub1 = pow2(HA(a,p.omega0));
+	double hub2 = HA1(a,p.omega0)/hub1;
+	double ap5 = pow(a,5);
+
+	/* Poisson modifications - linear order */
+	double mu0;
+	mu0 = mu(a,0.0001,p.omega0,p.extpars,p.model); //k->0 limit
+
+	// Poisson equation term
+	double poisson = 3./2.*p.omega0/(hub1*ap5)*mu0;
+
+	// addional nDGP terms
+	double term1 = 1./(a*a*hub1*24.*pow(beta(a,p.omega0,p.extpars[0]),3)*p.extpars[0])*pow(p.omega0/(a*a*a),2);
+	double term2 = 1./(a*a*hub1*144.*pow(beta(a,p.omega0,p.extpars[0]),5)*pow(p.extpars[0],2))*pow(p.omega0/(a*a*a),3);
 
 	// D
 	F[0] = G[1];
-	F[1] = -1./a*(3.+HA1(a,omega0)/(hub1))*G[1]+3./2.*omega0/(hub1*ap5)*mu(a,1.,omega0,p1,p2,p3,mod)*G[0];
+	F[1] = -1./a*(3.+hub2)*G[1]+poisson*G[0];
 
 	//E
 	F[2] = G[3];
-	F[3] = -1./a*(3.+HA1(a,omega0)/(hub1))*G[3]+3./2.*omega0/(hub1*ap5)*mu(a,1.,omega0,p1,p2,p3,mod)*G[2]+G[1]*G[1]+3./2.*omega0/(hub1*ap5)*mu(a,1.,omega0,p1,p2,p3,mod)*G[0]*G[0];
+	F[3] = -1./a*(3.+hub2)*G[3]+poisson*G[2]+G[1]*G[1]+poisson*G[0]*G[0];
 
 	//F
 	F[4] = G[5];
-	F[5] = -1./a*(3.+HA1(a,omega0)/(hub1))*G[5]+3./2.*omega0/(hub1*ap5)*mu(a,1.,omega0,p1,p2,p3,mod)*G[4]-1./(a*a*hub1*24.*pow(beta(a,omega0,p1),3)*p1) *pow(omega0/(a*a*a),2)*G[0]*G[0];
+	F[5] = -1./a*(3.+hub2)*G[5]+poisson*G[4]-term1*G[0]*G[0];
 
 	//C
 	F[6] =G[7];
-	F[7] = -1./a*(3.+HA1(a,omega0)/(hub1))*G[7]+3./2.*omega0/(hub1*ap5)*mu(a,1.,omega0,p1,p2,p3,mod)*G[6]+G[1]*(G[5]-G[1]);
+	F[7] = -1./a*(3.+hub2)*G[7]+poisson*G[6]+G[1]*(G[5]-G[1]);
 
 	//I
 	F[8] = G[9] ;
-	F[9] = -1./a*(3.+HA1(a,omega0)/(hub1))*G[9]+3./2.*omega0/(hub1*ap5)*mu(a,1.,omega0,p1,p2,p3,mod)*G[8]+3./2.*omega0/(hub1*ap5)*mu(a,1.,omega0,p1,p2,p3,mod)*(G[4]-G[0])*G[0]-1./(a*a*hub1*24.*pow(beta(a,omega0,p1),3)*p1)*pow(omega0/(a*a*a),2)*G[0]*G[0]*G[0]+G[1]*(G[5]-G[1]);
-
+	F[9] = -1./a*(3.+hub2)*G[9]+poisson*G[8]+poisson*(G[4]-G[0])*G[0]-term1*G[0]*G[0]*G[0]+G[1]*(G[5]-G[1]);
 
 	//KL
 	F[10] = G[11] ;
-	F[11] = -1./a*(3.+HA1(a,omega0)/(hub1))*G[11]+3./2.*omega0/(hub1*ap5)*mu(a,1.,omega0,p1,p2,p3,mod)*G[10]
-	-1./(a*a*hub1*12.*pow(beta(a,omega0,p1),3)*p1)*pow(omega0/(a*a*a),2)*G[0]*(G[2]+G[4]-2*G[0])
-	+1./(a*a*hub1*144.*pow(beta(a,omega0,p1),5)*pow(p1,2))*pow(omega0/(a*a*a),3)*G[0]*G[0]*G[0];
-
+	F[11] = -1./a*(3.+hub2)*G[11]+poisson*G[10]
+	-2.*term1*G[0]*(G[2]+G[4]-2*G[0])
+	+term2*G[0]*G[0]*G[0];
 
 	//	LCDM
 	F[12]= G[13];
-	F[13]= -1./a*(3.+HA1(a,omega0)/(hub1))*G[13]+3./2.*omega0/(hub1*ap5)*G[12];
+	F[13]= -1./a*(3.+hub2)*G[13]+3./2.*p.omega0/(hub1*ap5)*G[12];
 
 
- // J and L for 3rd order ndgp kernels
+ // J and L for 3rd order nDGP kernels
 
  //J
  F[14] = G[15];
- F[15] = -1./a*(3.+HA1(a,omega0)/(hub1))*G[15]+3./2.*omega0/(hub1*ap5)*mu(a,1.,omega0,p1,p2,p3,mod)*G[14]-1./(a*a*hub1*24.*pow(beta(a,omega0,p1),3)*p1) *pow(omega0/(a*a*a),2)*G[0]*G[0]*G[0]/7.;
+ F[15] = -1./a*(3.+hub2)*G[15]+poisson*G[14]-term1*G[0]*G[0]*G[0]/7.;
 
  //K
  F[16] = G[17];
- F[17] = -1./a*(3.+HA1(a,omega0)/(hub1))*G[17]+3./2.*omega0/(hub1*ap5)*mu(a,1.,omega0,p1,p2,p3,mod)*G[16]-1./(a*a*hub1*24.*pow(beta(a,omega0,p1),3)*p1) *pow(omega0/(a*a*a),2)*G[0]*G[0]*G[0]*5./7.;
+ F[17] = -1./a*(3.+hub2)*G[17]+poisson*G[16]-term1*G[0]*G[0]*G[0]*5./7.;
 
  //F3
  F[18] = G[19] ;
- F[19] = -1./a*(3.+HA1(a,omega0)/(hub1))*G[19]+3./2.*omega0/(hub1*ap5)*mu(a,1.,omega0,p1,p2,p3,mod)*G[18]+3./2.*omega0/(hub1*ap5)*mu(a,1.,omega0,p1,p2,p3,mod)*(G[4]-G[0])*G[0]+G[1]*(G[5]-G[1]);
+ F[19] = -1./a*(3.+hub2)*G[19]+poisson*G[18]+poisson*(G[4]-G[0])*G[0]+G[1]*(G[5]-G[1]);
 
 
 	return GSL_SUCCESS;
 }
 
 
-//Solve the system of equations for evolution factors ---- A is the scale factor, omega0 the matter density param, and par123 are modified gravity additional params
-void IOW::inite(double A, double omega0, double par1, double par2, double par3, int model)
+
+//Solve the system of equations for evolution factors
+void IOW::inite(double pars[], double extpars[], int model)
 {
 
-	double a = 0.00001;
-	double G[20] = {a,1., a, 1., a,  1., a, 1.,  a, 1., a, 1., a, 1., a, 1., a, 1.,a,1.}; // initial conditions
-	struct param_type2 params = {omega0,par1,par2,par3,1,1.,model};
+			double A = pars[0]; // target scale factor
+			double omega0 = pars[1]; // total matter fraction
+			double omeganu = pars[2]; // massive neutrino fraction
 
-// Solutions of evolution factors @ a=A
-	gsl_odeiv2_system sys = {func, jac, 20, &params};
-	gsl_odeiv2_driver * d =
-	gsl_odeiv2_driver_alloc_y_new (&sys, gsl_odeiv2_step_rk8pd,
-								  1e-6, 1e-6, 1e-6);
+			// Initial scale factor for solving system of equations
+			double a = 0.00001;
 
-	int status1 = gsl_odeiv2_driver_apply (d, &a, A, G);
+			// Non-Eds ICs
+			double G[20] = {a,1., a, 1., a,  1., a, 1.,  a, 1., a, 1., a, 1., a, 1., a, 1.,a,1.}; // initial conditions
+
+		/*Parameters passed to system of equations */
+			struct param_type2 mypars;
+
+						mypars.omega0 = omega0;
+						mypars.omeganu = omeganu;
+						mypars.model = model;
+
+						for (int i=0; i<maxpars;i++){
+							mypars.extpars[i] = 	extpars[i];
+						}
+
+
+		// Solutions of evolution factors @ a=A
+			gsl_odeiv2_system sys = {func, jac, 20, &mypars};
+			gsl_odeiv2_driver * d =
+			gsl_odeiv2_driver_alloc_y_new (&sys, gsl_odeiv2_step_rk8pd,
+										  1e-6, 1e-6, 1e-6);
+
+			int status1 = gsl_odeiv2_driver_apply (d, &a, A, G);
 
 
     //Hubble
@@ -1479,12 +1619,382 @@ void IOW::inite(double A, double omega0, double par1, double par2, double par3, 
 
 	int status2 = gsl_odeiv2_driver_apply (d1, &a, 1. , G);
 
-	dnorm_spt = G[12];
+	dnorm_spt = G[12]; // D(z=0) in LCDM
 
 	gsl_odeiv2_driver_free(d1);
 
 }
 
+
+/* Evolution factor equations for separable DGP and LCDM solutions up to 4th order - see 1808.01120  */
+
+int funce2(double a, const double G[], double F[], void *params)
+{
+		param_type2 p = *(param_type2 *)(params);
+
+		double omegacb = p.omega0 - p.omeganu;
+
+		/* Background quantities */
+		double hub1 = pow2(HA(a,p.omega0));
+		double hub2 = HA1(a,p.omega0)/hub1;
+		double ap5 = pow(a,5);
+
+		/* Poisson modifications - linear order */
+		double mu0;
+		mu0 = mu(a,0.0001,p.omega0,p.extpars,p.model); //k->0 limit
+
+		// Poisson equation term
+		double poisson = 3./2.*p.omega0/(hub1*ap5)*mu0;
+
+		// addional nDGP terms
+		double term1 = 1./(a*a*hub1*24.*pow(beta(a,p.omega0,p.extpars[0]),3)*p.extpars[0])*pow(p.omega0/(a*a*a),2);
+		double term2 = 1./(a*a*hub1*144.*pow(beta(a,p.omega0,p.extpars[0]),5)*pow(p.extpars[0],2))*pow(p.omega0/(a*a*a),3);
+		double term3 = 1./(a*a*hub1*1728.*pow(beta(a,p.omega0,p.extpars[0]),7)*pow(p.extpars[0],3))*pow(p.omega0/(a*a*a),4);
+
+	// D
+	F[0] = G[1];
+	F[1] = -1./a*(3.+hub2)*G[1]+poisson*G[0];
+
+	//E
+	F[2] = G[3];
+	F[3] = -1./a*(3.+hub2)*G[3]+poisson*G[2]+G[1]*G[1]+poisson*G[0]*G[0];
+
+	//F
+	F[4] = G[5];
+	F[5] = -1./a*(3.+hub2)*G[5]+poisson*G[4]-term1*G[0]*G[0];
+
+	//C
+	F[6] =G[7];
+	F[7] = -1./a*(3.+hub2)*G[7]+poisson*G[6]+G[1]*(G[5]-G[1]);
+
+	//I
+	F[8] = G[9] ;
+	F[9] = -1./a*(3.+hub2)*G[9]+poisson*G[8] + poisson*(G[4]-G[0])*G[0] - term1*G[0]*G[0]*G[0] + G[1]*(G[5]-G[1]);
+
+	//KL
+	F[10] = G[11] ;
+	F[11] = -1./a*(3.+hub2)*G[11]+poisson*G[10]
+	-2.*term1*G[0]*(G[2]+G[4]-2.*G[0])
+	+term2*G[0]*G[0]*G[0];
+
+
+	//	LCDM
+	F[12]= G[13];
+	F[13]= -1./a*(3.+hub2)*G[13]+3./2.*p.omega0/(hub1*ap5)*G[12];
+
+
+ // J,F3 K for 3rd order ndgp kernels
+
+ //J
+ F[14] = G[15];
+ F[15] = -1./a*(3.+hub2)*G[15]+poisson*G[14] - term1*G[0]*G[0]*G[0]/7.;
+
+ //K
+ F[16] = G[17];
+ F[17] = -1./a*(3.+hub2)*G[17]+poisson*G[16] - term1*G[0]*G[0]*G[0]*5./7.;
+
+ //F3
+ F[18] = G[19] ;
+ F[19] = -1./a*(3.+hub2)*G[19]+poisson*G[18] + poisson*(G[4]-G[0])*G[0] + G[1]*(G[5]-G[1]);
+
+
+// 4th order equations A-O (15)
+
+// B
+
+F[20] =G[21];
+F[21] = -1./a*(3.+hub2)*G[21]+poisson*G[20]+2.*G[1]*G[0]*(G[5]-G[1]);
+
+// C
+
+F[22] =G[23];
+F[23] = -1./a*(3.+hub2)*G[23]+poisson*G[22]+(G[5]-G[1])*(G[5]-G[1]);
+
+// F
+F[24] =G[25];
+F[25] = -1./a*(3.+hub2)*G[25]+poisson*G[24]
+              + poisson*G[0]*G[0]*(G[4]-G[0]) + G[1]*G[1]*(G[4]-G[0]) + G[1]*G[0]*(G[5]-G[1]);
+
+// G
+F[26] =G[27];
+F[27] = -1./a*(3.+hub2)*G[27]+poisson*G[26]
+              + poisson*G[0]*G[0]*(G[4]-G[0]) - term1*G[0]*G[0]*G[0]*G[0] + 2.*G[1]*G[0]*(G[5]-G[1]);
+
+// H
+F[28] =G[29];
+F[29] = -1./a*(3.+hub2)*G[29]+poisson*G[28]
+              + poisson*(G[4]-G[0])*(G[4]-G[0]) - term1*G[0]*G[0]*(G[4]-G[0]) + (G[5]-G[1])*(G[5]-G[1]);
+
+
+//A
+//Ai
+F[30] =G[31];
+F[31] = -1./a*(3.+hub2)*G[31]+poisson*G[30]+G[1]*(G[7]-G[1]); //C'
+//Aii
+F[32] =G[33];
+F[33] = -1./a*(3.+hub2)*G[33]+poisson*G[32]+G[1]*((G[19]-G[1]) -G[1]*(G[4]-G[0])); //F3'-D1'F2
+//Aiii
+F[34] =G[35];
+F[35] = -1./a*(3.+hub2)*G[35]+poisson*G[34]+G[1]*((G[9]-G[1])-G[0]*(G[5]-G[1])); // I3'-DF2'
+//Aiv
+F[36] =G[37];
+F[37] = -1./a*(3.+hub2)*G[37]+poisson*G[36]+G[1]*(G[15]-G[1]);// J3'
+//Av
+F[38] =G[39];
+F[39] = -1./a*(3.+hub2)*G[39]+poisson*G[38]+G[1]*(G[11]-G[17]); //L3'
+//Avi
+F[40] =G[41];
+F[41] = -1./a*(3.+hub2)*G[41]+poisson*G[40]+G[1]*(G[17]-G[1]); //K3'
+
+//D
+
+//Di
+F[42] =G[43];
+F[43] = -1./a*(3.+hub2)*G[43]+poisson*G[42]
+              + poisson*G[0]*(G[6]-G[0]) +G[1]*(G[7]-G[1]); //C3
+//Dii
+F[44] =G[45];
+F[45] = -1./a*(3.+hub2)*G[45]+poisson*G[44]
+              + poisson*G[0]*(G[18]-G[0]) +G[1]*(G[19]-G[1]); //F3
+//Diii
+F[46] =G[47];
+F[47] = -1./a*(3.+hub2)*G[47]+poisson*G[46]
+              + poisson*G[0]*(G[8]-G[0]) + G[1]*(G[9]-G[1]); // I3
+
+
+//Div
+F[48] =G[49];
+F[49] = -1./a*(3.+hub2)*G[49]+poisson*G[48]
+              + poisson*G[0]*(G[14]-G[0]) +G[1]*(G[15]-G[1]); // J3
+//Dv
+F[50] =G[51];
+F[51] = -1./a*(3.+hub2)*G[51]+poisson*G[50]
+              + poisson*G[0]*(G[10]-G[16]) +G[1]*(G[11]-G[17]); // L3
+//Dvi
+F[52] =G[53];
+F[53] = -1./a*(3.+hub2)*G[53]+poisson*G[52]
+              + poisson*G[0]*(G[16]-G[0]) +G[1]*(G[17]-G[1]); //K3
+
+
+// E
+//Ei
+F[54] =G[55];
+F[55] = -1./a*(3.+hub2)*G[55]+poisson*G[54]
+              + poisson*G[0]*(G[6]-G[0])  + G[1]*(G[5]-G[1])*G[0] + G[1]*(G[7]-G[1]); //C3
+
+//Eii
+F[56] =G[57];
+F[57] = -1./a*(3.+hub2)*G[57]+poisson*G[56]
+              + poisson*G[0]*(G[18]-G[0]) + poisson*(G[4]-G[0])*G[0]*G[0] + G[1]*(G[5]-G[1])*G[0]
+              - poisson*G[0]*G[0]*(G[4]-G[0])
+              + G[1]*(G[19]-G[1]) - G[1]*G[1]*(G[4]-G[0]) - G[1]*G[0]*(G[5]-G[1]); //F3
+//Eiii
+F[58] =G[59];
+F[59] = -1./a*(3.+hub2)*G[59]+poisson*G[58]
+              + poisson*G[0]*(G[8]-G[0]) + poisson*(G[4]-G[0])*G[0]*G[0] + G[1]*(G[5]-G[1])*G[0]
+              -poisson*G[0]*G[0]*(G[4]-G[0])
+              + G[1]*(G[9]-G[1]) - 2.*G[1]*G[0]*(G[5]-G[1]); // I3
+
+
+//Eiv
+F[60] =G[61];
+F[61] = -1./a*(3.+hub2)*G[61]+poisson*G[60]
+              + poisson*G[0]*(G[14]-G[0])  - term1*G[0]*G[0]*G[0]*G[0]/7. + G[1]*(G[15]-G[1]); // J3
+
+
+//Ev (L term)
+F[62] =G[63];
+F[63] = -1./a*(3.+hub2)*G[63]+poisson*G[62]
+            +poisson*G[0]*(G[10]-G[16])
+            -2.*term1*G[0]*G[0]*(G[2]+G[4]-2.*G[0])
+          	+term2*G[0]*G[0]*G[0]*G[0]
+            + term1*G[0]*G[0]*G[0]*G[0]*5./7.
+            + G[1]*(G[11]-G[17]);  // L3
+
+
+//Evi (K term)
+F[64] =G[65];
+F[65] = -1./a*(3.+hub2)*G[65]+poisson*G[64]
+              + poisson*G[0]*(G[16]-G[0]) - term1*G[0]*G[0]*G[0]*G[0]*5./7. + G[1]*(G[17]-G[1]); //K3
+
+
+//Ii
+F[66] =G[67];
+F[67] = -1./a*(3.+hub2)*G[67]+poisson*G[66]
+              -term1*G[0]*(G[6]-G[0]);
+
+//Iii
+F[68] =G[69];
+F[69] = -1./a*(3.+hub2)*G[69]+poisson*G[68]
+            -term1*G[0]*(G[18]-G[0]);
+
+//Iiii
+F[70] =G[71];
+F[71] = -1./a*(3.+hub2)*G[71]+poisson*G[70]
+            -term1*G[0]*(G[8]-G[0]);
+
+//Iiv
+F[72] =G[73];
+F[73] = -1./a*(3.+hub2)*G[73]+poisson*G[72]
+            -term1*G[0]*(G[14]-G[0]);
+
+//Iv // L
+F[74] =G[75];
+F[75] = -1./a*(3.+hub2)*G[75]+poisson*G[74]
+            -term1*G[0]*(G[10]-G[16]);
+
+//Ivi // K
+F[76] =G[77];
+F[77] = -1./a*(3.+hub2)*G[77]+poisson*G[76]
+            -term1*G[0]*(G[16]-G[0]);
+
+// J
+F[78] =G[79];
+F[79] = -1./a*(3.+hub2)*G[79]+poisson*G[78]
+            -2.*term1*G[0]*G[0]*(G[4]-G[0])
+            +term2*G[0]*G[0]*G[0]*G[0];
+
+// K
+F[80] =G[81];
+F[81] = -1./a*(3.+hub2)*G[81]+poisson*G[80]
+            -term1*(G[4]-G[0])*(G[4]-G[0])
+            +term2*G[0]*G[0]*(G[4]-G[0])
+            -2.*term3*G[0]*G[0]*G[0]*G[0];
+
+//L AND M
+F[82] =G[83];
+F[83] = -1./a*(3.+hub2)*G[83]+poisson*G[82]
+            -term1*G[0]*G[0]*G[0]*G[0];
+
+// N
+F[84] =G[85];
+F[85] = -1./a*(3.+hub2)*G[85]+poisson*G[84]
+            +2.*term2*G[0]*G[0]*(G[4]-G[0])
+            -term3*G[0]*G[0]*G[0]*G[0];
+
+// O
+F[86] =G[87];
+F[87] = -1./a*(3.+hub2)*G[87]+poisson*G[86]
+            +2.*term2*G[0]*G[0]*G[0]*G[0];
+
+return GSL_SUCCESS;
+}
+
+
+//loops for evol factors, A is the scale factor
+//Normalized to D[a] = a at early times and a = 1 today.
+void IOW::inite2(double pars[], double extpars[], int model)
+{
+
+				double A = pars[0]; // target scale factor
+				double omega0 = pars[1]; // total matter fraction
+				double omeganu = pars[2]; // massive neutrino fraction
+
+				// Initial scale factor for solving system of equations
+				double a = 0.00001;
+
+				// Non-Eds ICs
+				double G[88] = {a,1., a, 1., a,  1., a, 1.,  a, 1., a, 1., a, 1., a, 1., a, 1.,a,1.,
+			                  a,1., a, 1., a,  1., a, 1.,  a, 1., a, 1., a, 1., a, 1., a, 1.,a,1.,
+			                  a,1., a, 1., a,  1., a, 1.,  a, 1., a, 1., a, 1., a, 1., a, 1.,a,1.,
+			                  a,1., a, 1., a,  1., a, 1.,  a, 1., a, 1., a, 1., a, 1., a, 1.,a,1.,a, 1., a, 1., a, 1.,a,1.}; // initial conditions
+
+			/*Parameters passed to system of equations */
+				struct param_type2 mypars;
+
+							mypars.omega0 = omega0;
+							mypars.omeganu = omeganu;
+							mypars.model = model;
+
+							for (int i=0; i<maxpars;i++){
+								mypars.extpars[i] = 	extpars[i];
+							}
+
+
+// Solutions of evolution factors @ a=A
+	gsl_odeiv2_system sys = {funce2, jac, 88, &mypars};
+	gsl_odeiv2_driver * d =
+	gsl_odeiv2_driver_alloc_y_new (&sys, gsl_odeiv2_step_rk8pd,
+								  1e-3, 1e-3, 1e-1);
+
+	int status1 = gsl_odeiv2_driver_apply (d, &a, A, G);
+
+    //Hubble (LCDM background)
+    H_spt  = HA(A,omega0);
+
+// 1st, 2nd and 3rd order growth functions
+
+    double mod = 1.;
+		D_spt  = G[0];
+		F_spt  =mod*(G[4]-G[0]);
+		Cx_spt =mod*(G[6]-G[0]);
+		I_spt  =mod*(G[8]-G[0]);
+    J_spt  =mod*(G[14]-G[0]);
+    K_spt  =mod*(G[16]-G[0]);
+		KL_spt =mod*(G[10]-G[0]);
+    F3_spt =mod*(G[18]-G[0]);
+
+
+		//Their time (not scale factor!) derivatives
+		fdgp_spt =  G[1]/G[0]*A;
+		Dd_spt   =  G[1]*H_spt*A;
+		Fd_spt   = mod*(G[5]-G[1])*H_spt*A;
+		Cdx_spt  = mod*(G[7]-G[1])*H_spt*A;
+		Id_spt   = mod*(G[9]-G[1])*H_spt*A;
+    Jd_spt   = mod*(G[15]-G[1])*H_spt*A;
+    Kd_spt   = mod*(G[17]-G[1])*H_spt*A;
+		KLd_spt  = mod*(G[11]-G[1])*H_spt*A;
+    F3d_spt  = mod*(G[19]-G[1])*H_spt*A;
+
+		//LCDM
+		Dl_spt = G[12];
+		fl_spt = G[13]/G[12]*A;
+
+// 4th order evolution factors
+    for(int myint=0; myint<34; myint++){
+          evol4[myint] = mod*(G[20+2*myint]-G[0]);
+        }
+    for(int myint=0; myint<34; myint++){
+          devol4[myint] = mod*(G[21+2*myint]-G[1])*H_spt*A;
+        }
+
+// add in other factors for G4
+
+// D4
+devol4[11] += -Dd_spt/H_spt*Cx_spt;
+devol4[12] += -Dd_spt/H_spt*F3_spt;
+devol4[13] += -Dd_spt/H_spt*I_spt;
+devol4[14] += -Dd_spt/H_spt*J_spt;
+devol4[15] += -Dd_spt/H_spt*(KL_spt-K_spt);
+devol4[16] += -Dd_spt/H_spt*K_spt;
+//E4
+devol4[17] += -D_spt*Cdx_spt/H_spt;
+devol4[18] += -D_spt*(F3d_spt/H_spt-D_spt*fdgp_spt*F_spt);
+devol4[19] += -D_spt*(Id_spt/H_spt-D_spt*Fd_spt/H_spt);
+devol4[20] += -D_spt*Jd_spt/H_spt;
+devol4[21] += -D_spt*(KLd_spt-Kd_spt)/H_spt;
+devol4[22] += -D_spt*Kd_spt/H_spt;
+// F4
+devol4[2] += -F_spt*Dd_spt*D_spt/H_spt;
+//G4
+devol4[3] += -Fd_spt*D_spt*D_spt/H_spt;
+//G4
+devol4[4] += -Fd_spt*F_spt/H_spt;
+
+		gsl_odeiv2_driver_free(d);
+
+// Solution for LCDM linear growth @ a=1 for our normalisation of the linear power spectrum
+	gsl_odeiv2_driver * d1 =
+	gsl_odeiv2_driver_alloc_y_new (&sys, gsl_odeiv2_step_rk8pd,
+								   1e-6, 1e-6, 1e-6);
+
+	int status2 = gsl_odeiv2_driver_apply (d1, &a, 1. , G);
+
+	dnorm_spt = G[12];
+
+	gsl_odeiv2_driver_free(d1);
+
+}
 
 
 /* Analytic kernels for DGP and GR up to 4th order  */
@@ -1581,8 +2091,8 @@ double G3edsb(double k1, double k2, double k3, double k4, double k5, double k6, 
 
 
 // 4th order
-// x index index
-// 12 = 3 | 13 = 4 | 23 = 1 | 14 = 5 | 24 = 2 | 34 = -1.
+// x indices:
+// 12 = 3 | 13 = 4 | 23 = 1 | 14 = 5 | 24 = 2  and   34 = -1.
  double F4edsb(double k1, double k2, double k3, double k4, double x1, double x2,double x3, double x4, double x5){
 // mags^2
 double x6 = XMIN;
@@ -1612,7 +2122,7 @@ double k41rt = sqrt(k41);
 double k13rt = sqrt(k13);
 double k24rt = sqrt(k24);
 
-// x index index
+// x indices
 // 01 = 1 | 02 = 2 | 03 = 5 | 12 = 3 | 13 = 0 | 23 = 4
 
 return 1./396.*(
@@ -1644,7 +2154,7 @@ return 1./396.*(
 
 
 double G4edsb(double k1, double k2, double k3, double k4, double x1, double x2,double x3, double x4, double x5){
-  // mags^2
+  // magnitude squared
   double x6 = XMIN;
   double k1s = pow2(k1);
   double k2s = pow2(k2);
@@ -1734,8 +2244,6 @@ return 1./3.*(alpha(k[0],k[3],(k[1]*x[1]+k[2]*x[2])/k[3])*ker1(x[0])
 }
 
 
-////k2,p,p,XMIN,u,-u
-
 double I3SYM(double k1, double k2, double k3, double x1, double x2, double x3){
   return 1./3.*(alpha(sqrt(k2*k2+k3*k3+2.*k2*k3*x1),k1,(k2*x2+k3*x3)/sqrt(k2*k2+k3*k3+2.*k2*k3*x1))*ker1(x1)
                +alpha(sqrt(k1*k1+k2*k2+2.*k1*k2*x2),k3,(k1*x3+k2*x1)/sqrt(k1*k1+k2*k2+2.*k1*k2*x2))*ker1(x2)
@@ -1787,9 +2295,7 @@ double L3SYMb(double k[],double x[]){
   }
 
 
-// DGP kernels
-
-
+// DGP kernels with additional growth factors and associated terms
 double F2ndgp(double k1, double k2, double u1){
  return pow2(1./dnorm_spt)*(pow2(D_spt)*F2eds(k1,k2,u1) + F_spt*(1.-pow2(u1)));
 }
@@ -2571,11 +3077,16 @@ for(int i=0; i<16; i++){
 
 }
 
+
+
+
+
 /// Fitting f2 kernels of 1805.10567 calibrated to GR sims as in the same paper
 
 static double QVAL(double x){
   return (4.-pow(2.,x))/(1.+pow(2.,x+1.));
 }
+
 double F2fit(double vars[], double k1, double k2, double x){
   double a1,a2,a3,a4,a5,a6,a7,a8,a9,neff1,neff2,s8,knl,kap,lam;
   s8 = vars[0];
@@ -2621,7 +3132,7 @@ double F2fit(double vars[], double k1, double k2, double x){
 }
 
 
-//scoccimaro's version
+//Scoccimaro's fits with kappa and lambda from Horndeski and beyond as in 1805.10567
 double F2fitsc(double vars[], double k1, double k2, double x){
   double a1,a2,a3,a4,a5,a6,a7,a8,a9,neff1,neff2,s8,knl,kap,lam;
   s8 = vars[0];
@@ -2666,367 +3177,13 @@ double F2fitsc(double vars[], double k1, double k2, double x){
 
 }
 
-
-
-/// Evolution equations and solver for growth factors up to 4th order ////
-
-int funce2(double a, const double G[], double F[], void *params){
-	param_type2 p = *(param_type2 *)(params);
-	real omega0 = p.omega00;
-	real p1 = p.par1;
-	real p2 = p.par2;
-	real p3 = p.par3;
-	int mod = p.model;
-
-  double hub1 = pow2(HA(a,omega0));
-  double hub2 = HA1(a,omega0)/hub1;
-  double ap5 = pow(a,5);
-  double mua = mu(a,1.,omega0,p1,p2,p3,mod);
-  double betacub = pow(beta(a,omega0,p1),3);
-  double omsqr = pow(omega0/(a*a*a),2);
-
-	// D
-	F[0] = G[1];
-	F[1] = -1./a*(3.+hub2)*G[1]+3./2.*omega0/(hub1*ap5)*mua*G[0];
-
-	//E
-	F[2] = G[3];
-	F[3] = -1./a*(3.+hub2)*G[3]+3./2.*omega0/(hub1*ap5)*mua*G[2]+G[1]*G[1]+3./2.*omega0/(hub1*ap5)*mua*G[0]*G[0];
-
-	//F
-	F[4] = G[5];
-	F[5] = -1./a*(3.+hub2)*G[5]+3./2.*omega0/(hub1*ap5)*mua*G[4]-1./(a*a*hub1*24.*betacub*p1) *omsqr*G[0]*G[0];
-
-	//C
-	F[6] =G[7];
-	F[7] = -1./a*(3.+hub2)*G[7]+3./2.*omega0/(hub1*ap5)*mua*G[6]+G[1]*(G[5]-G[1]);
-
-	//I
-	F[8] = G[9] ;
-	F[9] = -1./a*(3.+hub2)*G[9]+3./2.*omega0/(hub1*ap5)*mua*G[8] + 3./2.*omega0/(hub1*ap5)*mua*(G[4]-G[0])*G[0] - 1./(a*a*hub1*24.*betacub*p1)*omsqr*G[0]*G[0]*G[0] + G[1]*(G[5]-G[1]);
-
-	//KL
-	F[10] = G[11] ;
-	F[11] = -1./a*(3.+hub2)*G[11]+3./2.*omega0/(hub1*ap5)*mua*G[10]
-	-1./(a*a*hub1*12.*betacub*p1)*omsqr*G[0]*(G[2]+G[4]-2.*G[0])
-	+1./(a*a*hub1*144.*pow(beta(a,omega0,p1),5)*pow(p1,2))*pow(omega0/(a*a*a),3)*G[0]*G[0]*G[0];
-
-
-	//	LCDM
-	F[12]= G[13];
-	F[13]= -1./a*(3.+hub2)*G[13]+3./2.*omega0/(hub1*ap5)*G[12];
-
-
- // J,F3 K for 3rd order ndgp kernels
-
- //J
- F[14] = G[15];
- F[15] = -1./a*(3.+hub2)*G[15]+3./2.*omega0/(hub1*ap5)*mua*G[14] - 1./(a*a*hub1*24.*betacub*p1) *omsqr*G[0]*G[0]*G[0]/7.;
-
- //K
- F[16] = G[17];
- F[17] = -1./a*(3.+hub2)*G[17]+3./2.*omega0/(hub1*ap5)*mua*G[16] - 1./(a*a*hub1*24.*betacub*p1) *omsqr*G[0]*G[0]*G[0]*5./7.;
-
- //F3
- F[18] = G[19] ;
- F[19] = -1./a*(3.+hub2)*G[19]+3./2.*omega0/(hub1*ap5)*mua*G[18] + 3./2.*omega0/(hub1*ap5)*mua*(G[4]-G[0])*G[0] + G[1]*(G[5]-G[1]);
-
-
-// 4th order equations A-O (15)
-
-// B
-
-F[20] =G[21];
-F[21] = -1./a*(3.+hub2)*G[21]+3./2.*omega0/(hub1*ap5)*mua*G[20]+2.*G[1]*G[0]*(G[5]-G[1]);
-
-// C
-
-F[22] =G[23];
-F[23] = -1./a*(3.+hub2)*G[23]+3./2.*omega0/(hub1*ap5)*mua*G[22]+(G[5]-G[1])*(G[5]-G[1]);
-
-// F
-F[24] =G[25];
-F[25] = -1./a*(3.+hub2)*G[25]+3./2.*omega0/(hub1*ap5)*mua*G[24]
-              + 3./2.*omega0/(hub1*ap5)*mua*G[0]*G[0]*(G[4]-G[0]) + G[1]*G[1]*(G[4]-G[0]) + G[1]*G[0]*(G[5]-G[1]);
-
-// G
-F[26] =G[27];
-F[27] = -1./a*(3.+hub2)*G[27]+3./2.*omega0/(hub1*ap5)*mua*G[26]
-              + 3./2.*omega0/(hub1*ap5)*mua*G[0]*G[0]*(G[4]-G[0]) - 1./(a*a*hub1*24.*betacub*p1)*omsqr*G[0]*G[0]*G[0]*G[0] + 2.*G[1]*G[0]*(G[5]-G[1]);
-
-// H
-F[28] =G[29];
-F[29] = -1./a*(3.+hub2)*G[29]+3./2.*omega0/(hub1*ap5)*mua*G[28]
-              + 3./2.*omega0/(hub1*ap5)*mua*(G[4]-G[0])*(G[4]-G[0]) - 1./(a*a*hub1*24.*betacub*p1)*omsqr*G[0]*G[0]*(G[4]-G[0]) + (G[5]-G[1])*(G[5]-G[1]);
-
-
-//A
-//Ai
-F[30] =G[31];
-F[31] = -1./a*(3.+hub2)*G[31]+3./2.*omega0/(hub1*ap5)*mua*G[30]+G[1]*(G[7]-G[1]); //C'
-//Aii
-F[32] =G[33];
-F[33] = -1./a*(3.+hub2)*G[33]+3./2.*omega0/(hub1*ap5)*mua*G[32]+G[1]*((G[19]-G[1]) -G[1]*(G[4]-G[0])); //F3'-D1'F2
-//Aiii
-F[34] =G[35];
-F[35] = -1./a*(3.+hub2)*G[35]+3./2.*omega0/(hub1*ap5)*mua*G[34]+G[1]*((G[9]-G[1])-G[0]*(G[5]-G[1])); // I3'-DF2'
-//Aiv
-F[36] =G[37];
-F[37] = -1./a*(3.+hub2)*G[37]+3./2.*omega0/(hub1*ap5)*mua*G[36]+G[1]*(G[15]-G[1]);// J3'
-//Av
-F[38] =G[39];
-F[39] = -1./a*(3.+hub2)*G[39]+3./2.*omega0/(hub1*ap5)*mua*G[38]+G[1]*(G[11]-G[17]); //L3'
-//Avi
-F[40] =G[41];
-F[41] = -1./a*(3.+hub2)*G[41]+3./2.*omega0/(hub1*ap5)*mua*G[40]+G[1]*(G[17]-G[1]); //K3'
-
-//D
-
-//Di
-F[42] =G[43];
-F[43] = -1./a*(3.+hub2)*G[43]+3./2.*omega0/(hub1*ap5)*mua*G[42]
-              + 3./2.*omega0/(hub1*ap5)*mua*G[0]*(G[6]-G[0]) +G[1]*(G[7]-G[1]); //C3
-//Dii
-F[44] =G[45];
-F[45] = -1./a*(3.+hub2)*G[45]+3./2.*omega0/(hub1*ap5)*mua*G[44]
-              + 3./2.*omega0/(hub1*ap5)*mua*G[0]*(G[18]-G[0]) +G[1]*(G[19]-G[1]); //F3
-//Diii
-F[46] =G[47];
-F[47] = -1./a*(3.+hub2)*G[47]+3./2.*omega0/(hub1*ap5)*mua*G[46]
-              + 3./2.*omega0/(hub1*ap5)*mua*G[0]*(G[8]-G[0]) + G[1]*(G[9]-G[1]); // I3
-
-
-//Div
-F[48] =G[49];
-F[49] = -1./a*(3.+hub2)*G[49]+3./2.*omega0/(hub1*ap5)*mua*G[48]
-              + 3./2.*omega0/(hub1*ap5)*mua*G[0]*(G[14]-G[0]) +G[1]*(G[15]-G[1]); // J3
-//Dv
-F[50] =G[51];
-F[51] = -1./a*(3.+hub2)*G[51]+3./2.*omega0/(hub1*ap5)*mua*G[50]
-              + 3./2.*omega0/(hub1*ap5)*mua*G[0]*(G[10]-G[16]) +G[1]*(G[11]-G[17]); // L3
-//Dvi
-F[52] =G[53];
-F[53] = -1./a*(3.+hub2)*G[53]+3./2.*omega0/(hub1*ap5)*mua*G[52]
-              + 3./2.*omega0/(hub1*ap5)*mua*G[0]*(G[16]-G[0]) +G[1]*(G[17]-G[1]); //K3
-
-
-// E
-//Ei
-F[54] =G[55];
-F[55] = -1./a*(3.+hub2)*G[55]+3./2.*omega0/(hub1*ap5)*mua*G[54]
-              + 3./2.*omega0/(hub1*ap5)*mua*G[0]*(G[6]-G[0])  + G[1]*(G[5]-G[1])*G[0] + G[1]*(G[7]-G[1]); //C3
-
-//Eii
-F[56] =G[57];
-F[57] = -1./a*(3.+hub2)*G[57]+3./2.*omega0/(hub1*ap5)*mua*G[56]
-              + 3./2.*omega0/(hub1*ap5)*mua*G[0]*(G[18]-G[0]) + 3./2.*omega0/(hub1*ap5)*mua*(G[4]-G[0])*G[0]*G[0] + G[1]*(G[5]-G[1])*G[0]
-              - 3./2.*omega0/(hub1*ap5)*mua*G[0]*G[0]*(G[4]-G[0])
-              + G[1]*(G[19]-G[1]) - G[1]*G[1]*(G[4]-G[0]) - G[1]*G[0]*(G[5]-G[1]); //F3
-//Eiii
-F[58] =G[59];
-F[59] = -1./a*(3.+hub2)*G[59]+3./2.*omega0/(hub1*ap5)*mua*G[58]
-              + 3./2.*omega0/(hub1*ap5)*mua*G[0]*(G[8]-G[0]) + 3./2.*omega0/(hub1*ap5)*mua*(G[4]-G[0])*G[0]*G[0] + G[1]*(G[5]-G[1])*G[0]
-              -3./2.*omega0/(hub1*ap5)*mua*G[0]*G[0]*(G[4]-G[0])
-              + G[1]*(G[9]-G[1]) - 2.*G[1]*G[0]*(G[5]-G[1]); // I3
-
-
-//Eiv
-F[60] =G[61];
-F[61] = -1./a*(3.+hub2)*G[61]+3./2.*omega0/(hub1*ap5)*mua*G[60]
-              + 3./2.*omega0/(hub1*ap5)*mua*G[0]*(G[14]-G[0])  - 1./(a*a*hub1*24.*betacub*p1)*omsqr*G[0]*G[0]*G[0]*G[0]/7. + G[1]*(G[15]-G[1]); // J3
-
-
-//Ev (L term)
-F[62] =G[63];
-F[63] = -1./a*(3.+hub2)*G[63]+3./2.*omega0/(hub1*ap5)*mua*G[62]
-            +3./2.*omega0/(hub1*ap5)*mua*G[0]*(G[10]-G[16])
-            -1./(a*a*hub1*12.*betacub*p1)*omsqr*G[0]*G[0]*(G[2]+G[4]-2.*G[0])
-          	+1./(a*a*hub1*144.*pow(beta(a,omega0,p1),5)*p1*p1)*pow(omega0/(a*a*a),3)*G[0]*G[0]*G[0]*G[0]
-            + 1./(a*a*hub1*24.*betacub*p1) *omsqr*G[0]*G[0]*G[0]*G[0]*5./7.
-            + G[1]*(G[11]-G[17]);  // L3
-
-
-//Evi (K term)
-F[64] =G[65];
-F[65] = -1./a*(3.+hub2)*G[65]+3./2.*omega0/(hub1*ap5)*mua*G[64]
-              + 3./2.*omega0/(hub1*ap5)*mua*G[0]*(G[16]-G[0]) - 1./(a*a*hub1*24.*betacub*p1)*omsqr*G[0]*G[0]*G[0]*G[0]*5./7. + G[1]*(G[17]-G[1]); //K3
-
-
-
-
-//Ii
-F[66] =G[67];
-F[67] = -1./a*(3.+hub2)*G[67]+3./2.*omega0/(hub1*ap5)*mua*G[66]
-              -1./(a*a*hub1*24.*betacub*p1) *omsqr*G[0]*(G[6]-G[0]);
-
-//Iii
-F[68] =G[69];
-F[69] = -1./a*(3.+hub2)*G[69]+3./2.*omega0/(hub1*ap5)*mua*G[68]
-            -1./(a*a*hub1*24.*betacub*p1) *omsqr*G[0]*(G[18]-G[0]);
-
-//Iiii
-F[70] =G[71];
-F[71] = -1./a*(3.+hub2)*G[71]+3./2.*omega0/(hub1*ap5)*mua*G[70]
-            -1./(a*a*hub1*24.*betacub*p1) *omsqr*G[0]*(G[8]-G[0]);
-
-//Iiv
-F[72] =G[73];
-F[73] = -1./a*(3.+hub2)*G[73]+3./2.*omega0/(hub1*ap5)*mua*G[72]
-            -1./(a*a*hub1*24.*betacub*p1) *omsqr*G[0]*(G[14]-G[0]);
-
-//Iv // L
-F[74] =G[75];
-F[75] = -1./a*(3.+hub2)*G[75]+3./2.*omega0/(hub1*ap5)*mua*G[74]
-            -1./(a*a*hub1*24.*betacub*p1) *omsqr*G[0]*(G[10]-G[16]);
-
-//Ivi // K
-F[76] =G[77];
-F[77] = -1./a*(3.+hub2)*G[77]+3./2.*omega0/(hub1*ap5)*mua*G[76]
-            -1./(a*a*hub1*24.*betacub*p1) *omsqr*G[0]*(G[16]-G[0]);
-
-
-
-
-
-// J
-F[78] =G[79];
-F[79] = -1./a*(3.+hub2)*G[79]+3./2.*omega0/(hub1*ap5)*mua*G[78]
-            -2./(a*a*hub1*24.*betacub*p1) *omsqr*G[0]*G[0]*(G[4]-G[0])
-            +1./(a*a*hub1*144.*pow(beta(a,omega0,p1),5)*pow(p1,2))*pow(omega0/(a*a*a),3)*G[0]*G[0]*G[0]*G[0];
-
-// K
-F[80] =G[81];
-F[81] = -1./a*(3.+hub2)*G[81]+3./2.*omega0/(hub1*ap5)*mua*G[80]
-            -1./(a*a*hub1*24.*betacub*p1) *omsqr*(G[4]-G[0])*(G[4]-G[0])
-            +1./(a*a*hub1*144.*pow(beta(a,omega0,p1),5)*pow(p1,2))*pow(omega0/(a*a*a),3)*G[0]*G[0]*(G[4]-G[0])
-            -2./(a*a*hub1*1728.*pow(beta(a,omega0,p1),7)*pow(p1,3))*pow2(omsqr)*G[0]*G[0]*G[0]*G[0];
-
-//L AND M
-F[82] =G[83];
-F[83] = -1./a*(3.+hub2)*G[83]+3./2.*omega0/(hub1*ap5)*mua*G[82]
-            -1./(a*a*hub1*24.*betacub*p1)*omsqr*G[0]*G[0]*G[0]*G[0];
-
-// N
-F[84] =G[85];
-F[85] = -1./a*(3.+hub2)*G[85]+3./2.*omega0/(hub1*ap5)*mua*G[84]
-            +2./(a*a*hub1*144.*pow(beta(a,omega0,p1),5)*pow(p1,2))*pow(omega0/(a*a*a),3)*G[0]*G[0]*(G[4]-G[0])
-            -1./(a*a*hub1*2.*1728.*pow(beta(a,omega0,p1),7)*pow(p1,3))*pow(omega0/(a*a*a),4)*G[0]*G[0]*G[0]*G[0];
-
-// O
-F[86] =G[87];
-F[87] = -1./a*(3.+hub2)*G[87]+3./2.*omega0/(hub1*ap5)*mua*G[86]
-            +2./(a*a*hub1*144.*pow(beta(a,omega0,p1),5)*pow(p1,2))*pow(omega0/(a*a*a),3)*G[0]*G[0]*G[0]*G[0];
-
-return GSL_SUCCESS;
-}
-
-
-//loops for evol factors, A is the scale factor
-//Normalized to D[a] = a at early times and a = 1 today.
-void IOW::inite2(double A, double omega0, double par1, double par2, double par3, int model)
-{
-
-	double a = 0.00001;
-	double G[88] = {a,1., a, 1., a,  1., a, 1.,  a, 1., a, 1., a, 1., a, 1., a, 1.,a,1.,
-                  a,1., a, 1., a,  1., a, 1.,  a, 1., a, 1., a, 1., a, 1., a, 1.,a,1.,
-                  a,1., a, 1., a,  1., a, 1.,  a, 1., a, 1., a, 1., a, 1., a, 1.,a,1.,
-                  a,1., a, 1., a,  1., a, 1.,  a, 1., a, 1., a, 1., a, 1., a, 1.,a,1.,a, 1., a, 1., a, 1.,a,1.}; // initial conditions
-
-  struct param_type2 params = {omega0,par1,par2,par3,1,1.,model};
-
-// Solutions of evolution factors @ a=A
-	gsl_odeiv2_system sys = {funce2, jac, 88, &params};
-	gsl_odeiv2_driver * d =
-	gsl_odeiv2_driver_alloc_y_new (&sys, gsl_odeiv2_step_rk8pd,
-								  1e-3, 1e-3, 1e-1);
-
-	int status1 = gsl_odeiv2_driver_apply (d, &a, A, G);
-
-  //Hubble
-  H_spt  = HA(A,omega0);
-
-// 1st, 2nd and 3rd order growth functions
-
-    double mod = 1.;
-		D_spt  = G[0];
-		F_spt  =mod*(G[4]-G[0]);
-		Cx_spt =mod*(G[6]-G[0]);
-		I_spt  =mod*(G[8]-G[0]);
-    J_spt  =mod*(G[14]-G[0]);
-    K_spt  =mod*(G[16]-G[0]);
-		KL_spt =mod*(G[10]-G[0]);
-    F3_spt =mod*(G[18]-G[0]);
-
-
-		//Their time (not scale factor!) derivatives
-		fdgp_spt =  G[1]/G[0]*A;
-		Dd_spt   =  G[1]*H_spt*A;
-		Fd_spt   = mod*(G[5]-G[1])*H_spt*A;
-		Cdx_spt  = mod*(G[7]-G[1])*H_spt*A;
-		Id_spt   = mod*(G[9]-G[1])*H_spt*A;
-    Jd_spt   = mod*(G[15]-G[1])*H_spt*A;
-    Kd_spt   = mod*(G[17]-G[1])*H_spt*A;
-		KLd_spt  = mod*(G[11]-G[1])*H_spt*A;
-    F3d_spt  = mod*(G[19]-G[1])*H_spt*A;
-
-		//LCDM
-		Dl_spt = G[0];//G[12];
-		fl_spt = G[1]/G[0]*A;//G[13]/G[12]*A;
-
-// 4th order evolution factors
-    for(int myint=0; myint<34; myint++){
-          evol4[myint] = mod*(G[20+2*myint]-G[0]);
-        }
-    for(int myint=0; myint<34; myint++){
-          devol4[myint] = mod*(G[21+2*myint]-G[1])*H_spt*A;
-        }
-
-// add in other factors for G4
-
-// D4
-devol4[11] += -Dd_spt/H_spt*Cx_spt;
-devol4[12] += -Dd_spt/H_spt*F3_spt;
-devol4[13] += -Dd_spt/H_spt*I_spt;
-devol4[14] += -Dd_spt/H_spt*J_spt;
-devol4[15] += -Dd_spt/H_spt*(KL_spt-K_spt);
-devol4[16] += -Dd_spt/H_spt*K_spt;
-//E4
-devol4[17] += -D_spt*Cdx_spt/H_spt;
-devol4[18] += -D_spt*(F3d_spt/H_spt-D_spt*fdgp_spt*F_spt);
-devol4[19] += -D_spt*(Id_spt/H_spt-D_spt*Fd_spt/H_spt);
-devol4[20] += -D_spt*Jd_spt/H_spt;
-devol4[21] += -D_spt*(KLd_spt-Kd_spt)/H_spt;
-devol4[22] += -D_spt*Kd_spt/H_spt;
-// F4
-devol4[2] += -F_spt*Dd_spt*D_spt/H_spt;
-//G4
-devol4[3] += -Fd_spt*D_spt*D_spt/H_spt;
-//G4
-devol4[4] += -Fd_spt*F_spt/H_spt;
-
-		gsl_odeiv2_driver_free(d);
-
-// Solution for LCDM linear growth @ a=1 for our normalisation of the linear power spectrum
-	gsl_odeiv2_driver * d1 =
-	gsl_odeiv2_driver_alloc_y_new (&sys, gsl_odeiv2_step_rk8pd,
-								   1e-6, 1e-6, 1e-6);
-
-	int status2 = gsl_odeiv2_driver_apply (d1, &a, 1. , G);
-
-	dnorm_spt = G[12];
-
-	gsl_odeiv2_driver_free(d1);
-
-}
-
-
 /* RSD power spectrum multipole functions */
 
 /*Kernels for multipole factors*/
 
 /* multipole factors : Example for TNS (case 6) (2l+1)/2 * integ dmu  e^(-(k*f*sigma_v*mu)^2) * mu^(2n) * P_l(mu)*/
 
-static double kernel1(real k, real sigma_v, real F0, real anw, int n, int a, real u1) {
+static double kernel1(double k, double sigma_v, double F0, double anw, int n, int a, double u1) {
 switch(a) {
   case 1:
 	return pow(u1,2*n) * (1.-sigma_v*pow2(u1*F0));//RESUM
@@ -3055,7 +3212,7 @@ switch(a) {
 }
 
 
-static double kernel2(real k, real sigma_v, real F0, real anw, int n, int a, real u1) {
+static double kernel2(double k, double sigma_v, double F0, double anw, int n, int a, double u1) {
    switch(a) {
      case 1:
      return 3.*pow(u1,2*n+2.)*(1.-sigma_v*pow2(u1*F0)) - pow(u1,2*n)*(1.-sigma_v*pow2(u1*F0));
@@ -3083,7 +3240,7 @@ static double kernel2(real k, real sigma_v, real F0, real anw, int n, int a, rea
         }
 }
 
-static double kernel3(real k, real sigma_v, real F0, real anw, int n, int a, real u1) {
+static double kernel3(double k, double sigma_v, double F0, double anw, int n, int a, double u1) {
   switch(a){
     case 1:
     return  (35*pow(u1,4)-30.*u1*u1+3.)*pow(u1,2*n)*(1.-sigma_v*pow2(u1*F0));
@@ -3114,7 +3271,7 @@ static double kernel3(real k, real sigma_v, real F0, real anw, int n, int a, rea
 // a =1 : monopole
 // a =2 : quadrupole
 // a =3 : hexdecapole
-double factL(real k, real sigma_v, real F0, real anw, int n, int e, int a ){
+double factL(double k, double sigma_v, double F0, double anw, int n, int e, int a ){
   switch(e) {
         case 1:
 			       return 0.5*Integrate(bind(kernel1,k, sigma_v, F0, anw, n, a, std::placeholders::_1), -1. , 1., 1e-3);
@@ -3133,7 +3290,7 @@ double factL(real k, real sigma_v, real F0, real anw, int n, int e, int a ){
 
 // a*b =1 : LCDM
 // a*b =2 : nDGP
-double DFOG(real k, real u,  double sigma_v, int a) {
+double DFOG(double k, double u,  double sigma_v, int a) {
 	double F0;
 	switch (a) {
 		case 1:
@@ -3149,8 +3306,8 @@ double DFOG(real k, real u,  double sigma_v, int a) {
 
 
 // Minimum and Maximum selection functions
-double Min(real a, real b) {
-real p;
+double Min(double a, double b) {
+double p;
 if(a<b)
 p=a;
 else
@@ -3158,8 +3315,8 @@ p=b;
 return p;
 }
 
-double Max(real a, real b) {
-real p;
+double Max(double a, double b) {
+double p;
 if(a<b)
 p=b;
 else
