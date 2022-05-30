@@ -6,6 +6,22 @@
 #include "SpecialFunctions.h"
 
 
+class BSPTN {
+public:
+  // pars: base parameters. Currently used: 0: scale factor, 1: total matter fraction today
+  // extpars: extended parameters. extpars[0] = Omega_rc for nDGP and fr0 for f(R)
+  // epars: ODE error parameters - see specific function or examples/bs.cpp example
+
+  // tree level  equation solvers : DGP, f(R)
+  void initnb0_dgp(double pars[], double extpars[], double k[], double x[], double kargs[]);
+  void initnb0_fofr(double pars[], double extpars[], double k[], double x[], double kargs[]);
+
+  // 1-loop level  equation solvers : DGP, f(R)
+  void initnb1_dgp(double pars[], double extpars[], double epars[], double k[], double x[], double kargs[]);
+  void initnb1_fr(double pars[], double extpars[], double epars[], double k[], double x[], double kargs[]);
+
+};
+
 // NUMERICAL KERNELS /////
 
 /// CREATION OF KERNEL ARRAYS ////
@@ -93,17 +109,5 @@ extern double G4b_23pp;
 
 const double myh0sqr = pow2(1./2997.92);
 
-
-class BSPTN {
-public:
-  // tree level  equation solvers : dgp, f(R)
-  void initnb0_dgp(double A, double k[], double x[], double kargs[], double omega0, double par1, double par2, double par3);
-  void initnb0_fofr(double A, double k[], double x[], double kargs[], double omega0, double par1, double par2, double par3);
-
-  // 1-loop level  equation solvers : dgp, f(R)
-  void initnb1_dgp(double A, double k[], double x[], double kargs[], double omega0, double par1, double par2, double par3, double epars[]);
-  void initnb1_fr(double A, double k[], double x[], double kargs[], double omega0, double par1, double par2, double par3, double epars[]);
-
-};
 
 #endif // BSPTN_H
