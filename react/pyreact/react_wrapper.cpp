@@ -149,27 +149,34 @@ extern "C" {
         IOW iow;
 
         /* array set up for 1-loop spt splining over z and reaction splining over k */
-        int loop_nk = 60;
+        int loop_nk = 60; // number of bins between kvals[0] and kvals[Nk-1]
         double ploopr[*N_z],ploopp[*N_z],react_tab[loop_nk],k2val[loop_nk];
         /* declare splines */
         Spline mysr,mysp,myreact;
-        /*declare variable array*/
-        double vars[8];
-        vars[0] = 1.;
-        vars[1] = *Omega_m;
-        vars[2] = *mg1;
-        vars[3] = *mg2;
-        vars[4] = *mg3;
-        vars[5] = *mass_loop;
-        vars[6] = 0.0; // massive neutrino mass sum, not implemented in pyreact yet!
+
+        /*declare base cosmo parameter array*/
+        double pars[8];
+        pars[0] = 1.;
+        pars[1] = *Omega_m;
+        pars[2] = 0.; // use compute_reaction_nu for massive neutrino inclusion
+        pars[5] = *mass_loop;
+
+        /* declare extended parameter array */
+        // See reactions/src/SpecialFunctions.h for maxpars
+        // Need to upgrade this to accept array input.
+        double extpars[maxpars];
+        extpars[0] = *mg1;
+        extpars[1] = *mg2;
+        extpars[2] = *mg3;
 
         bool modcamb = false;
         int mod = *model;
         // initialise power spectrum normalisation before running 1-loop computations
-        iow.initnorm(vars,mod);
+        iow.initnorm(pars,extpars,mod);
 
         // initialise splines over redshift for real and pseudo 1-loop spectra @ k0 = 0.06h/Mpc
-        double k0 = 0.06;
+        // See reactions/src/HALO.h to adjust K0HMR.
+        double k0 = K0HMR;
         for(int i=0; i<*N_z; i++) {
             ploopr[i] = 0.;
             ploopp[i] = 0.;
@@ -178,37 +185,41 @@ extern "C" {
         // Switch on 1-loop modified gravity correction if DGP or f(R)
         bool modg;
         if (mod == 2 || mod == 3) {
-          // 1-loop computations at all redshifts @ k0
-          spt.ploop_init(ploopr,ploopp, zvals , *N_z, vars, mod, k0);
+          // 1-loop computations at all redshifts @ k0 and store to ploopr and ploopp arrays
+          spt.ploop_init(ploopr,ploopp, zvals , *N_z, pars, extpars, k0, mod);
+          // turn on 1-loop computation
           modg = true;
         }
         else{
           modg = false;
         }
 
+        // create array of scale factors from redshifts
         double myscalef[*N_z];
         for(int i = 0; i<*N_z ; i++){
             myscalef[i]= 1./(1.+zvals[i]);
         }
 
+        // Spline the 1-loop P(k0,a) arrays
         mysr = CubicSpline(*N_z, myscalef, ploopr);
         mysp = CubicSpline(*N_z, myscalef, ploopp);
 
 
         // main loop
         for(int j = 0; j<*N_z; j++) {
-            vars[0] = 1./(1.+zvals[j]);
+            pars[0] = 1./(1.+zvals[j]);
 
             // initialise wCDM/LCDM lin growth for PS normalisation
-            iow.initnorm(vars,mod);
+            iow.initnorm(pars,extpars,mod);
+
             // Spherical collapse stuff
             /// initialise delta_c(M), a_vir(M), delta_avir(M) and v(M)
-            status = halo.scol_init(vars,modcamb,mod);
-            status |= halo.scol_initp(vars,modcamb);
+            status = halo.scol_init(pars,extpars,modcamb,mod);
+            status |= halo.scol_initp(pars,modcamb);
 
             // store modified sigma 8 at z=0
             if(j == *N_z-1) {
-                modsig8[0] = vars[7];
+                modsig8[0] = pars[6];
             }
 
             if(status != 0) {
@@ -216,29 +227,34 @@ extern "C" {
                 return 1;
             }
 
-            // initialise k_star and mathcal{E}
-            halo.react_init_nu_multiz(vars,mysr,mysp,modcamb,modg);  // kstar and mathcal E for reaction for multiple redshifts
+            // kstar and mathcal E initialisation for multiple redshifts
+            halo.react_init_nu_multiz(pars,mysr,mysp,modcamb,modg);
 
             // reaction
             //#pragma omp parallel for
             for(int i =0; i < loop_nk;  i ++) {
                 // 1.01 is put so that spline covers full range of input k values
+                // take values between kvals[0] and kvals[Nk-1]
                 k2val[i] = kvals[0] * exp(i*log(kvals[*N_k-1]*1.01/kvals[0])/(loop_nk-1.));
+
+                // manually set to 1. for large scales where linear theory is applicable
                 if(k2val[i]<0.01){
                     react_tab[i] = 1.;
                 }
                 else {
-                    react_tab[i] = halo.reaction_nu(k2val[i], vars, modcamb);
+                    react_tab[i] = halo.reaction_nu(k2val[i], pars, modcamb);
                 }
             }
 
+            // spline reaction over k
             myreact = CubicSpline(loop_nk, k2val, react_tab);
 
+            // store to output arrays
             for(int i =0; i < *N_k;  i ++) {
                 output_react[i*(*N_z)+j] =  myreact(kvals[i]);
                 output_pl[i*(*N_z)+j] = pow2(halo.Lin_Grow(kvals[i]))*P_l(kvals[i]);
                 if(*verbose > 1) {
-                    printf(" %e %e %e \n",zvals[j], kvals[i],halo.plinear_cosmosis(kvals[i]));
+                    printf(" %e %e %e \n",zvals[j], kvals[i], pow2(halo.Lin_Grow(kvals[i]))*P_l(kvals[i]));
                 }
             }
         }
@@ -307,18 +323,6 @@ extern "C" {
         }
 
 
-/* Switch on 1-loop modified gravity correction if DGP or f(R) */
-        bool modg;
-        /* Which model ?*/
-        int mod = *model;
-
-        if (mod == 2 || mod == 3) {
-          modg = true;
-        }
-        else{
-          modg = false;
-        }
-
         // Relative error in magnitude integrations
         real epsrel = 1e-2;
 
@@ -332,18 +336,34 @@ extern "C" {
         array Tlcdm(*N_k_lcdm);
         array kilcdm(*N_k_lcdm, kvals_lcdm);
 
-        /*declare variable array*/
-        double vars[8];
-        vars[0] = 1.;
-        vars[1] = *Omega_m;
-        vars[2] = *mg1;
-        vars[3] = *mg2;
-        vars[4] = *mg3;
-        vars[5] = *mass_loop;
-        vars[6] = *Omega_nu;
+        /*declare base cosmo parameter array*/
+        double pars[8];
+        pars[0] = 1.;
+        pars[1] = *Omega_m;
+        pars[2] = *Omega_nu;
+        pars[5] = *mass_loop;
+
+        /* declare extended parameter array */
+        // See reactions/src/SpecialFunctions.h for maxpars
+        // Need to upgrade this to accept array input.
+        double extpars[maxpars];
+        extpars[0] = *mg1;
+        extpars[1] = *mg2;
+        extpars[2] = *mg3;
 
         bool modcamb = true;
+        /* Switch on 1-loop modified gravity correction if DGP or f(R) */
+         /* Add other theories if they include modifications to gravity  */
+        bool modg;
 
+          /* Which model ?*/
+          int mod = *model;
+          if (mod == 2 || mod == 3) {
+            modg = true;
+          }
+          else{
+            modg = false;
+          }
 
         /* Perform some checks */
         if ( *pscale<1e-3 || *pscale>0.1 || *As<1.5e-9 || *As>2.5e-9 ) {
@@ -354,17 +374,14 @@ extern "C" {
           react_error("You must supply the input transfer functions if using a modified linear input");
         }
 
-
         // Special function class
         IOW iow;
         // initialise power spectrum normalisation before running
-        iow.initnorm(vars,mod);
+        iow.initnorm(pars,extpars,mod);
 
 
 
-/* Option 2: Run wrapper assuming input is transfer/pofk array in k and z for all species in target cosmology */
-/* If transfer or pofk inputs are at the redshifts required and already modified we need to initialise classes for each redshift */
-
+/* If transfer or power spectrum inputs are at the redshifts required and already modified we need to initialise classes for each redshift */
 
           /* PART 1: Initialise vector of classes for each z*/
 
@@ -387,20 +404,23 @@ extern "C" {
 
             // Load transfers for real cosmology
               for(int j = 0; j<*N_k; j++){
+                  // if input is the transfer functions set k arrays at ith redshift
                   if(*is_transfer) {
-                      Tm[j] = torpk_m[(*N_z-i-1)*(*N_k)+j];
-                      Tcb[j] = torpk_cb[(*N_z-i-1)*(*N_k)+j];
+                      Tm[j] = torpk_m[(*N_z-i-1)*(*N_k)+j]; // total matter
+                      Tcb[j] = torpk_cb[(*N_z-i-1)*(*N_k)+j]; // CB
                       if (*Omega_nu<1e-10) {
-                        Tnu[j] = Tm[j];
+                      // set to total matter to avoid numerical issues (it won't contribute anyway)
+                      Tnu[j] = Tm[j];
                       }
                       else{
                       Tnu[j] = (*Omega_m*Tm[j] - (*Omega_m-*Omega_nu)*Tcb[j])/(*Omega_nu);
                       }
                   }
+                  // if input is the power spectra, convert to transfer
                   else {
                       // Copter takes transfer function as input - Easiest fix is to just convert input PS to T
-                      Tm[j] = sqrt(torpk_m[(*N_z-i-1)*(*N_k)+j] / (2*M_PI*M_PI * (*As) * ki[j] * pow(*h,4) * pow(ki[j]*(*h)/(*pscale), *n_s-1.)));
-                      Tcb[j] = sqrt(torpk_cb[(*N_z-i-1)*(*N_k)+j] / (2*M_PI*M_PI * (*As) * ki[j] * pow(*h,4) * pow(ki[j]*(*h)/(*pscale), *n_s-1.)));
+                      Tm[j] = sqrt(torpk_m[(*N_z-i-1)*(*N_k)+j] / (2.*M_PI*M_PI * (*As) * ki[j] * pow(*h,4) * pow(ki[j]*(*h)/(*pscale), *n_s-1.)));
+                      Tcb[j] = sqrt(torpk_cb[(*N_z-i-1)*(*N_k)+j] / (2.*M_PI*M_PI * (*As) * ki[j] * pow(*h,4) * pow(ki[j]*(*h)/(*pscale), *n_s-1.)));
                       if (*Omega_nu<1e-10) {
                         Tnu[j] = Tm[j];
                       }
@@ -410,13 +430,13 @@ extern "C" {
                     }
                   }
 
-            // same for LCDM
+            // Repeat for LCDM cv spectrum
                   for(int j = 0; j<*N_k_lcdm; j++){
                       if(*is_transfer) {
                         Tlcdm[j] = torpk_lcdm[(*N_z-i-1)*(*N_k_lcdm)+j];
                       }
                       else {
-                          // Copter takes transfer function as input - Easiest fix is to just convert input PS to T
+                      // Copter takes transfer function as input - Easiest fix is to just convert input PS to T
                         Tlcdm[j] = sqrt(torpk_lcdm[(*N_z-i-1)*(*N_k_lcdm)+j] / (2*M_PI*M_PI * (*As) * ki[j] * pow(*h,4) * pow(ki[j]*(*h)/(*pscale), *n_s-1.)));
                         }
                       }
@@ -446,13 +466,13 @@ extern "C" {
         double ploopr[*N_z],ploopp[*N_z];
 
         // initialise splines over redshift for real and pseudo 1-loop spectra @ k0 = 0.06h/Mpc
-        double k0 = 0.06;
+        double k0 = K0HMR;
         for(int i=0; i<*N_z; i++) {
             ploopr[i] = 0.;
             ploopp[i] = 0.;
         }
 
-
+      // if modified gravity is active we do 1-loop computations
       if (modg) {
         /* Initialise arrays for P_L(k0)  for 1-loop real and pseudo computations */
         double pkz0[*N_z], pkz0p[*N_z];
@@ -460,7 +480,8 @@ extern "C" {
         /* Do not change number of abscissae - this is assumed in SPT.cpp's ploop_init_nu function */
         double pkz1[*N_z][50], pkz2[*N_z][1600], pkz1p[*N_z][50], pkz2p[*N_z][1600];
 
-        // Populate power spectrum arrays
+        // Populate power spectrum arrays over integral limits
+        // integral limits
         double KMAX = QMAXp/k0; // max r = p/k (QMAXp = 30 - see SpecialFunctions.h)
         double KMIN = QMINp/k0; // min r = p/k (QMINp = 1e-4 - ...)
 
@@ -483,16 +504,18 @@ extern "C" {
         }
 
         /* Initialise 1-loop arrays as function of z @ k0 */
-        myspt[0].ploop_init_nu(pkz0,pkz1,pkz2,pkz0p,pkz1p,pkz2p,ploopr,ploopp, zvals, *N_z, vars, mod, k0);
+        myspt[0].ploop_init_nu(pkz0,pkz1,pkz2,pkz0p,pkz1p,pkz2p,ploopr,ploopp, zvals, *N_z, pars, extpars, k0, mod);
 
       }
 
+
+      // create array of scale factors from redshifts
         double myscalef[*N_z];
         for(int i = 0; i<*N_z ; i++){
             myscalef[i]= 1./(1.+zvals[i]);
         }
 
-        /* Spline resulting arrays as functions of scale factor */
+        // Spline the 1-loop P(k0,a) arrays
         Spline mysr = CubicSpline(*N_z, myscalef, ploopr);
         Spline mysp = CubicSpline(*N_z, myscalef, ploopp);
 
@@ -502,26 +525,25 @@ extern "C" {
         double react_tab[loop_nk],k2val[loop_nk];
 
         for(int j = 0; j<*N_z; j++) {
-            vars[0] = 1./(1.+zvals[j]);
+            pars[0] = 1./(1.+zvals[j]);
 
             // initialise wCDM/LCDM lin growth for PS normalisation
-            iow.initnorm(vars,mod);
+            iow.initnorm(pars,extpars,mod);
 
 
             // Spherical collapse stuff
             /// initialise delta_c(M), a_vir(M), delta_avir(M) and v(M)
-            status = myhalo[j].scol_init(vars,modcamb,mod); // real spherical collapse quantities
-            status |= myhalo[j].scol_initp(vars,modcamb); // pseudo spherical collapse quantities
+            status = myhalo[j].scol_init(pars,extpars,modcamb,mod); // real spherical collapse quantities
+            status |= myhalo[j].scol_initp(pars,modcamb); // pseudo spherical collapse quantities
 
 
             // store modified sigma 8 at z=0
             if(j == *N_z-1) {
-                modsig8[0] = vars[7];
+                modsig8[0] = pars[6];
             }
 
             // initialise k_star and mathcal{E}
-            myhalo[j].react_init_nu_multiz(vars,mysr,mysp,modcamb,modg);
-
+            myhalo[j].react_init_nu_multiz(pars,mysr,mysp,modcamb,modg);
 
             // reaction
             //#pragma omp parallel for
@@ -532,7 +554,7 @@ extern "C" {
                     react_tab[i] = 1.;
                 }
                 else {
-                    react_tab[i] = myhalo[j].reaction_nu(k2val[i], vars, modcamb);
+                    react_tab[i] = myhalo[j].reaction_nu(k2val[i], pars, modcamb);
                 }
             }
 
@@ -551,4 +573,214 @@ extern "C" {
 
         return 0;
   }
+
+
+/* Option 1: Run wrapper as normally, i.e. if input transfer/pofk is LCDM at z=0 */
+    int compute_reaction_ext(int* N_k_pk, double* powerspectrum,
+                     int* N_k, double* kvals,
+                     int* N_z, double* zvals,
+                     bool* is_transfer,
+                     double* h, double* n_s, double* Omega_m, double* Omega_b, double* sigma_8,
+                     int* maxp, double* extpars, int* mass_loop, int* model,
+                     int* N_k_react, int* N_z_react, double* output_react,
+                     int* N_k_pl, int* N_z_pl, double* output_pl,
+                     double* modsig8,
+                     int* verbose)
+    {
+    int status = 0;
+    if(*N_k != *N_k_pk || *N_k != *N_k_react || *N_k != *N_k_pl){
+        react_error("Inconsistency in k array sizes");
+        return 1;
+    }
+    if(*N_z != *N_z_react || *N_z != *N_z_pl){
+        react_error("Inconsistency in z array sizes");
+        return 1;
+    }
+
+    if(*maxp > maxpars ){
+        react_error("You specified too many extra parameters. Adjust maxpars in reactions/src/SpecialFunctions.h and re-make.");
+        return 1;
+    }
+
+    if(kvals[0] > 1e-4) {
+        react_error("k must at least go down to 1e-4");
+        return 1;
+    }
+    if(zvals[0] < zvals[*N_z-1]) {
+        react_error("z must be in decreasing order.");
+        return 1;
+    }
+    if(zvals[0] > 2.5) {
+        react_error("z must be smaller than 2.5");
+        return 1;
+    }
+
+
+
+    if(*verbose > 0) {
+        std::cout<<"z: " << zvals[0] << " -> " << zvals[*N_z-1] << "\n";
+        std::cout<<"k: " << kvals[0] << " -> " << kvals[*N_k-1] << "\n";
+        std::cout<<"h: " << *h << "\n";
+        std::cout<<"n_s: " << *n_s << "\n";
+        std::cout<<"Omega_m: " << *Omega_m << "\n";
+        std::cout<<"Omega_b: " << *Omega_b << "\n";
+        std::cout<<"sigma_8: " << *sigma_8 << "\n";
+        for(int i=0;i<maxpars;i++){
+        std::cout<<"beyond LCDM parameter" << i << ":"<< extpars[i] << "\n";
+        }
+        std::cout<<"mass loop: " << *mass_loop << "\n";
+        std::cout<<"model: "  << *model << " (1:GR, 2:f(R), 3:DGP, 4:quintessence, 5: CPL)\n";
+
+    }
+
+
+    array Ti(*N_k);
+    array ki(*N_k, kvals);
+
+    double T0;
+    if(!(*is_transfer)) {
+        T0 = sqrt(powerspectrum[0] / pow(ki[0], *n_s));
+    }
+
+    for(int i = 0; i<*N_k; i++){
+        if(*is_transfer) {
+            Ti[i] = powerspectrum[i];
+        }
+        else {
+            // Copter takes transfer function as input - Easiest fix is to just convert input PS to T
+            Ti[i] = sqrt(powerspectrum[i] / pow(ki[i], *n_s));
+            // Must normalise T to 1. at large scales.
+            Ti[i] /= T0;
+        }
+    }
+
+    if(*verbose > 0) {
+        std::cout<<"T(k): " << Ti[0] << ", " << Ti[1] << " -> " << Ti[*N_k-1] << "\n";
+        std::cout<<"is_transfer: " << *is_transfer << "\n";
+    }
+
+
+    // Relative error in magnitude integrations
+    real epsrel = 1e-2;
+
+    Cosmology C(*h, *n_s, *Omega_m, *Omega_b, *sigma_8, ki, Ti);
+    LinearPS P_l(C, 0.0);
+    HALO halo(C, P_l, P_l, P_l, P_l, epsrel);
+    SPT spt(C, P_l, epsrel);
+    IOW iow;
+
+    /* array set up for 1-loop spt splining over z and reaction splining over k */
+    int loop_nk = 60; // number of bins between kvals[0] and kvals[Nk-1]
+    double ploopr[*N_z],ploopp[*N_z],react_tab[loop_nk],k2val[loop_nk];
+    /* declare splines */
+    Spline mysr,mysp,myreact;
+
+    /*declare base cosmo parameter array*/
+    double pars[8];
+    pars[0] = 1.;
+    pars[1] = *Omega_m;
+    pars[2] = 0.; // use compute_reaction_nu for massive neutrino inclusion
+    pars[5] = *mass_loop;
+
+    /* declare extended parameter array */
+    // See reactions/src/SpecialFunctions.h for maxpars
+    // Need to upgrade this to accept array input.
+    double extparsin[maxpars];
+    for(int i =0; i<maxpars; i++){
+      extparsin[i] = extpars[i];
+    }
+
+    bool modcamb = false;
+    int mod = *model;
+    // initialise power spectrum normalisation before running 1-loop computations
+    iow.initnorm(pars,extparsin,mod);
+
+    // initialise splines over redshift for real and pseudo 1-loop spectra @ k0 = 0.06h/Mpc
+    // See reactions/src/HALO.h to adjust K0HMR.
+    double k0 = K0HMR;
+    for(int i=0; i<*N_z; i++) {
+        ploopr[i] = 0.;
+        ploopp[i] = 0.;
+    }
+
+    // Switch on 1-loop modified gravity correction if DGP or f(R)
+    bool modg;
+    if (mod == 2 || mod == 3) {
+      // 1-loop computations at all redshifts @ k0 and store to ploopr and ploopp arrays
+      spt.ploop_init(ploopr,ploopp, zvals , *N_z, pars, extparsin, k0, mod);
+      // turn on 1-loop computation
+      modg = true;
+    }
+    else{
+      modg = false;
+    }
+
+    // create array of scale factors from redshifts
+    double myscalef[*N_z];
+    for(int i = 0; i<*N_z ; i++){
+        myscalef[i]= 1./(1.+zvals[i]);
+    }
+
+    // Spline the 1-loop P(k0,a) arrays
+    mysr = CubicSpline(*N_z, myscalef, ploopr);
+    mysp = CubicSpline(*N_z, myscalef, ploopp);
+
+
+    // main loop
+    for(int j = 0; j<*N_z; j++) {
+        pars[0] = 1./(1.+zvals[j]);
+
+        // initialise wCDM/LCDM lin growth for PS normalisation
+        iow.initnorm(pars,extparsin,mod);
+
+        // Spherical collapse stuff
+        /// initialise delta_c(M), a_vir(M), delta_avir(M) and v(M)
+        status = halo.scol_init(pars,extparsin,modcamb,mod);
+        status |= halo.scol_initp(pars,modcamb);
+
+        // store modified sigma 8 at z=0
+        if(j == *N_z-1) {
+            modsig8[0] = pars[6];
+        }
+
+        if(status != 0) {
+            react_error("Failed to compute spherical collapse.");
+            return 1;
+        }
+
+        // kstar and mathcal E initialisation for multiple redshifts
+        halo.react_init_nu_multiz(pars,mysr,mysp,modcamb,modg);
+
+        // reaction
+        //#pragma omp parallel for
+        for(int i =0; i < loop_nk;  i ++) {
+            // 1.01 is put so that spline covers full range of input k values
+            // take values between kvals[0] and kvals[Nk-1]
+            k2val[i] = kvals[0] * exp(i*log(kvals[*N_k-1]*1.01/kvals[0])/(loop_nk-1.));
+
+            // manually set to 1. for large scales where linear theory is applicable
+            if(k2val[i]<0.01){
+                react_tab[i] = 1.;
+            }
+            else {
+                react_tab[i] = halo.reaction_nu(k2val[i], pars, modcamb);
+            }
+        }
+
+        // spline reaction over k
+        myreact = CubicSpline(loop_nk, k2val, react_tab);
+
+        // store to output arrays
+        for(int i =0; i < *N_k;  i ++) {
+            output_react[i*(*N_z)+j] =  myreact(kvals[i]);
+            output_pl[i*(*N_z)+j] = pow2(halo.Lin_Grow(kvals[i]))*P_l(kvals[i]);
+            if(*verbose > 1) {
+                printf(" %e %e %e \n",zvals[j], kvals[i], pow2(halo.Lin_Grow(kvals[i]))*P_l(kvals[i]));
+            }
+        }
+    }
+
+    return 0;
+}
+
 }
