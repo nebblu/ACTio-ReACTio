@@ -1,6 +1,7 @@
 #ifndef SCOL_H
 #define SCOL_H
 #include "Common.h"
+#include "SpecialFunctions.h"
 // SP_IVP.h
 // Spherical Collapse IVP
 //#include <omp.h>
@@ -39,6 +40,7 @@
 #define TWO     RCONST(2.0)
 #define THREE   RCONST(3.0)       /* 3.0                    */
 #define DELTA1  RCONST(3e-5)   /* Delta_i1  = ai */
+#define AINIT  RCONST(3e-5)   /*  ai */
 #define DELTA2  RCONST(0.00012)   /* Delta_i2 = 4 x ai */
 #define EPSILON RCONST(1.0e-9)
 #define ZERO    RCONST(0.0)
@@ -68,9 +70,7 @@ typedef struct usdat {
   realtype OCB;
   realtype Rth;
   realtype T1;
-  double par1;
-  double par2;
-  double par3;
+  double theory[maxpars];
   double maxt;
   int mymodel;
   gsl_spline *spline;
@@ -95,7 +95,7 @@ public:
    // solves for y_halo
    int SphericalCollapse(double *dC, arrays_T3 xxyyzz, UserData data_vec, double TMULT_REAL, double delta_g); // spherical collapse solver
    // solves for a_virial
-   double myscol(double myscolparams[], double acol, double omegacb, double omeganu, double Rthp, double sig1, double sig2, double pars[], int model); // solves for virial quantities and stores them in array myscolparams
+   double myscol(double myscolparams[], double acol, double omegacb, double omeganu, double Rthp, double sig1, double sig2, double extpars[], int model); // solves for virial quantities and stores them in array myscolparams
 
 
    void PrintOutput(realtype t, realtype y1, realtype y2);

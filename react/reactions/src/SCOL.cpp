@@ -89,11 +89,11 @@ static int f_modscol(realtype t, N_Vector y, N_Vector ydot, void *user_data)
     double myh = (y1 + ET)/ET;
     double myenv = (yenv + ET)/ET;
 
-    Fvir = mymgF(ET*ET0, myh, myenv, Rth, OM, (data->par1),(data->par2),(data->par3), IC, (data->mymodel));
+    Fvir = mymgF(ET*ET0, myh, myenv, Rth, OM, (data->theory), IC, (data->mymodel));
     // (H/H0)^2
-    hubble2 = pow2(HAg(ET*ET0, OM, (data->par1), (data->par2), (data->par3),(data->mymodel)));
+    hubble2 = pow2(HAg(ET*ET0, OM, (data->theory), (data->mymodel)));
     // d H/ d ln[a] /H
-    dhlnaoh = HA1g(ET*ET0,OM, (data->par1), (data->par2), (data->par3),(data->mymodel))/hubble2;
+    dhlnaoh = HA1g(ET*ET0,OM, (data->theory), (data->mymodel))/hubble2;
 
     prefac  =  SUNRexp(-THREE*t)*OCB; // a^3 Omega_cb
 
@@ -255,7 +255,7 @@ double SCOL::Delta_Lambda(double OM, double Z)
 
   return 2.5 * OM
           * sqrt(OM/ OM_Z_params.c/ OM_Z_params.c / OM_Z_params.c  + 1-OM)
-          / 3e-5 * result;
+          / AINIT * result;
 }
 
 
@@ -460,9 +460,9 @@ int SCOL::SphericalCollapse(double *dC, arrays_T3 xxyyzz, UserData data_vec, dou
       data->spline  = (*data_vec).spline;
       data->acc     = (*data_vec).acc;
       data->T1      = (*data_vec).T1;
-      data->par1    = (*data_vec).par1;
-      data->par2    = (*data_vec).par2;
-      data->par3    = (*data_vec).par3;
+      for(int i=0;i<maxpars;i++){
+        data -> theory[i] = (*data_vec).theory[i];
+      }
       data->maxt    = (*data_vec).maxt;
       data->mymodel = (*data_vec).mymodel;
       data->OM      = (*data_vec).OM;
@@ -574,15 +574,11 @@ int SCOL::SphericalCollapse(double *dC, arrays_T3 xxyyzz, UserData data_vec, dou
 
 // needs omega0, initial top-hat radius , initial density of enviornment, modification parameters and selection of theory
 // model = 1 gives GR collapse, 2+ gives modified collapse - see SpecialFunctions.cpp
-double SCOL::myscol(double myscolparams[], double acol, double omegacb, double omeganu, double Rthp, double sig1, double sig2, double pars[], int model)
+// extpars are the modified theory parameters
+double SCOL::myscol(double myscolparams[], double acol, double omegacb, double omeganu, double Rthp, double sig1, double sig2, double extpars[], int model)
 {
 
         double omega0 = omegacb + omeganu;
-
-      // theory params
-        double p1 = pars[0];
-        double p2 = pars[1];
-        double p3 = pars[2];
 
         for(int i=0; i<3; i++){
         myscolparams[i] =0.;
@@ -599,7 +595,7 @@ double SCOL::myscol(double myscolparams[], double acol, double omegacb, double o
          d = Delta_Lambda (omega0, myz);
        }
         else{
-          d = Dl_spt/3e-5;
+          d = Dl_spt/AINIT;
          }
 
 
@@ -640,12 +636,13 @@ double SCOL::myscol(double myscolparams[], double acol, double omegacb, double o
          data->T1      = T00; // = Log[ai]
          data->OM      = omega0;
          data->OCB     = omegacb;
-         data->par1    = p1;
-         data->par2    = p2;
-         data->par3    = p3;
+         for(int i=0;i<maxpars;i++){
+           data -> theory[i] = extpars[i];
+         }
          data->Rth     = Rthp;
          data->mymodel = model;
 	       data->maxt    = maximumt;
+
 
           // initialse the delta_i (solver spherical collapse differential equation)
         SphericalCollapse (&myscolparams[0], xxyyzz, data, TMULT, mydelta);
@@ -689,9 +686,9 @@ double SCOL::myscol(double myscolparams[], double acol, double omegacb, double o
          ke =  pow2(HA(ai, omega0)*(myy + myp)/arat);
        }
        else{
-         wphi = prefac * mymgF(ai, myy, myyenv, Rthp, omegacb, p1, p2, p3, myscolparams[0],model)*mydelt;
-         weff = WEFF(ai,omegacb,p1,p2,p3,model)*pow2(myy/arat);
-         ke =  pow2(HAg(ai, omega0,p1,p2,p3,model)*(myy + myp)/arat); // might need to change to cb TO CHECK
+         wphi = prefac * mymgF(ai, myy, myyenv, Rthp, omegacb, extpars, myscolparams[0],model)*mydelt;
+         weff = WEFF(ai,omegacb,extpars,model)*pow2(myy/arat);
+         ke =  pow2(HAg(ai, omega0,extpars,model)*(myy + myp)/arat); // might need to change to cb TO CHECK
        }
 
 

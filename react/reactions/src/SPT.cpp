@@ -23,8 +23,30 @@
 using std::cref;
 using std::bind;
 
+extern const int ERROR_MESSAGE_LEN_SPT = 512;
+char error_message_spt[ERROR_MESSAGE_LEN_SPT];
+
+void spt_error(const char* msg) {
+    const int truncate = ERROR_MESSAGE_LEN_SPT-10;
+
+    #pragma omp critical
+    {
+        snprintf(error_message_spt, truncate, "SPT.cpp error: %s", msg);
+        printf("%s\n", error_message_spt);
+    }
+}
+
+
 
 ////////// PERTURBATION THEORY CONSTRUCTED STATISTICS ////////////
+
+/* Functions for power spectra in various models of gravity & dark energy  */
+
+/* Makes use of ODE systems in SpecialFunctions.cpp */
+
+/* See header file for argument values and descriptions */
+
+/* See 1606.02520, 1808.01120, 2005.12184  for more theoretical details */
 
 /*Load the linear power spectrum */
 
@@ -33,25 +55,6 @@ SPT::SPT(const Cosmology& C_, const PowerSpectrum& P_L_, real epsrel_)
 {
     epsrel = epsrel_;
 }
-
-// Function to vary growth rate f as a free parameter instead of predicted from theory.
-double rempf;
-
-//LCDM
-void SPT::remp(real f) const{
-rempf = f/fl_spt;
-}
-
-//nDGP
-void SPT::rempdgp(real f) const{
-rempf = f/fdgp_spt;
-}
-
-// numerical  --- TODO: not in RSD spectra yet --- should be easy to implement
-void SPT::rempn(real f) const{
-rempf = f/(-G1_nk/F1_nk);
-}
-
 
 
 ///////////////////////////////ANALYTIC PREDICTIONS IN REAL SPACE  (EDS APPROXIMATED) /////////////////////////////////
@@ -69,10 +72,10 @@ real SPT::PLOOP(real k, int a) const {
             return  pow2(Dl_spt/dnorm_spt)*P_L(k) + P13_dd(k)+P22_dd(k);
             break;
         case 2:
-            return  -rempf*fl_spt*pow2(Dl_spt/dnorm_spt)*P_L(k) + P13_dt(k) + P22_dt(k);
+            return  -fl_spt*pow2(Dl_spt/dnorm_spt)*P_L(k) + P13_dt(k) + P22_dt(k);
             break;
         case 3:
-            return  pow2(rempf*fl_spt*Dl_spt/dnorm_spt)*P_L(k) + P13_tt(k) + P22_tt(k);
+            return  pow2(fl_spt*Dl_spt/dnorm_spt)*P_L(k) + P13_tt(k) + P22_tt(k);
             break;
         //DGP
         case 4:
@@ -102,11 +105,11 @@ real SPT::PRSD(real k, real u, real bl, int a) const {
 	double F0,D0;
 	switch (a) {
 		case 1:
-			F0=rempf*fl_spt;
+			F0=fl_spt;
 			D0= Dl_spt;
 			break;
 		case 2:
-			F0=rempf*fdgp_spt;
+			F0=fdgp_spt;
 			D0=D_spt;
 			break;
     default:
@@ -144,7 +147,7 @@ real SPT::PTNS(real k, real u, real bl, real sigma_v, int a) const {
 // a = 2 : Quadrupole
 // a = 3 : Hexdecapole
 real SPT::KASM(real k, real bl, real sigma_v, int a) const {
-	return   pow2(D_spt*bl/dnorm_spt)*(factL(k,sigma_v,1.,1.,0,a,7) + 2.*rempf*fdgp_spt/bl*factL(k,sigma_v,1.,1.,1,a,7) + pow2(rempf*fdgp_spt/bl)*factL(k,sigma_v,1.,1.,2,a,7))*P_L(k);
+	return   pow2(D_spt*bl/dnorm_spt)*(factL(k,sigma_v,1.,1.,0,a,7) + 2.*fdgp_spt/bl*factL(k,sigma_v,1.,1.,1,a,7) + pow2(fdgp_spt/bl)*factL(k,sigma_v,1.,1.,2,a,7))*P_L(k);
 }
 
 
@@ -188,13 +191,12 @@ real SPT::PTNSMnDGPq(real k, double barr[], real sigma_v, int a) const {
 
 
 
-
 /*All functions below are the components used to construct the above spectra :
  In order of appearance :
 
  1 LOOP CORRECTIONS : LCDM , nDGP, Numerical
  TNS A,B and nDGP correction terms
- modified gravity TNS and Kaiser with linear, Q-bias and Lag bias (GR modelling only for Lag Bias)*/
+ Modified gravity RSD [kaiser, TNS, 1-loop SPT] with linear, Q-bias and Lag bias (scale indep modelling only for Lag Bias)*/
 
 
 /*LCDM 1-loop terms */
@@ -300,7 +302,7 @@ return Integrate(bind(f22_dt, cref(P_L), k, r, std::placeholders::_1), YMIN, YMA
 real SPT::P22_dt(real k) const {
 	real KMAX = QMAXp/k;
 	real KMIN = QMINp/k;
-    return  k*k*k/(98.*4.*M_PI*M_PI) *pow4(Dl_spt/dnorm_spt)*(-rempf*fl_spt)* Integrate<ExpSub>(bind(midintdt, cref(P_L), k, std::placeholders::_1), KMIN, KMAX, epsrel);
+    return  k*k*k/(98.*4.*M_PI*M_PI) *pow4(Dl_spt/dnorm_spt)*(-fl_spt)* Integrate<ExpSub>(bind(midintdt, cref(P_L), k, std::placeholders::_1), KMIN, KMAX, epsrel);
 }
 
 
@@ -324,7 +326,7 @@ static real f13_dt(const PowerSpectrum& P_L, real k, real r) {
 real SPT::P13_dt(real k) const {
    	real KMAX = QMAXp/k;
 	  real KMIN = QMINp/k;
-    return k*k*k/(252.*4.*M_PI*M_PI) *P_L(k) *(-rempf*fl_spt)*pow4(Dl_spt/dnorm_spt)* Integrate<ExpSub>(bind(f13_dt, cref(P_L), k, std::placeholders::_1), KMIN, KMAX, epsrel);
+    return k*k*k/(252.*4.*M_PI*M_PI) *P_L(k) *(-fl_spt)*pow4(Dl_spt/dnorm_spt)* Integrate<ExpSub>(bind(f13_dt, cref(P_L), k, std::placeholders::_1), KMIN, KMAX, epsrel);
 }
 
 
@@ -350,7 +352,7 @@ return Integrate(bind(f22_tt, cref(P_L), k, r, std::placeholders::_1), YMIN, YMA
  real SPT::P22_tt(real k) const {
 	real KMAX = QMAXp/k;
 	real KMIN = QMINp/k;
-	 return k*k*k/(98*4*M_PI*M_PI) *  pow4(Dl_spt/dnorm_spt)*pow2(rempf*fl_spt)*Integrate<ExpSub>(bind(midintt, cref(P_L), k, std::placeholders::_1), KMIN, KMAX, epsrel);
+	 return k*k*k/(98*4*M_PI*M_PI) *  pow4(Dl_spt/dnorm_spt)*pow2(fl_spt)*Integrate<ExpSub>(bind(midintt, cref(P_L), k, std::placeholders::_1), KMIN, KMAX, epsrel);
 }
 
 /* P13- VELOCITY, VELOCITY*/
@@ -374,7 +376,7 @@ static real f13_tt(const PowerSpectrum& P_L, real k, real r) {
 real SPT::P13_tt(real k) const {
    	real KMAX = QMAXp/k;
 	real KMIN = QMINp/k;
-    return k*k*k/(84*4*M_PI*M_PI) *P_L(k) *pow4(Dl_spt/dnorm_spt)*pow2(rempf*fl_spt) * Integrate<ExpSub>(bind(f13_tt, cref(P_L), k, std::placeholders::_1), KMIN, KMAX, epsrel);
+    return k*k*k/(84*4*M_PI*M_PI) *P_L(k) *pow4(Dl_spt/dnorm_spt)*pow2(fl_spt) * Integrate<ExpSub>(bind(f13_tt, cref(P_L), k, std::placeholders::_1), KMIN, KMAX, epsrel);
 }
 
 
@@ -602,9 +604,9 @@ static real lbias_selec(const PowerSpectrum& P_L, int a,  real bias[], real k, r
             +P_L(k)*b3n*bias[0]*plkr*2.*105./16.*pow2(r)*(dker*sker+8./63.); // b3 terms
 
      case 2 :
-     return   -rempf*fl_spt*plkr*P_L(k*d1)*pow2(r)*(bias[1]*G2ker //b2t
+     return   -fl_spt*plkr*P_L(k*d1)*pow2(r)*(bias[1]*G2ker //b2t
                                                  +bs2*G2ker*sker) // bs2t
-              -rempf*fl_spt*P_L(k)*b3n*plkr*105./16.*pow2(r)*(dker*sker+8./63.);
+              -fl_spt*P_L(k)*b3n*plkr*105./16.*pow2(r)*(dker*sker+8./63.);
     default:
     warning("SPT: invalid indices, a = %d \n", a);
         return 0;
@@ -620,6 +622,7 @@ static real midpb2(const PowerSpectrum& P_L, int a, real bias[], real k, real r)
 return Integrate(bind(lbias_selec, cref(P_L), a, bias, k, r, std::placeholders::_1), YMIN, YMAX , 1e-3);
 }
 
+
 //P_bs2
 real SPT::Lag_bias(int a, real k, real bias[]) const {
  	real KMAX = QMAXp/k;
@@ -629,9 +632,14 @@ real SPT::Lag_bias(int a, real k, real bias[]) const {
 
 
 
+
+
 /////// Numerical 1-loop spectra /////////////
 
-static double ploopn2_mgdd( const PowerSpectrum& P_L, double vars[], int model,  double k, double r, double x){
+/* Integrands */
+// density-density
+
+static double ploopn2_mgdd( const PowerSpectrum& P_L, double pars[], double extpars[], int model,  double k, double r, double x){
   double kargs[4],kv[3],xv[3], p22,p13;
   // tolerance for ode solver (see SpecialFunctions.cpp, initn2). This encounters a singularity if k'.-k' = -1 exactly.
   double tol = 1e-8;
@@ -647,7 +655,7 @@ static double ploopn2_mgdd( const PowerSpectrum& P_L, double vars[], int model, 
         kargs[2] = sqrt(kv[1]*kv[1]+2.*kv[1]*kv[2]*xv[0]+kv[2]*kv[2]);
         kargs[1] = sqrt(kv[2]*kv[2]+2.*kv[2]*kv[0]*xv[2]+kv[0]*kv[0]);
         kargs[3] = sqrt(kv[0]*kv[0]+2.*kv[0]*kv[1]*xv[1]+kv[1]*kv[1]);
-        iow.initn2(vars[0],kv,xv,kargs,vars[1],vars[2],vars[3],vars[4],vars[6],model);
+        iow.initn2(pars,extpars,kv,xv,kargs,model);
         p22 = pow2(F2_nk);
         p13 = F1_nk*F3_nk;
 
@@ -655,7 +663,8 @@ static double ploopn2_mgdd( const PowerSpectrum& P_L, double vars[], int model, 
 }
 
 
-static double ploopn2_mgdt( const PowerSpectrum& P_L, double vars[], int model, double k, double r, double x){
+// density-velocity (theta = velocity divergence )
+static double ploopn2_mgdt( const PowerSpectrum& P_L, double pars[], double extpars[], int model, double k, double r, double x){
   double kargs[4],kv[3],xv[3], p22,p13;
   // tolerance for ode solver (see SpecialFunctions.cpp, initn2). This encounters a singularity if k'.-k' = -1 exactly.
   double tol = 1e-8;
@@ -671,13 +680,14 @@ static double ploopn2_mgdt( const PowerSpectrum& P_L, double vars[], int model, 
         kargs[2] = sqrt(kv[1]*kv[1]+2.*kv[1]*kv[2]*xv[0]+kv[2]*kv[2]);
         kargs[1] = sqrt(kv[2]*kv[2]+2.*kv[2]*kv[0]*xv[2]+kv[0]*kv[0]);
         kargs[3] = sqrt(kv[0]*kv[0]+2.*kv[0]*kv[1]*xv[1]+kv[1]*kv[1]);
-        iow.initn2(vars[0],kv,xv,kargs,vars[1],vars[2],vars[3],vars[4],vars[6],model);
+        iow.initn2(pars,extpars,kv,xv,kargs,model);
         p22 = G2_nk*F2_nk;
         p13 = 0.5*(G1_nk*F3_nk + F1_nk*G3_nk);
     return pow2(r)*2.*P_L(k*r)*(P_L(kargs[0])*p22 + 3.*P_L(k)*p13);
 }
 
-static double ploopn2_mgtt(const PowerSpectrum& P_L, double vars[], int model, double k, double r, double x){
+// velocity-velocity
+static double ploopn2_mgtt(const PowerSpectrum& P_L, double pars[], double extpars[], int model, double k, double r, double x){
   double kargs[4],kv[3],xv[3], p22,p13;
   // tolerance for ode solver (see SpecialFunctions.cpp, initn2). This encounters a singularity if k'.-k' = -1 exactly.
   double tol = 1e-8;
@@ -693,7 +703,7 @@ static double ploopn2_mgtt(const PowerSpectrum& P_L, double vars[], int model, d
         kargs[2] = sqrt(kv[1]*kv[1]+2.*kv[1]*kv[2]*xv[0]+kv[2]*kv[2]);
         kargs[1] = sqrt(kv[2]*kv[2]+2.*kv[2]*kv[0]*xv[2]+kv[0]*kv[0]);
         kargs[3] = sqrt(kv[0]*kv[0]+2.*kv[0]*kv[1]*xv[1]+kv[1]*kv[1]);
-        iow.initn2(vars[0],kv,xv,kargs,vars[1],vars[2],vars[3],vars[4],vars[6],model);
+        iow.initn2(pars,extpars,kv,xv,kargs,model);
         p22 = pow2(G2_nk);
         p13 = G1_nk * G3_nk;
     return pow2(r)*2.*P_L(k*r)*(P_L(kargs[0])*p22 + 3.*P_L(k)*p13);
@@ -701,7 +711,8 @@ static double ploopn2_mgtt(const PowerSpectrum& P_L, double vars[], int model, d
 
 
 // pseudo 1-loop matter power spectrum (1812.05594)
-static double ploopn2_mgdd_pseudo( const PowerSpectrum& P_L, double vars[], int model, double k, double r, double x){
+// density-density
+static double ploopn2_mgdd_pseudo( const PowerSpectrum& P_L, double pars[], double extpars[], int model, double k, double r, double x){
   double kargs[4],kv[3],xv[3], p22,p13;
   // tolerance for ode solver (see SpecialFunctions.cpp, initn2). This encounters a singularity if k'.-k' = -1 exactly.
   double tol = 1e-8;
@@ -717,27 +728,32 @@ static double ploopn2_mgdd_pseudo( const PowerSpectrum& P_L, double vars[], int 
         kargs[2] = sqrt(kv[1]*kv[1]+2.*kv[1]*kv[2]*xv[0]+kv[2]*kv[2]);
         kargs[1] = sqrt(kv[2]*kv[2]+2.*kv[2]*kv[0]*xv[2]+kv[0]*kv[0]);
         kargs[3] = sqrt(kv[0]*kv[0]+2.*kv[0]*kv[1]*xv[1]+kv[1]*kv[1]);
-        iow.initn2_pseudo(vars[0],kv,xv,kargs,vars[1],vars[2],vars[3],vars[4],vars[6],model);
+        iow.initn2(pars,extpars,kv,xv,kargs,1); // GR initialisation
+      // iow.initn2_unscr(pars,extpars,kv,xv,kargs,model); // unscreened approximation
         p22 = pow2(F2_nk);
         p13 = F1_nk*F3_nk;
 
 	// for full pseudo we need to multiply by the modified growth / LCDM growth
         double normalisation = pow4(F1_nk);
 
-        iow.initn_lin(vars[0], k*r, vars[1],vars[2], vars[3],vars[4],model);
+        iow.initn_lin(pars,extpars, k*r, model);
         double pnorm = pow2(F1_nk);
-        iow.initn_lin(vars[0], k, vars[1],vars[2], vars[3],vars[4],model);
-        double knorm = pow2(F1_nk);
-        iow.initn_lin(vars[0], kargs[0], vars[1],vars[2], vars[3],vars[4],model);
+        iow.initn_lin(pars,extpars, kargs[0], model);
         double kmpnorm = pow2(F1_nk);
+        iow.initn_lin(pars,extpars, k, model);
+        double knorm = pow2(F1_nk);
 
     return pow2(r)*2.*P_L(k*r)*pnorm*(P_L(kargs[0])*p22*kmpnorm + 3.*P_L(k)*p13*knorm) / normalisation;
 }
 
 
 // Choose a {0,...,4}: P_linear, P_dd,P_dt, P_tt (MG), P_dd pseudo (see HALO.cpp)
-// vars: 0 =  scale factor, 1= omega_m(z=0), 2 = mg param , 3 = mg param, 4 = mg param,
-double SPT::PLOOPn2(int a, double vars[], int model, double k, double err) const{
+
+//pars: 0 =  scale factor, 1= omega_m(z=0), 2 = Omega_nu(z=0)
+// extpars - beyond lcdm parameters
+
+// See SpecialFunctions.h for integral limits
+double SPT::PLOOPn2(int a, double k, double pars[], double extpars[], double err, int model) const{
   IOW iow;
 double loop, tree;
 double prefac = k*k*k/(4*M_PI*M_PI)/pow4(dnorm_spt);
@@ -745,26 +761,26 @@ real KMAX = QMAXp/k;
 real KMIN = QMINp/k;
 double c[2] = {KMIN,-1.};
 double d[2] = {KMAX, 1.};
+
 switch (a) {
   case 0:
-    iow.initn_lin(vars[0], k, vars[1],vars[2], vars[3],vars[4],model);
+    iow.initn_lin(pars,extpars, k, model);
     tree = pow2(F1_nk/dnorm_spt)*P_L(k);
     return tree;
   case 1:
-    loop = prefac*Integrate<2>(bind(ploopn2_mgdd,cref(P_L),vars,model,k,std::placeholders::_1,std::placeholders::_2), c, d, err);
+    loop = prefac*Integrate<2>(bind(ploopn2_mgdd,cref(P_L),pars,extpars,model,k,std::placeholders::_1,std::placeholders::_2), c, d, err);
     tree = pow2(F1_nk/dnorm_spt)*P_L(k);
     return loop+tree;
   case 2:
-    loop = prefac*Integrate<2>(bind(ploopn2_mgdt,cref(P_L),vars,model,k,std::placeholders::_1,std::placeholders::_2), c, d, err,1e-2);
+    loop = prefac*Integrate<2>(bind(ploopn2_mgdt,cref(P_L),pars,extpars,model,k,std::placeholders::_1,std::placeholders::_2), c, d, err,1e-2);
     tree = (G1_nk*F1_nk)/pow2(dnorm_spt)*P_L(k);
     return loop+tree;
   case 3:
-    loop = prefac*Integrate<2>(bind(ploopn2_mgtt,cref(P_L),vars,model,k,std::placeholders::_1,std::placeholders::_2), c, d, err,1e-2);
+    loop = prefac*Integrate<2>(bind(ploopn2_mgtt,cref(P_L),pars,extpars,model,k,std::placeholders::_1,std::placeholders::_2), c, d, err,1e-2);
     tree = pow2(G1_nk/dnorm_spt)*P_L(k);
     return loop+tree;
   case 4:
-    loop = prefac*Integrate<2>(bind(ploopn2_mgdd_pseudo,cref(P_L),vars,model,k,std::placeholders::_1,std::placeholders::_2), c, d, err);
-    iow.initn_lin(vars[0], k, vars[1],vars[2], vars[3],vars[4],model);
+    loop = prefac*Integrate<2>(bind(ploopn2_mgdd_pseudo,cref(P_L),pars,extpars,model,k,std::placeholders::_1,std::placeholders::_2), c, d, err);
     tree = pow2(F1_nk/dnorm_spt)*P_L(k);
     return loop+tree;
     default:
@@ -774,10 +790,9 @@ switch (a) {
 
 
 
-/* Massive neutrinos 1-loop real and pseudo spectra as described in https://arxiv.org/abs/1902.10692*/
-
-
-static double ploopn2_mgdd_nu( const PowerSpectrum& P_L, double vars[], int model, double k, double r, double x){
+/* Massive neutrinos 1-loop real and pseudo spectra as described in 1902.10692*/
+// density-density
+static double ploopn2_mgdd_nu( const PowerSpectrum& P_L, double pars[], double extpars[], int model, double k, double r, double x){
   double kargs[4],kv[3],xv[3], p22,p13;
   // tolerance for ode solver (see SpecialFunctions.cpp, initn2). This encounters a singularity if k'.-k' = -1 exactly.
   double tol = 1e-8;
@@ -793,7 +808,7 @@ static double ploopn2_mgdd_nu( const PowerSpectrum& P_L, double vars[], int mode
         kargs[2] = sqrt(kv[1]*kv[1]+2.*kv[1]*kv[2]*xv[0]+kv[2]*kv[2]);
         kargs[1] = sqrt(kv[2]*kv[2]+2.*kv[2]*kv[0]*xv[2]+kv[0]*kv[0]);
         kargs[3] = sqrt(kv[0]*kv[0]+2.*kv[0]*kv[1]*xv[1]+kv[1]*kv[1]);
-        iow.initn2(vars[0],kv,xv,kargs,vars[1],vars[2],vars[3],vars[4],vars[6],model);
+        iow.initn2(pars,extpars,kv,xv,kargs,model); // GR initialisation
         p22 = pow2(F2_nk);
         p13 = F3_nk;
 
@@ -801,7 +816,8 @@ static double ploopn2_mgdd_nu( const PowerSpectrum& P_L, double vars[], int mode
 }
 
 
-static double ploopn2_mgdd_pseudo_nu( const PowerSpectrum& P_L, double vars[], int model, double k, double r, double x){
+// pseudo spectrum
+static double ploopn2_mgdd_pseudo_nu( const PowerSpectrum& P_L, double pars[], double extpars[], int model, double k, double r, double x){
   double kargs[4],kv[3],xv[3], p22,p13;
   // tolerance for ode solver (see SpecialFunctions.cpp, initn2). This encounters a singularity if k'.-k' = -1 exactly.
   double tol = 1e-8;
@@ -818,7 +834,9 @@ static double ploopn2_mgdd_pseudo_nu( const PowerSpectrum& P_L, double vars[], i
         kargs[1] = sqrt(kv[2]*kv[2]+2.*kv[2]*kv[0]*xv[2]+kv[0]*kv[0]);
         kargs[3] = sqrt(kv[0]*kv[0]+2.*kv[0]*kv[1]*xv[1]+kv[1]*kv[1]);
 	// can replace this initialisation to the F2 and F3 EdS kernels for quicker run (only in full pseudo computation, not in unscreened approx)
-        iow.initn2_pseudo(vars[0],kv,xv,kargs,vars[1],vars[2],vars[3],vars[4],vars[6],model);
+        iow.initn2(pars,extpars,kv,xv,kargs,1); // GR initialisation
+        // iow.initn2_unscr(pars,extpars,kv,xv,kargs,model); // unscreened approximation
+
         p22 = pow2(F2_nk);
         p13 = F3_nk;
 
@@ -826,7 +844,8 @@ static double ploopn2_mgdd_pseudo_nu( const PowerSpectrum& P_L, double vars[], i
 }
 
 // Same as PLOOPn2 but for massive neutrino case
-double SPT::PLOOPn2_nu(int a, double vars[], int model, double k, double err) const{
+// Here it is assumed that P_L is the target real cosmology already and is not rescaled - i.e. modcamb = true (see HALO.h)
+double SPT::PLOOPn2_nu(int a, double k, double pars[], double extpars[], double err, int model) const{
   IOW iow;
 double loop, tree;
 double prefac = k*k*k/(4*M_PI*M_PI);
@@ -836,15 +855,15 @@ double c[2] = {KMIN,-1.};
 double d[2] = {KMAX, 1.};
 switch (a) {
   case 0:
-    iow.initn_lin(vars[0], k, vars[1],vars[2], vars[3],vars[4],model);
+    iow.initn_lin(pars,extpars, k, model);
     tree = P_L(k);
     return tree;
   case 1:
-    loop = prefac*Integrate<2>(bind(ploopn2_mgdd_nu,cref(P_L),vars,model,k,std::placeholders::_1,std::placeholders::_2), c, d, err);
+    loop = prefac*Integrate<2>(bind(ploopn2_mgdd_nu,cref(P_L),pars,extpars,model,k,std::placeholders::_1,std::placeholders::_2), c, d, err);
     tree = P_L(k);
     return loop+tree;
   case 2:
-    loop = prefac*Integrate<2>(bind(ploopn2_mgdd_pseudo_nu,cref(P_L),vars,model,k,std::placeholders::_1,std::placeholders::_2), c, d, err);
+    loop = prefac*Integrate<2>(bind(ploopn2_mgdd_pseudo_nu,cref(P_L),pars,extpars,model,k,std::placeholders::_1,std::placeholders::_2), c, d, err);
     tree = P_L(k);
     return loop+tree;
     default:
@@ -854,16 +873,23 @@ switch (a) {
 
 
 
+
 // P_loop(k0,z) array initialisation for real and pseudo spectra used in reactions: 1812.05594 (HALO.cpp)
 // The pseudo spectrum simply omits screening terms (gamma_2 = gamma_3 = 0) (1606.02520)
-// ploopr - real spectrum array
-// ploopp - pseudo spectrum array
+// ploopr - real spectrum array to be initialised
+// ploopp - pseudo spectrum array to be initialised
 // redshifts - list of redshifts to compute spectra at
 // noz - number of redshifts
-// vars:  1 = omega0,  2 = mg param
+// pars:  1 = Omega_{m,0},  2 = Omega_{nu,0}
 // k0 - scale at which to compute Spectra
+// extrapars - beyond lcdm parameters
 
-void SPT::ploop_init(double ploopr[], double ploopp[], double redshifts[], int noz, double vars[], int model, double k0){
+void SPT::ploop_init(double ploopr[], double ploopp[], double redshifts[], int noz, double pars[], double extpars[], double k0, int model){
+
+  if ( fabs(pars[2])>1e-6) {
+    warning("Omega_nu is non-zero but you are assuming a LCDM z=0 input spectrum");
+  }
+
   IOW iow;
 
   double res[noz],resp[noz]; // stores loop integral results for real and pseudo spectra
@@ -907,7 +933,7 @@ void SPT::ploop_init(double ploopr[], double ploopp[], double redshifts[], int n
           kargs[1] = sqrt(kv[2]*kv[2]+2.*kv[2]*kv[0]*xv[2]+kv[0]*kv[0]);
           kargs[3] = sqrt(kv[0]*kv[0]+2.*kv[0]*kv[1]*xv[1]+kv[1]*kv[1]);
           // solve differential equations numerically
-          iow.initn3(redshifts, noz, kv,xv,kargs,vars[1],vars[2],vars[3],vars[4],mykernelarray,model);
+          iow.initn3(pars, extpars, redshifts, noz, kv, xv, kargs, mykernelarray,model);
 
  	  double p22[noz],p13[noz], p22p[noz],p13p[noz];
           // assign all redshifts
@@ -962,12 +988,16 @@ for(int zi = 0; zi<noz; zi++){
 // ploopp - pseudo spectrum array to be filled by ploop_init_nu
 // redshifts - list of redshifts to compute spectra at
 // noz - number of redshifts
-// vars:  1 = omega0,  2 = mg param
+// pars:  1 = Omega_{m,0},  2 = Omega_{nu,0}
 // k0 - scale at which to compute Spectra
+// extrapars - beyond lcdm parameters
 
-
-void SPT::ploop_init_nu(double pkz0[], double pkz1[][50], double pkz2[][50*32], double pkz0p[], double pkz1p[][50], double pkz2p[][50*32], double ploopr[], double ploopp[], double redshifts[], int noz, double vars[], int model, double k0){
+void SPT::ploop_init_nu(double pkz0[], double pkz1[][50], double pkz2[][50*32], double pkz0p[], double pkz1p[][50], double pkz2p[][50*32], double ploopr[], double ploopp[], double redshifts[], int noz, double pars[], double extpars[], double k0, int model){
   IOW iow;
+
+  if ( fabs(pars[2])< 1e-6) {
+    warning("Omega_nu is zero but you are assuming a direct P(k) input spectrum");
+  }
 
   double res[noz],resp[noz]; // stores loop integral results for real and pseudo spectra
   const int loop_N = 50; // steps in trap rule for loop integral in integrated wave vector p. 50 ensures sub percent accuracy but may be optimised.
@@ -1010,7 +1040,7 @@ void SPT::ploop_init_nu(double pkz0[], double pkz1[][50], double pkz2[][50*32], 
           kargs[1] = sqrt(kv[2]*kv[2]+2.*kv[2]*kv[0]*xv[2]+kv[0]*kv[0]);
           kargs[3] = sqrt(kv[0]*kv[0]+2.*kv[0]*kv[1]*xv[1]+kv[1]*kv[1]);
           // solve differential equations numerically
-          iow.initn3(redshifts, noz, kv,xv,kargs,vars[1],vars[2],vars[3],vars[4],mykernelarray, vars[6], model);
+          iow.initn3(pars, extpars, redshifts, noz, kv, xv, kargs, mykernelarray,model);
 
         //  printf("%d \n", i);
 
@@ -1127,7 +1157,6 @@ void parscamb(const PowerSpectrum& P_L)
 }
 
 // Initialises components
-
 void SPT::phinit(double scalef, double omega0)const{
     parscamb(cref(P_L));
 
@@ -1206,9 +1235,9 @@ double SPT::PHALO(double k) const{
 ///////REDSHIFT SPACE MODEL-TNS Correction TERMS///////////
 ///////////////////////////////////////////////
 
-/* Non vanishing A, B and C terms */
+/* Non vanishing A, B and DGP terms */
 
-// Notes for analytic ABC terms : DEFINITION OF THETA= - DEL V / aHf (and is accounted for in definition of Cross Bispectrum)
+// Notes for analytic AB + DGP terms : DEFINITION OF THETA= - DEL V / aHf (and is accounted for in definition of Cross Bispectrum)
 // See http://arxiv.org/pdf/1006.0699v1.pdf for derivation
 // NOTE ON PARAMETERS: x =k1.k/(k^2*r)
 
@@ -1403,7 +1432,7 @@ static real midintabc(double u0[],real bl, int a, const PowerSpectrum& P_L, real
   real YMAX = ATS(k,r);
 
 	real F0,D1,X1;
-			F0 = rempf*fdgp_spt;
+			F0 = fdgp_spt;
 			D1 = D_spt;
 			X1 = 1.;
       real u01 = u0[0];
@@ -1454,7 +1483,7 @@ static real midintabc(double u0[],real bl, int a, const PowerSpectrum& P_L, real
 
 							+F0*F0*F0*F0*u04*Integrate(bind(ABC, 25,  cref(P_L), k,  r, std::placeholders::_1), YMIN, YMAX , 1e-3*P_L(k)))
 
-	//C - nDGP analytic
+	// nDGP analytic
 
 		  +       X1*D1*D1*2./pow4(dnorm_spt)*(F0*pow2(bl)*u01*(Integrate(bind(ABC, 26, cref(P_L), k, r, std::placeholders::_1),   YMIN, YMAX ,  1e-3*P_L(k))
 										+ Integrate(bind(ABC, 31, cref(P_L), k, r, std::placeholders::_1),   YMIN, YMAX ,  1e-3*P_L(k))
@@ -1486,7 +1515,7 @@ static real midintabc(double u0[],real bl, int a, const PowerSpectrum& P_L, real
 // a = 2 : Quadrupole
 // a = 3 : Hexdecapole
 
-// For A or B or C seperated : just remove as necessary.
+// For A or B or DGP seperated : just remove as necessary.
 real SPT::AB(real k, real bl, real sigmav, int a) const{
       int n3 = 300;
       real KMAX = QMAXp/k;
@@ -1511,6 +1540,7 @@ real SPT::AB(real k, real bl, real sigmav, int a) const{
       }
 
 
+// two dimensional terms
 real SPT::AB_mu(real k, real bl, real u, int a) const{
       int n3 = 300;
       real KMAX = QMAXp/k;
@@ -1538,12 +1568,10 @@ real SPT::AB_mu(real k, real bl, real u, int a) const{
 
 /*NUMERICAL TNS WITH VARIOUS BIAS PRESCRIPTIONS */
 
-
 //// Integrands for numerical TNS //////
 
-
 // Q-bias
-static double ptns_qb( const PowerSpectrum& P_L, double u0[], double vars[], int model, double bk, double k, double r, double x){
+static double ptns_qb( const PowerSpectrum& P_L, double u0[], double pars[], double extpars[], int model, double bk, double k, double r, double x){
   double kargs[4],kv[3],xv[3], abct, pdd, pdd22, pdd13, pdt, pdt22, pdt13, ptt, ptt22, ptt13, prefac, plk, plkmp, plkr,d,r2,r3,x2,x3,x4;
   prefac = k*k*k/(4*M_PI*M_PI)/pow4(dnorm_spt);
   d = 1.+ r*r - 2.*r*x;
@@ -1567,7 +1595,7 @@ static double ptns_qb( const PowerSpectrum& P_L, double u0[], double vars[], int
         kargs[2] = sqrt(kv[1]*kv[1]+2.*kv[1]*kv[2]*xv[0]+kv[2]*kv[2]);
         kargs[1] = sqrt(kv[2]*kv[2]+2.*kv[2]*kv[0]*xv[2]+kv[0]*kv[0]);
         kargs[3] = sqrt(kv[0]*kv[0]+2.*kv[0]*kv[1]*xv[1]+kv[1]*kv[1]);
-        iow.initn_rsd(vars[0],kv,xv,kargs,vars[1],vars[2],vars[3],vars[4],model);
+        iow.initn_rsd(pars,extpars,kv,xv,kargs,model);
 
         pdd22 = pow2(F2_nk);
         pdd13 = F1_nk*F3_nk;
@@ -1651,9 +1679,9 @@ static double ptns_qb( const PowerSpectrum& P_L, double u0[], double vars[], int
     }
 
 
-//// Lagrangian bias of Roy and Mac Donald
+//// Lagrangian bias of Roy and Mac Donald (LCDM only)
 
-static double ptns_lagb( const PowerSpectrum& P_L, double u0[], double vars[], int model, double bias[], double k, double r, double x){
+static double ptns_lagb( const PowerSpectrum& P_L, double u0[], double pars[], double extpars[], int model, double bias[], double k, double r, double x){
     double kargs[4],kv[3],xv[3], abct, pdd, pdd22, pdd13, pdt, pdt22, pdt13, ptt, ptt22, ptt13, prefac, plk, plkmp, plkr,d,r2,r3,x2,x3,x4;
     prefac = k*k*k/(4*M_PI*M_PI)/pow4(dnorm_spt);
     d = 1.+ r*r - 2.*r*x;
@@ -1676,7 +1704,7 @@ static double ptns_lagb( const PowerSpectrum& P_L, double u0[], double vars[], i
           kargs[2] = sqrt(kv[1]*kv[1]+2.*kv[1]*kv[2]*xv[0]+kv[2]*kv[2]);
           kargs[1] = sqrt(kv[2]*kv[2]+2.*kv[2]*kv[0]*xv[2]+kv[0]*kv[0]);
           kargs[3] = sqrt(kv[0]*kv[0]+2.*kv[0]*kv[1]*xv[1]+kv[1]*kv[1]);
-          iow.initn_rsd(vars[0],kv,xv,kargs,vars[1],vars[2],vars[3],vars[4],model);
+          iow.initn_rsd(pars,extpars,kv,xv,kargs,model);
 
           pdd22 = pow2(F2_nk);
           pdd13 = F1_nk*F3_nk;
@@ -1789,7 +1817,7 @@ static double ptns_lagb( const PowerSpectrum& P_L, double u0[], double vars[], i
 
 
   //// Integrands for numerical RSD SPT 1-loop spectrum //////
-  static double pspt( const PowerSpectrum& P_L, double u0[], double vars[], int model, double bk, double k, double r, double x){
+  static double pspt( const PowerSpectrum& P_L, double u0[], double pars[], double extpars[], int model, double bk, double k, double r, double x){
     double kargs[4],kv[3],xv[3], abct, pdd, pdd22, pdd13, pdt, pdt22, pdt13, ptt, ptt22, ptt13, prefac, plk, plkmp, plkr;
     double d,d2,r2,r3,x2,x3,x4,r4,x6,x5;
     prefac = k*k*k/(4*M_PI*M_PI)/pow4(dnorm_spt);
@@ -1813,7 +1841,7 @@ static double ptns_lagb( const PowerSpectrum& P_L, double u0[], double vars[], i
           kargs[2] = sqrt(kv[1]*kv[1]+2.*kv[1]*kv[2]*xv[0]+kv[2]*kv[2]);
           kargs[1] = sqrt(kv[2]*kv[2]+2.*kv[2]*kv[0]*xv[2]+kv[0]*kv[0]);
           kargs[3] = sqrt(kv[0]*kv[0]+2.*kv[0]*kv[1]*xv[1]+kv[1]*kv[1]);
-          iow.initn_rsd(vars[0],kv,xv,kargs,vars[1],vars[2],vars[3],vars[4],model);
+          iow.initn_rsd(pars,extpars,kv,xv,kargs,model);
 
           pdd22 = pow2(F2_nk);
           pdd13 = F1_nk*F3_nk;
@@ -1921,69 +1949,75 @@ static double ptns_lagb( const PowerSpectrum& P_L, double u0[], double vars[], i
 
 
 // Velocity dispersion integrand
-static real vel_disp_lin(const PowerSpectrum& P_L, double vars[], int model, double q){
+static real vel_disp_lin(const PowerSpectrum& P_L, double pars[], double extpars[], int model, double q){
   IOW iow;
-  iow.initn_lin(vars[0], q, vars[1],vars[2], vars[3],vars[4],model);
+  iow.initn_lin(pars,extpars,q,model);
   double growth = pow2(G1_nk/dnorm_spt);
   return  P_L(q)*growth/(6.*pow2(M_PI));
 }
 
 
 // sigma_v^2
-real SPT::sigmav_init(double vars[], int model) const{
-    return Integrate(bind(vel_disp_lin, cref(P_L), vars, model, std::placeholders::_1), QMINp, QMAXp, epsrel);
+bool mysigvcheck=false; // make sure it is calculated for 1-loop SPT spectrum
+real SPT::sigmav_init(double pars[], double extpars[], int model) const{
+    mysigvcheck = true;
+    return Integrate(bind(vel_disp_lin, cref(P_L), pars, extpars, model, std::placeholders::_1), QMINp, QMAXp, epsrel);
   }
 
 /////// REDSHIFT SPACE MODIFIED GRAVITY SPECTRUM ////////
 // a {0,..,3}  : 0=Kaiser, 1 = TNS q-bias [1507.01592], 2 = TNS lag bias (MG) - incomplete!, 3 = 1-loop SPT (MG) [see Eq.23 of 1006.0699 for example]
 // b {1,2,3} :  1 = monopole, 2 = quadrupole, 3 = hexdecapole
 // bias[] :  0 = linear bias, 1,2 = qbias param or lagrangian bias params (b_2, N)
-// vars: 0 =  scale factor, 1= omega_m(z=0), 2 = mg param , 3 = mg param, 4 = mg param,
-// pars[0] -  sigma_v free parameter for TNS and Kaiser or velocity dispersion
+// pars: 0 =  scale factor, 1= omega_m(z=0)
+// extpars - beyond lcdm parameters
+// rsdpars[0] -  sigma_v free parameter for TNS and Kaiser or velocity dispersion
 // err -  absolute error in differential equation solver
-
-double SPT::PRSD_mg(int a, int b, double bias[], double vars[], int model, double pars[], double k, double err) const{
+double SPT::PRSD_mg(int rsd_model, int b, double pars[], double extpars[], double rsdpars[],  double bias[], double k, double err, int model) const{
 IOW iow;
 double linear, nonlinear, u0x[8], bk, bl, stoch, kaiser_term, myd2, myf, k2, b2;
 real KMAX = QMAXp/k;
 real KMIN = QMINp/k;
-double c[2] = {KMIN,-0.99999999};
-double d[2] = {KMAX, 0.99999999};
-switch (a) {
+double tol = 1e-8;
+double c[2] = {KMIN,-1.+tol};
+double d[2] = {KMAX, 1.-tol};
+switch (rsd_model) {
   case 0:
       bl = bias[0];
-      iow.initn_lin(vars[0], k, vars[1],vars[2], vars[3], vars[4],model);
-      linear = pow2(F1_nk*bl/dnorm_spt)*(factL(k, pars[0], 1., 1., 0, b, 7)*P_L(k) - 2.*(G1_nk/F1_nk/bl)*factL(k, pars[0], 1., 1., 1, b, 7)*P_L(k) + pow2(G1_nk/F1_nk/bl)*factL(k, pars[0], 1., 1., 2, b, 7)* P_L(k));
-
+      iow.initn_lin(pars,extpars,k,model);
+      linear = pow2(F1_nk*bl/dnorm_spt)*(factL(k, rsdpars[0], 1., 1., 0, b, 7)*P_L(k) - 2.*(G1_nk/F1_nk/bl)*factL(k, pars[0], 1., 1., 1, b, 7)*P_L(k) + pow2(G1_nk/F1_nk/bl)*factL(k, pars[0], 1., 1., 2, b, 7)* P_L(k));
     return linear;
 
   case 1:
     bk =  bias[0]*sqrt((1.+bias[1]*pow2(k))/(1.+bias[2]*k));
 // multipole prefactors or powers of mu
-    u0x[0]=factL(k, pars[0], 1., 1., 1, b, 7);
-    u0x[1]=factL(k, pars[0], 1., 1., 2, b, 7);
-    u0x[2]=factL(k, pars[0], 1., 1., 3, b, 7);
-    u0x[3]=factL(k, pars[0], 1., 1., 4, b, 7);
-    u0x[4]=factL(k, pars[0], 1., 1., 0, b, 7);
-    nonlinear = Integrate<2>(bind(ptns_qb,cref(P_L), u0x, vars, model, bk, k, std::placeholders::_1,std::placeholders::_2), c, d, err);
+    u0x[0]=factL(k, rsdpars[0], 1., 1., 1, b, 7);
+    u0x[1]=factL(k, rsdpars[0], 1., 1., 2, b, 7);
+    u0x[2]=factL(k, rsdpars[0], 1., 1., 3, b, 7);
+    u0x[3]=factL(k, rsdpars[0], 1., 1., 4, b, 7);
+    u0x[4]=factL(k, rsdpars[0], 1., 1., 0, b, 7);
+    nonlinear = Integrate<2>(bind(ptns_qb,cref(P_L), u0x, pars, extpars, model, bk, k, std::placeholders::_1,std::placeholders::_2), c, d, err);
     linear = pow2(F1_nk*bias[0]/dnorm_spt)*(u0x[4]*P_L(k) - 2.*(G1_nk/F1_nk/bias[0])*u0x[0]*P_L(k) + pow2(G1_nk/F1_nk/bias[0])*u0x[1]*P_L(k));
 
     return linear + nonlinear;
 
   case 2:
 // multipole prefactors or powers of mu
-    u0x[0]=factL(k, pars[0], 1., 1., 1, b, 7);
-    u0x[1]=factL(k, pars[0], 1., 1., 2, b, 7);
-    u0x[2]=factL(k, pars[0], 1., 1., 3, b, 7);
-    u0x[3]=factL(k, pars[0], 1., 1., 4, b, 7);
-    u0x[4]=factL(k, pars[0], 1., 1., 0, b, 7);
-    nonlinear = Integrate<2>(bind(ptns_lagb,cref(P_L), u0x, vars, model, bias, k,std::placeholders::_1,std::placeholders::_2), c, d, err);
+    u0x[0]=factL(k, rsdpars[0], 1., 1., 1, b, 7);
+    u0x[1]=factL(k, rsdpars[0], 1., 1., 2, b, 7);
+    u0x[2]=factL(k, rsdpars[0], 1., 1., 3, b, 7);
+    u0x[3]=factL(k, rsdpars[0], 1., 1., 4, b, 7);
+    u0x[4]=factL(k, rsdpars[0], 1., 1., 0, b, 7);
+    nonlinear = Integrate<2>(bind(ptns_lagb,cref(P_L), u0x, pars, extpars, model, bias, k,std::placeholders::_1,std::placeholders::_2), c, d, err);
     linear = pow2(F1_nk*bias[0]/dnorm_spt)*(u0x[4]*P_L(k) - 2.*(G1_nk/F1_nk/bias[0])*u0x[0]*P_L(k) + pow2(G1_nk/F1_nk/bias[0])*u0x[1]*P_L(k));
     stoch =  u0x[4]*bias[2];
 
     return linear + nonlinear + stoch;
 
   case 3:
+      if (!mysigvcheck) {
+        warning("You haven't calculated linear simga_v - for 1-loop spectrum rsdpars[0] = spt.sigmav_init(vars, mymodel)");
+      }
+
       k2 = pow2(k);
       b2 = pow2(bias[0]);
   // multipole prefactors or powers of mu
@@ -1992,21 +2026,20 @@ switch (a) {
       u0x[2] = factL(k,  0., 1., 1., 3 , b,  1); // u6
       u0x[3] = factL(k,  0., 1., 1., 4 , b,  1); // u8
       u0x[4] = factL(k,  0., 1., 1., 0 , b,  1); // u0
-      u0x[5] = factL(k, pars[0]*k2, 1., 1., 0 , b,  8); // u0i : (k sigmav mu)^2  [pars[0] = sigmav]
-      u0x[6] = factL(k, pars[0]*k2, 1., 1., 1 , b,  8); // u2i : (k sigmav mu)^2 u^2
-      u0x[7] = factL(k, pars[0]*k2, 1., 1., 2 , b,  8); // u4i : (k sigmav mu)^2 u^4
+      u0x[5] = factL(k, rsdpars[0]*k2, 1., 1., 0 , b,  8); // u0i : (k sigmav mu)^2  [pars[0] = sigmav]
+      u0x[6] = factL(k, rsdpars[0]*k2, 1., 1., 1 , b,  8); // u2i : (k sigmav mu)^2 u^2
+      u0x[7] = factL(k, rsdpars[0]*k2, 1., 1., 2 , b,  8); // u4i : (k sigmav mu)^2 u^4
 
-      nonlinear = Integrate<2>(bind(pspt,cref(P_L), u0x, vars, model, bias[0], k, std::placeholders::_1,std::placeholders::_2), c, d, err);
+      nonlinear = Integrate<2>(bind(pspt,cref(P_L), u0x, pars, extpars, model, bias[0], k, std::placeholders::_1,std::placeholders::_2), c, d, err);
       myd2 = pow2(F1_nk/dnorm_spt);
       myf = -G1_nk/F1_nk;
       linear = (u0x[4]*myd2*pow2(bias[0])*P_L(k) + 2.*u0x[0]*myd2*myf*bias[0]*P_L(k) + u0x[1]*myd2*pow2(myf)*b2*P_L(k));
       kaiser_term = -(u0x[5]*myd2*pow2(bias[0])*P_L(k) + 2.*u0x[6]*myd2*myf*bias[0]*P_L(k) + u0x[7]*myd2*pow2(myf)*b2*P_L(k));
 
-
-      return linear + nonlinear + kaiser_term;
+      return linear + nonlinear +  kaiser_term;
 
   default:
-  warning("SPT: invalid indices, a = %d \n", a);
+  warning("SPT: invalid indices, rsd_model = %d \n", rsd_model);
       return 0;
     }
   }
