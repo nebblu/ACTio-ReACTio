@@ -36,8 +36,10 @@ using std::bind;
 // Throughout the values of pars, extpars and model are:
 // pars: base parameters. Currently used: 0: scale factor, 1: total matter fraction today, 2: total massive neutrino fraction today
 // extpars: extended parameters. extpars[0] = Omega_rc for nDGP, fr0 for f(R), w0 for CPL, extpars[1] = wa for CPL
+// for EFTofDE and LCDM background we have extpars[i] = alpha_{K0},alpha_{B0},alpha_{M0}
+// for KGB with CPL background we have extpars[i] = w0, wa, alpha_{K0},alpha_{B0},alpha_{M0}
 // model selects MG or DE model (1 = GR, MG: 2 = f(R), 3 = DGP, DE models: 4 = quintessence, 5 = CPL, 6 = HyP)
-
+// 7-10: EFTofDE with PPF, unscreened, superscreened and KGB non-linear implementations.
 
 
 /* BACKGROUND QUANTITIES - LCDM - assumed in modified gravity computations */
@@ -129,6 +131,25 @@ double HAg(double a, double omega0, double extpars[], int model){
 			omegaL= (1.-omega0)*omegaf;
 			return  sqrt(omega0/pow(a,3)+omegaL);
 
+			case 7:
+			/* EFTofDE: PPF - set to LCDM background for now  */
+			return HA( a, omega0);
+
+			case 8:
+			/* EFTofDE: unscreened approx */
+			return  HA( a, omega0);
+
+			case 9:
+			/* EFTofDE: superscreened approx */
+			return  HA( a, omega0);
+
+			case 10:
+			/* KGB with CPL background  */
+			A = -3.*(1.+extpars[0]+extpars[1]);
+			omegaf = pow(a,A)*exp(3.*(-1.+a)*extpars[1]);
+			omegaL= (1.-omega0)*omegaf;
+			return  sqrt(omega0/pow(a,3)+omegaL);
+
 			default:
 					warning("SpecialFunctions: invalid model choice, model = %d \n", model);
 					return 0;
@@ -172,6 +193,25 @@ double HA1g(double a, double omega0, double extpars[], int model){
 	  omegaL= (1.-omega0)*omegaf;
 		return -3.*omega0/(2.*pow(a,3)) + A*a*omegaL/2.;
 
+		case 7:
+		/* EFTofDE: PPF - set to LCDM background for now  */
+		return HA1( a, omega0);
+
+		case 8:
+		/* EFTofDE: unscreened approximation */
+		return HA1( a, omega0);
+
+		case 9:
+		/* EFTofDE: superscreened approximation */
+		return HA1( a, omega0);
+
+		case 10:
+		/* KGB with CPL background  */
+		A = -3.*(1.+extpars[0]+extpars[1]);
+	  omegaf = pow(a,A)*exp(3*(-1.+a)*extpars[1]);
+		omegaL= (1.-omega0)*omegaf;
+	  return -3.*omega0/(2.*pow(a,3)) + (A+3.*a*extpars[1])*omegaL/2.;
+
 		default:
 				warning("SpecialFunctions: invalid model choice, model = %d \n", model);
 				return 0;
@@ -184,9 +224,9 @@ double HA2g(double a, double omega0, double extpars[], int model){
    	return -HA1g(a,omega0,extpars,model)/pow2(HAg(a,omega0,extpars,model));
 }
 
-//3/(2H^2) * Omega_m
+//3 H0^2/(2H^2) * Omega_{m,0}/a^3
 double HA2g2(double a, double omega0, double extpars[], int model){
-   	return 3.*omega0/(2.*pow2(HAg(a,omega0,extpars, model))*pow(a,3));
+   	return 3.*omega0/(2.*pow2(HAg(a,omega0,extpars,model))*pow(a,3));
 }
 
 
@@ -220,6 +260,24 @@ double  WEFF(double a, double omega0, double extpars[], int model){
 		 /* Hyp 5/04/2021: WORK IN PROGRESS - NEED TO DERIVE WEFF FOR HYP MODEL! SET TO LCDM  */
 		 return 2.*(1.-omega0);
 
+		 case 7:
+		 /* EFTofDE: PPF */
+		 return 2.*(1.-omega0);
+
+		 case 8:
+		 /* EFTofDE: unscreened approximation */
+		 return 2.*(1.-omega0);
+
+		 case 9:
+		 /* EFTofDE: superscreened approximation */
+		 return 2.*(1.-omega0);
+
+		 case 10:
+		 /* KGB with CPL background */
+		 h2 = pow2(HAg(a,omega0,extpars,model));
+		 return -(1.+3.*(extpars[0]+(1.-a)*extpars[1]))*(h2-omega0/pow3(a));
+
+
 		 default:
 				 warning("SpecialFunctions: invalid model choice, model = %d \n", model);
 				 return 0;
@@ -240,6 +298,17 @@ static double ker1(double u1){
 inline double beta(double a, double omega0, double omegarc){
 	return 1.+  HA(a,omega0)/sqrt(omegarc)*(1.+HA1(a,omega0)/(3.*HA(a,omega0)*HA(a,omega0)));}
 
+// time evolution form of alpha_i for EFTofDE
+// edit as necessary - but also edit the scale factor derivative function accordingly!
+inline double alphai_eft(double a, double omega0, double alpha0){
+	return alpha0*a;
+}
+
+// scale factor derivatives of alphai_eft
+inline double dalphai_eft(double a, double omega0, double alpha0){
+	return alpha0;
+}
+
 
 /* PERTURBATIVE POISSON EQUATION FUNCTIONS UP TO 3RD ORDER */
 //p1,p2,p3 are theory parameters
@@ -250,21 +319,85 @@ inline double beta(double a, double omega0, double omegarc){
 
 double mu(double a, double k0, double omega0, double extpars[], int model){
 	double h0 = 1./2997.92458;
-	double var1;
+	double var1, var2, alphaofa[5],dalphaofa[5];
 	switch(model) {
 		case 1:
-						return  1. ; // GR
+		/* GR */
+						return  1. ;
 		case 2:
+		/* f(R) Hu-Sawicki */
 						var1 = pow2(k0/a);
-	  				return 1. + var1/(3.*(var1+pow3(omega0/pow3(a)-4.*(omega0-1.))/(2.*extpars[0]/pow2(h0)*pow2(4.-3.*omega0)))); //f(R) Hu- Sawicki
+	  				return 1. + var1/(3.*(var1+pow3(omega0/pow3(a)-4.*(omega0-1.))/(2.*extpars[0]/pow2(h0)*pow2(4.-3.*omega0))));
     case 3:
-						return 1.+1./(3.*beta(a,omega0,extpars[0])); //nDGP
+		/* nDGP */
+						return 1.+1./(3.*beta(a,omega0,extpars[0]));
 		case 4:
-						return  1. ; // QUINTESSENCE
+		/* QUINTESSENCE */
+						return  1. ;
 		case 5:
-						return  1. ; // CPL
+		/* CPL */
+						return  1. ;
 		case 6:
-						return  1. ; // HYP
+		/* HYP */
+						return  1. ;
+
+		/* k->infinity limit of EFTofDE. See Eq. 26 of 1606.05339*/
+		// 7-10: PPF, unscreened, superscreened, KGB
+		case 7:
+						alphaofa[0] = alphai_eft(a,omega0,extpars[0]); // alpha_K(a) = alpha_{K0}*a
+						alphaofa[1] = alphai_eft(a,omega0,extpars[1]); // alpha_B(a) = alpha_{B0}*a
+						alphaofa[2] = alphai_eft(a,omega0,extpars[2]); // alpha_M(a) = alpha_{M0}*a
+						// scale factor derivatives of alpha_i(a)
+						dalphaofa[0] = dalphai_eft(a,omega0,extpars[0]);
+						dalphaofa[1] = dalphai_eft(a,omega0,extpars[1]);
+						dalphaofa[2] = dalphai_eft(a,omega0,extpars[2]);
+
+					  var1 = alphaofa[0] + 3./2.*pow2(alphaofa[1]); // alpha
+						var2 = 2./var1*( (1.-	alphaofa[1]/2.) * (alphaofa[1]/2. + HA2g(a,omega0,extpars,model))
+																					 + a*dalphaofa[1]/2.- HA2g2(a,omega0,extpars,model)); //cs^2
+					  return 1. + pow2(alphaofa[1])/(2.*var2*var1);
+
+	  case 8:
+						alphaofa[0] = alphai_eft(a,omega0,extpars[0]); // alpha_K(a) = alpha_{K0}*a
+						alphaofa[1] = alphai_eft(a,omega0,extpars[1]); // alpha_B(a) = alpha_{B0}*a
+						alphaofa[2] = alphai_eft(a,omega0,extpars[2]); // alpha_M(a) = alpha_{M0}*a
+						// scale factor derivatives of alpha_i(a)
+						dalphaofa[0] = dalphai_eft(a,omega0,extpars[0]);
+						dalphaofa[1] = dalphai_eft(a,omega0,extpars[1]);
+						dalphaofa[2] = dalphai_eft(a,omega0,extpars[2]);
+					  var1 = alphaofa[0] + 3./2.*pow2(alphaofa[1]); // alpha
+						var2 = 2./var1*( (1.-	alphaofa[1]/2.) * (alphaofa[1]/2. + HA2g(a,omega0,extpars,model))
+																					 + a*dalphaofa[1]/2.- HA2g2(a,omega0,extpars,model)); //cs^2
+					  return 1. + pow2(alphaofa[1])/(2.*var2*var1);
+
+		case 9:
+						alphaofa[0] = alphai_eft(a,omega0,extpars[0]); // alpha_K(a) = alpha_{K0}*a
+						alphaofa[1] = alphai_eft(a,omega0,extpars[1]); // alpha_B(a) = alpha_{B0}*a
+						alphaofa[2] = alphai_eft(a,omega0,extpars[2]); // alpha_M(a) = alpha_{M0}*a
+						// scale factor derivatives of alpha_i(a)
+						dalphaofa[0] = dalphai_eft(a,omega0,extpars[0]);
+						dalphaofa[1] = dalphai_eft(a,omega0,extpars[1]);
+						dalphaofa[2] = dalphai_eft(a,omega0,extpars[2]);
+
+					  var1 = alphaofa[0] + 3./2.*pow2(alphaofa[1]); // alpha
+						var2 = 2./var1*( (1.-	alphaofa[1]/2.) * (alphaofa[1]/2. + HA2g(a,omega0,extpars,model))
+																					 + a*dalphaofa[1]/2.- HA2g2(a,omega0,extpars,model)); //cs^2
+					  return 1. + pow2(alphaofa[1])/(2.*var2*var1);
+		case 10:
+		// CPL background so we use extpars[0]=w0, extpars[1]=wa
+						alphaofa[0] = alphai_eft(a,omega0,extpars[2]); // alpha_K(a) = alpha_{K0}*a
+						alphaofa[1] = alphai_eft(a,omega0,extpars[3]); // alpha_B(a) = alpha_{B0}*a
+						alphaofa[2] = alphai_eft(a,omega0,extpars[4]); // alpha_M(a) = alpha_{M0}*a
+						// scale factor derivatives of alpha_i(a)
+						dalphaofa[0] = dalphai_eft(a,omega0,extpars[2]);
+						dalphaofa[1] = dalphai_eft(a,omega0,extpars[3]);
+						dalphaofa[2] = dalphai_eft(a,omega0,extpars[4]);
+
+					  var1 = alphaofa[0] + 3./2.*pow2(alphaofa[1]); // alpha
+						var2 = 2./var1*( (1.-	alphaofa[1]/2.) * (alphaofa[1]/2. + HA2g(a,omega0,extpars,model))
+																					 + a*dalphaofa[1]/2.- HA2g2(a,omega0,extpars,model)); //cs^2
+					  return 1. + pow2(alphaofa[1])/(2.*var2*var1);
+
 		default:
 				warning("SpecialFunctions: invalid model choice, model = %d \n", model);
 				return 0;
@@ -277,8 +410,10 @@ double gamma2(double a, double omega0, double k0, double k1, double k2, double u
 	double var1,var2,var3,var4,var5,var6;
 	switch(model) {
 		case 1:
-						return  0. ; // GR
+		/* GR */
+						return  0. ;
 		case 2:
+		/* f(R) Hu- Sawicki */
 						var1 = pow3(a);
 						var2 = pow3(var1);
 						var3 = pow2(h0);
@@ -289,17 +424,31 @@ double gamma2(double a, double omega0, double k0, double k1, double k2, double u
 									    (48.*pow(var1,5)*pow2(extpars[0]/var3)*pow2(HA(a,omega0))*pow2(var4)
 									   *(var6+var5)
 									   *(pow2(k1/a)+var5)
-							 		   *(pow2(k2/a)+var5)); //f(R) Hu- Sawicki
+							 		   *(pow2(k2/a)+var5));
 		case 3:
-						return -1./(HA(a,omega0)*HA(a,omega0)*24.*pow(beta(a,omega0,extpars[0]),3)*extpars[0])*pow(omega0/(a*a*a),2)*ker1(u1); //nDGP
+		/* DGP */
+						return -1./(HA(a,omega0)*HA(a,omega0)*24.*pow(beta(a,omega0,extpars[0]),3)*extpars[0])*pow(omega0/(a*a*a),2)*ker1(u1);
 		case 4:
-						return  0. ; // QUINTESSENCE
+		/* QUINTESSENCE */
+						return  0. ;
 		case 5:
-						return  0. ; // CPL
+		/* CPL */
+						return  0. ;
 		case 6:
-						return  0. ; // HYP
+		/* HYP */
+						return  0. ;
 		case 7:
-						return  0. ; // EFTofDE linear approximation
+		/* EFTofDE PPF*/
+						return  0. ;
+		case 8:
+		/* EFTofDE - unscreened  approximation  */
+						return  0. ;
+		case 9:
+		/* EFTofDE - superscreened approximation  */
+						return  0. ;
+		case 10:
+		/* KGB  with CPL background*/
+						return  0. ;
 		default:
 		warning("SpecialFunctions: invalid model choice, model = %d \n", model);
 				return 0;
@@ -313,8 +462,10 @@ double gamma3(double a, double omega0, double k0, double k1, double k2, double k
 
 	switch(model) {
 	  case 1:
-						return  0. ; // GR
+		/* GR */
+						return  0. ;
 	  case 2:
+		/* f(R) Hu- Sawicki */
 						var1 = pow3(a);
 						var2 = pow3(var1);
 						var3 = pow2(h0);
@@ -335,17 +486,31 @@ double gamma3(double a, double omega0, double k0, double k1, double k2, double k
 						 										*(pow2(k3/a)+var5)
 						 				 					  *(var9+var5))
 						 		 								*(-45./8.*(var9+var5)/(var7*var10*(extpars[0]/var3))*pow(omega0-4.*var1*(omega0-1.),7)/var11/var4
-						 		   							+pow2(9./(4.*var6*var10)*pow(omega0-4.*var1*(omega0-1.),5)/var11)));  // Hu-Sawicki
+						 		   							+pow2(9./(4.*var6*var10)*pow(omega0-4.*var1*(omega0-1.),5)/var11)));
 	  case 3:
-							return 1./(HA(a,omega0)*HA(a,omega0)*144.*pow(beta(a,omega0,extpars[0]),5)*pow(extpars[0],2))*pow(omega0/(a*a*a),3)*ker1(u1)*ker1((k2*u2+k3*u3)/sqrt(k2*k2+2.*k2*k3*u1+k3*k3)); //nDGP
+		/* nDGP */
+							return 1./(HA(a,omega0)*HA(a,omega0)*144.*pow(beta(a,omega0,extpars[0]),5)*pow(extpars[0],2))*pow(omega0/(a*a*a),3)*ker1(u1)*ker1((k2*u2+k3*u3)/sqrt(k2*k2+2.*k2*k3*u1+k3*k3));
 		case 4:
-						return  0. ; // QUINTESSENCE
+		/* QUINTESSENCE */
+						return  0. ;
 		case 5:
-						return  0. ; // CPL
+		/* CPL */
+						return  0. ;
 		case 6:
-						return  0. ; // HYP
+		/* HYP */
+						return  0. ;
 		case 7:
-						return 0. ; // EFTofDE linear approximation
+		/* EFTofDE PPF  */
+						return  0. ;
+		case 8:
+		/* EFTofDE - unscreened  approximation  */
+						return  0. ;
+		case 9:
+		/* EFTofDE - superscreened approximation  */
+						return  0. ;
+		case 10:
+		/* KGB  with CPL background*/
+						return  0. ;
 		default:
 		warning("SpecialFunctions: invalid model choice, model = %d \n", model);
 				return 0;
@@ -357,8 +522,9 @@ double gamma3(double a, double omega0, double k0, double k1, double k2, double k
 
 double mymgF(double a, double yh, double yenv, double Rth, double omega0, double extpars[], double delta_initial, int model){
 	double h0 = 1./2997.92;
-	double dod, dod2, dRRth, fr0, var1, term1, term2;
-	double betadgp,xm3,xterm,delta;
+	double dod, dod2, dRRth, fr0, var1, var2, var3, term1, term2;
+	double betadgp,xm3,xterm,delta,deltaenv,Mvir;
+	double alphaofa[5],dalphaofa[5],lambda2; //EFTofDE
 	switch(model) {
 	  case 1:
 						return  0. ; // GR
@@ -389,14 +555,65 @@ double mymgF(double a, double yh, double yenv, double Rth, double omega0, double
 
 		      return 2./(3.*betadgp)*(sqrt(1.+ xm3)-1.)/xm3;
 
-		case 4:
-						return  0. ; // QUINTESSENCE
-		case 5:
-						return  0. ; // CPL
-		case 6:
-						return  0. ; // HYP
-		case 7:
-						return  0. ; // PPF
+			case 4:
+			/* QUINTESSENCE */
+							return  0. ;
+			case 5:
+			/* CPL */
+							return  0. ;
+			case 6:
+			/* HYP */
+							return  0. ;
+
+			case 7:
+			/* EFTofDE - PPF */
+			// p1-p7 : extpars[3-9] , extpars[0-2] : alpha_{K0}, alpha_{B0}, alpha_{M0}
+					var1 = extpars[3]/(extpars[3]-1.)*extpars[5]; // a
+					Mvir = pow3(Rth/0.1)*5.*omega0; // virial mass x Gnewton - see definition in scol_init in HALO.cpp
+
+					delta = (1.+delta_initial)/pow3(yh) - 1.; // non-linear over density of halo
+					deltaenv = (1.+delta_initial)/pow3(yenv) - 1.; // non-linear over density of environment
+
+					var2 = pow(1./delta,1./3.); // yh with 1608.00522 definitions
+					var3 = pow(1./deltaenv,1./3.);  // yenv with 1608.00522 definitions
+
+					term1 = extpars[6]*pow(a,extpars[7])*pow(2.*h0*Mvir,extpars[8])*pow(var3/var2,extpars[9]); // y0
+
+					xm3 = pow(term1/var2,var1); // (y0/yh)^a
+
+
+							return extpars[3]*extpars[4]*(pow(1.+ xm3,1./extpars[3])-1.) / xm3 ;
+
+			case 8:
+			/* EFTofDE - unscreened approximation  */
+							return mu(a,0.001,omega0,extpars,model)-1.;
+			case 9:
+			/* EFTofDE - superscreened approximation  */
+							return 0.;
+
+			case 10:
+			/* KGB with CPL background */
+			// CPL background so we use extpars[0]=w0, extpars[1]=wa
+					alphaofa[0] = alphai_eft(a,omega0,extpars[2]); // alpha_K(a) = alpha_{K0}*a
+					alphaofa[1] = alphai_eft(a,omega0,extpars[3]); // alpha_B(a) = alpha_{B0}*a
+					alphaofa[2] = alphai_eft(a,omega0,extpars[4]); // alpha_M(a) = alpha_{M0}*a
+					// scale factor derivatives of alpha_i(a)
+					dalphaofa[0] = dalphai_eft(a,omega0,extpars[2]);
+					dalphaofa[1] = dalphai_eft(a,omega0,extpars[3]);
+					dalphaofa[2] = dalphai_eft(a,omega0,extpars[4]);
+
+					var1 = alphaofa[0] + 3./2.*pow2(alphaofa[1]); // alpha
+					var2 = 2./var1*( (1.-	alphaofa[1]/2.) * (alphaofa[1]/2. + HA2g(a,omega0,extpars,model))
+																				 + a*dalphaofa[1]/2.- HA2g2(a,omega0,extpars,model)); //cs^2
+
+					lambda2 = alphaofa[1]/pow2(HAg(a,omega0,extpars,model))/var1/var2; // perhaps 1 less power of H here?
+
+					delta = (1.+delta_initial)/pow3(yh) - 1.;
+					xm3 = 4.*omega0/pow3(a)*lambda2*delta; // perhaps extra power of lambda here ?
+
+					term1 = 2.*pow2(alphaofa[1])/(2.*var2*var1); // 2 (mu_L -1)
+
+					return term1*(sqrt(1.+ xm3)-1.)/xm3;
 		default:
 					warning("SpecialFunctions: invalid model choice, model = %d \n", model);
 				  return 0;
