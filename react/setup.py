@@ -48,10 +48,10 @@ class clean(_clean):
 
 setup(name = "pyreact",
       description       = "Python interface for the ReACT library",
-      author            = "Tilman Troester",
+      author            = "Tilman Troester & Ben Bose",
       author_email      = "tilmantroester@gmail.com",
       packages = ["pyreact"],
-      version='1.0.0',
+      version='2.0.0',
       package_data = {"" : LIBS,},
       install_requires = ['numpy'],
       cmdclass={"install"   : install,
