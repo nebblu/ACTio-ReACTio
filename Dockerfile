@@ -62,7 +62,7 @@ RUN apt-get -y install cmake && \
 
 ## React
 
-RUN  git clone https://github.com/nebblu/ReACT.git && \
+RUN  git clone https://github.com/nebblu/ACTio-ReACTio.git && \
      cd ReACT && \
      sed -i "s/CPPFLAGS +=/CPPFLAGS += -I\/sundials\/instdir\/include/g" pyreact/Makefile && \
      sed -i "s/LDFLAGS +=/LDFLAGS += -L\/sundials\/instdir\/lib/g" pyreact/Makefile && \
