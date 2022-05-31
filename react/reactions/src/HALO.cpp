@@ -148,6 +148,7 @@ double kval_tab[loop_Nk],ling_tab[loop_Nk];
 
 double omegacb = pars[1]-pars[2];
 
+// initialise linear growth factor if we are using LCDM P(k,z=0) input so we can rescale
 if(!modcamb){
 for(int i = 0; i< loop_Nk; i++){
   kval_tab[i] =  kmin * exp(i*log(kmax/kmin)/(loop_Nk-1.));
@@ -155,10 +156,18 @@ for(int i = 0; i< loop_Nk; i++){
   iow.initn_lin(pars, extpars, kval_tab[i], model);
   ling_tab[i] = F1_nk/dnorm_spt; // = D(z)/D_LCDM(z=0)
     }
+}
+// otherwise linear_growth should be set to unity (so functions like plinear_cosmosis still work fine)
+else{
+  for(int i = 0; i< loop_Nk; i++){
+    kval_tab[i] =  kmin * exp(i*log(kmax/kmin)/(loop_Nk-1.));
+    ling_tab[i] = 1.;
+      }
+}
 
     // spline linear growth factor
      linear_growth = LinearSpline(loop_Nk,kval_tab,ling_tab);
-}
+
 
  double sig1,sig2;
 
