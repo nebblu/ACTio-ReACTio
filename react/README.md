@@ -1,6 +1,7 @@
 
-# ReACT with massive neutrinos
-## This branch is a first implementation of massive neutrinos (1909.02561) into the basic ReACT code. 
+# ReACT v2: ACTio et ReACTio 
+
+## This repository contains version 2 of the [ReACT](https://github.com/nebblu/ReACT) code. 
 
 ## Table of contents: 
 
