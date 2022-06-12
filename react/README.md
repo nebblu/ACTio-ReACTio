@@ -1,5 +1,5 @@
 
-# ReACT v2: ACTio et ReACTio 
+# ReACT v2: ACT-io et ReACT-io 
 
 ## This repository contains version 2 of the [ReACT](https://github.com/nebblu/ReACT) code. 
 
