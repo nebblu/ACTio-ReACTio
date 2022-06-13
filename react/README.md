@@ -21,10 +21,10 @@ ReACT is a halo model and standard perturbation theory code based on the softwar
 
 The package is made up of 5 folders: 
 
-* reactions : contains all the c++ source code for the calculations. Specifically, this is in `reactions/src`. 
-* pyreact : contains the wrapper functions calling the c++ code from python. 
-* cosmosis : contains the cosmosis module for ReACT. 
-* notebooks : example python notebooks for ReACT computations and a Mathematica file performing translations between covariant theories and modifications to the Poisson equation. 
+* `reactions` : contains all the c++ source code for the calculations. Specifically, this is in `reactions/src`. 
+* `pyreact` : contains the wrapper functions calling the c++ code from python. 
+* `cosmosis` : contains the cosmosis module for ReACT. 
+* `notebooks` : example python notebooks for ReACT computations and a Mathematica file performing translations between covariant theories and modifications to the Poisson equation. 
 
 
 ReACT can perform the follwing calculations for general theories beyond LCDM
