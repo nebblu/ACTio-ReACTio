@@ -218,8 +218,9 @@ Then just run
 
 > ./test 
 
+All example files require the specification of a transfer function or linear power spectrum. The given examples take transfer function inputs. You can specify the modified transfer function in two possible ways: 
 
-1. All example files require the specification of a transfer function or linear power spectrum. The given examples take transfer function inputs. You can specify the modified transfer function directly as produced using a Boltzmann solver (e.g. [MGCAMB](https://github.com/sfu-cosmo/MGCAMB))  as in reaction_mnu.cpp. **Note** that this file should be headerless. 
+1. Directly as produced using a Boltzmann solver (e.g. [MGCAMB](https://github.com/sfu-cosmo/MGCAMB)) as in reaction_mnu.cpp. **Note** that this file should be headerless. 
 2. Otherwise, you must create your own cosmology file as in `reactions/examples/transfers' within which you should specify the associated z=0 LCDM transfer function file with the following two column format: {k[h/Mpc], T(k)} with the transfer function normalised to 1 at small k. This is then assumed by the code to rescale the power spectrum to the target, beyond LCDM cosmology  using internally computed LCDM and MG/DE growth factors.  
 
 The internal flag **modcamb** tells ReACT whether or not to treat the input transfer function file as in option (1) - true value - or option (2) - false value. Default is false as in the original version of the code. 
