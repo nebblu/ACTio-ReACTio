@@ -229,15 +229,15 @@ In C++ code this is specified as an integer. We have the following cases so far
 
 Note that all cases except 4 & 5 assume a LCDM background expansion. 
 
-One can add in new models by simply going to the source code, `reactions/src/BeyondLCDM.cpp` and adding in a new `case n:' in all the functions with the required modified background and Poisson equation functions. The array extpars stores the theory parameters. The default size of this array is 20 and can be increased by changing the maxpars parameter in `reactions/src/BeyondLCDM.h`. 
+One can add in new models by simply going to the source code, `reactions/src/BeyondLCDM.cpp` and adding in a new `case n:` in all the functions with the required modified background and Poisson equation functions. The array extpars stores the theory parameters. The default size of this array is 20 and can be increased by changing the maxpars parameter in `reactions/src/BeyondLCDM.h`. 
 
-Once you have added in the required background, linear, 1-loop and non-linear modifications you just need to re-compile the source code by going to the `reactions' directory and running 
+Once you have added in the required background, linear, 1-loop and non-linear modifications you just need to re-compile the source code by going to the `reactions` directory and running 
 
 ```
 make && make install
 ```
 
-If you want to add in this model to the Pyreact wrapper, you will also need to add in the `n'th model in `pyreact/react.py'.  
+If you want to add in this model to the Pyreact wrapper, you will also need to add in the nth model in `pyreact/react.py`.  
 
 ## Parameters
 
