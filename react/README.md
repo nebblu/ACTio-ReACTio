@@ -186,7 +186,7 @@ The pyreact wrapper allows the C++ code (the native language of ReACT) to be cal
 *  pyreact_demo-ext.ipynb : Demonstrates the implementation of the EFTofDE + PPF halo model reaction and compares with the DGP implementation. 
 * pyreact_demo-neutrinos.ipynb : Demonstrates the implementation of the massive neutrinos halo model reaction [2105.12114](https://arxiv.org/abs/2105.12114).
 * pyreact_demo-rsd.ipynb : Demonstrates the implementation of the redshift space power spectrum multipoles [1606.02520](https://arxiv.org/abs/1606.02520).
-* pyreact_demo-bspt.ipynb : Demonstrates the implementation of the real space bispectrum [1808.01120]([https://arxiv.org/abs/1606.02520](https://arxiv.org/abs/1808.01120)).
+* pyreact_demo-bspt.ipynb : Demonstrates the implementation of the real space bispectrum [1808.01120](https://arxiv.org/abs/1808.01120).
 
 
 ###  C++
@@ -249,19 +249,26 @@ If you want to add in this model to the Pyreact wrapper, you will also need to a
 **Note** the cosmoSIS module has not yet been extended to include massive neutrinos. 
 
 
-
 ## Citation
 
 When using ReACT in a publication, please acknowledge the code by citing the relevant papers from the following:
 
-arXiv:1812.05594 : "On the road to percent accuracy: non-linear reaction of the matter power spectrum to dark energy and modified gravity"
+[arXiv:1812.05594](https://arxiv.org/abs/1812.05594) : "On the road to percent accuracy I: non-linear reaction of the matter power spectrum to dark energy and modified gravity"
 
-arXiv:2005.12184 : "On the road to per-cent accuracy IV:  ReACT -- computing the non-linear power spectrum beyond LCDM"
+[arXiv:1909.02561](https://arxiv.org/abs/1909.02561) : "On the road to percent accuracy III: non-linear reaction of the matter power spectrum to massive neutrinos"
 
-arXiv:2105.12114 : "On the road to percent accuracy V: the non-linear power spectrum beyond LCDM with massive neutrinos and baryonic feedback"
+[arXiv:2005.12184](https://arxiv.org/abs/2005.12184) : "On the road to per-cent accuracy IV:  ReACT -- computing the non-linear power spectrum beyond LCDM"
 
-arXiv:2111.13598  : "On the road to per cent accuracy VI: the non-linear power spectrum for interacting dark energy with baryonic feedback and massive neutrinos
+[arXiv:2105.12114](https://arxiv.org/abs/2105.12114) : "On the road to percent accuracy V: the non-linear power spectrum beyond LCDM with massive neutrinos and baryonic feedback"
+
+[arXiv:2111.13598](https://arxiv.org/abs/2111.13598)  : "On the road to per cent accuracy VI: the non-linear power spectrum for interacting dark energy with baryonic feedback and massive neutrinos
 "
+
+[arXiv:1808.01120](https://arxiv.org/abs/1808.01120) : "The one-loop matter bispectrum as a probe of gravity and dark energy"
+
+[arXiv:1606.02520](https://arxiv.org/abs/1606.02520) : "A Perturbative Approach to the Redshift Space Power Spectrum: Beyond the Standard Model"
+
+
 
 Respective bibtex entries:
 
