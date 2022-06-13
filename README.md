@@ -30,17 +30,17 @@ The package is made up of 5 folders:
 
 ReACT can perform the follwing calculations for general theories beyond LCDM
 
-* Spherical collapse  (1812.05594): `reactions/src/SCOL.cpp`
+* Spherical collapse  (1812.05594): `reactions/src/SCOL.cpp`.
 
-* Halo model power spectrum (1812.05594):  `reactions/src/HALO.cpp`
+* Halo model power spectrum (1812.05594):  `reactions/src/HALO.cpp`.
 
-* Real and redshift space LSS 2 point statistics (1606.02520): `reactions/src/SPT.cpp`
+* Real and redshift space LSS 2 point statistics (1606.02520): `reactions/src/SPT.cpp`.
 
-* Numerical perturbation theory kernels up to 3rd order (1606.02168): `reactions/src/SpericalFunctions.cpp`
+* Numerical perturbation theory kernels up to 3rd order (1606.02168): `reactions/src/SpericalFunctions.cpp`.
 
-* Real space bispectrum at 1-loop level** (1808.01120): `reactions/src/BSPT.cpp`
+* Real space bispectrum at 1-loop level** (1808.01120): `reactions/src/BSPT.cpp`.
 
-* Exact perturbation theory kernels up to 4th order** (1808.01120): `reactions/src/BSPTN.cpp`
+* Exact perturbation theory kernels up to 4th order** (1808.01120): `reactions/src/BSPTN.cpp`.
 
 ** for LCDM, nDGP and f(R) gravity only. 
 
@@ -192,7 +192,7 @@ exit
 ### Python
 The pyreact wrapper allows the C++ code (the native language of ReACT) to be called by Python code. Example jupyter notebooks that demonstrate the usage of ReACT can be found in the `notebooks` folder. Specifically we have included : 
 
-* pyreact_demo.ipynb : Demonstrates the basic halo model reaction [2005.12184](https://arxiv.org/abs/2005.12184)
+* pyreact_demo.ipynb : Demonstrates the basic halo model reaction [2005.12184](https://arxiv.org/abs/2005.12184).
 *  pyreact_demo-ext.ipynb : Demonstrates the implementation of the EFTofDE + PPF halo model reaction and compares with the DGP implementation. 
 * pyreact_demo-neutrinos.ipynb : Demonstrates the implementation of the massive neutrinos halo model reaction [2105.12114](https://arxiv.org/abs/2105.12114).
 * pyreact_demo-rsd.ipynb : Demonstrates the implementation of the redshift space power spectrum multipoles [1606.02520](https://arxiv.org/abs/1606.02520).
@@ -202,12 +202,12 @@ The pyreact wrapper allows the C++ code (the native language of ReACT) to be cal
 ###  C++
 One can also run ReACT and MG-Copter in their native C++. Again, a number of example output C++ scripts have been included in `reactions/examples` as well as a number of cosmologies in `reactions/examples/transfers`. Specifically we have included : 
 
-* actio_reactio.cpp : Example code to output the reaction and halo spectra for EFTofDE & PPF parametrisations
-* reaction_mnu.cpp : Example code to output the reaction and halo spectra for beyond LCDM physics & massive neutrinos
-* halo_ps.cpp : Example code to output the halo model powerspectrum
-* spt_rsd.cpp : Example code to output the 1-loop powerspectrum in real and redshift space
-* spt.cpp : Example code to output the 1-loop powerspectrum in real space
-* bs.cpp : Example code to output the real space bispectrum
+* actio_reactio.cpp : Example code to output the reaction and halo spectra for EFTofDE & PPF parametrisations.
+* reaction_mnu.cpp : Example code to output the reaction and halo spectra for beyond LCDM physics & massive neutrinos.
+* halo_ps.cpp : Example code to output the halo model powerspectrum.
+* spt_rsd.cpp : Example code to output the 1-loop powerspectrum in real and redshift space.
+* spt.cpp : Example code to output the 1-loop powerspectrum in real space.
+* bs.cpp : Example code to output the real space bispectrum.
 
 
 We can compile these examples with a command similar to : 
@@ -230,14 +230,14 @@ The internal flag **modcamb** tells ReACT whether or not to treat the input tran
 
 In Pyreact we currently have the following models and model parameters 
 
-1. gr : general relativity - None 
-2. f(r) : [Hu-Sawicki f(R)](https://arxiv.org/abs/0705.1158). **extpars[0-2]** = $f_{R0}$ 
-3. dgp : normal branch of [DGP gravity](https://arxiv.org/abs/hep-th/0005016). **extpars[0]** = $\Omega_{rc}$ 
-4. quintessence : Quintessence. **extpars[0]** = $w_0$
-5. cpl : [CPL evolving dark energy](https://arxiv.org/abs/gr-qc/0009008) w = w0 + (1-a)wa (). **extpars[0-1]**=  {$w_0,w_a$}
-6. ds : [Dark Scattering with CPL background](https://arxiv.org/abs/1605.05623). **extpars[0-2]** = {$w_0,w_a,\xi*h$)
-7. eftppf :  effective field theory of dark energy with a post parametrised friedmannian $G_{eff,non-linear}$ in spherical collapse equations. **extpars[0-9]** = {$\alpha_{k0},\alpha_{b0},\alpha_{m0},p1,...,p7$} 
-8. eftus :  effective field theory of dark energy without screening, i.e. $G_{eff, non-linear}$ = $G_{eff,linear}$. **extpars[0-2]** ={$\alpha_{k0},\alpha_{b0},\alpha_{m0}$} 
+1. gr : general relativity. No extra parameters.  
+2. f(r) : [Hu-Sawicki f(R)](https://arxiv.org/abs/0705.1158). **extpars[0]** = $f_{R0}$. 
+3. dgp : normal branch of [DGP gravity](https://arxiv.org/abs/hep-th/0005016). **extpars[0]** = $\Omega_{rc}$. 
+4. quintessence : Quintessence. **extpars[0]** = $w_0$.
+5. cpl : [CPL evolving dark energy](https://arxiv.org/abs/gr-qc/0009008) w = w0 + (1-a)wa (). **extpars[0-1]**=  {$w_0,w_a$}.
+6. ds : [Dark Scattering with CPL background](https://arxiv.org/abs/1605.05623). **extpars[0-2]** = {$w_0,w_a,\xi*h$}.
+7. eftppf :  effective field theory of dark energy with a post parametrised friedmannian $G_{eff,non-linear}$ in spherical collapse equations. **extpars[0-9]** = {$\alpha_{k0},\alpha_{b0},\alpha_{m0},p1,...,p7$}. 
+8. eftus :  effective field theory of dark energy without screening, i.e. $G_{eff, non-linear}$ = $G_{eff,linear}$. **extpars[0-2]** ={$\alpha_{k0},\alpha_{b0},\alpha_{m0}$}. 
 9. eftss :  effective field theory of dark energy with superscreening , i.e. $G_{eff, non-linear}$ = $G_{N}$. **extpars[0-2]**  = {$\alpha_{k0},\alpha_{b0},\alpha_{m0}$}.  
 
 where a `0` subscript means the value today. 
