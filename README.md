@@ -136,7 +136,7 @@ $ python3 setup.py develop --user
 6) Check that everything is working. Go to the reactions/examples/ directory and try to run one of the example files. For example:
 
 ```
-$ g++ -I/home/bose/react_tutorial/ReACT/reactions/include -L/home/bose/react_tutorial/ReACT/reactions/lib -lcopter -lgsl -lstdc++ halo_ps.cpp -o test
+$ g++ -I/home/bose/react_tutorial/ACTio-ReACTio/reactions/include -L/home/bose/react_tutorial/ACTio-ReACTio/reactions/lib -lcopter -lgsl -lstdc++ halo_ps.cpp -o test
 ```
 
 ```
@@ -152,7 +152,7 @@ $ 0 1.000000e-03 4.039658e+02 4.213977e+02 9.959108e-01 ...
 **Note** you may also need to export the copter library path to run the example files: 
 
 ```
-$ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/bose/react_tutorial/ReACT/reactions/lib:${LD_LIBRARY_PATH}
+$ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/bose/react_tutorial/ACTio-ReACTio/reactions/lib:${LD_LIBRARY_PATH}
 ```
 
 
@@ -175,7 +175,7 @@ This will also automatically take all the local files in `/Users/bbose/Desktop/m
 I've tested this works on the tests and example files within the `reactions/examples` and `reactions/tests` directories. You can use the following command to run them
 
 ```
-g++ -I/ReACT/reactions/include -L/ReACT/reactions/lib  spt.cpp -lgsl -lcopter
+g++ -I/ACTio-ReACTio/reactions/include -L/ACTio-ReACTio/reactions/lib  spt.cpp -lgsl -lcopter
 ```
 ```
 ./a.out
@@ -212,7 +212,7 @@ One can also run ReACT and MG-Copter in their native C++. Again, a number of exa
 
 We can compile these examples with a command similar to : 
 
-> gcc -I/Users/bbose/Desktop/ReACT-master/reactions/include -L/Users/bbose/Desktop/ReACT-master/reactions/lib -lcopter -lgsl -lstdc++ bs.cpp -o test
+> gcc -I/Users/bbose/Desktop/ACTio-ReACTio/reactions/include -L/Users/bbose/Desktop/ACTio-ReACTio/reactions/lib -lcopter -lgsl -lstdc++ bs.cpp -o test
 
 Then just run 
 
