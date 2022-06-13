@@ -264,9 +264,9 @@ When using ReACT in a publication, please acknowledge the code by citing the rel
 [arXiv:2111.13598](https://arxiv.org/abs/2111.13598)  : "On the road to per cent accuracy VI: the non-linear power spectrum for interacting dark energy with baryonic feedback and massive neutrinos
 "
 
-[arXiv:1808.01120](https://arxiv.org/abs/1808.01120) : "The one-loop matter bispectrum as a probe of gravity and dark energy"
-
 [arXiv:1606.02520](https://arxiv.org/abs/1606.02520) : "A Perturbative Approach to the Redshift Space Power Spectrum: Beyond the Standard Model"
+
+[arXiv:1808.01120](https://arxiv.org/abs/1808.01120) : "The one-loop matter bispectrum as a probe of gravity and dark energy"
 
 
 
@@ -287,6 +287,24 @@ Respective bibtex entries:
     year = "2019"
 }
 ```
+
+```
+@article{Cataneo:2019fjp,
+    author = "Cataneo, Matteo and Emberson, J. D. and Inman, Derek and Harnois-Deraps, Joachim and Heymans, Catherine",
+    title = "{On the road to per cent accuracy \textendash{} III. Non-linear reaction of the matter power spectrum to massive neutrinos}",
+    eprint = "1909.02561",
+    archivePrefix = "arXiv",
+    primaryClass = "astro-ph.CO",
+    doi = "10.1093/mnras/stz3189",
+    journal = "Mon. Not. Roy. Astron. Soc.",
+    volume = "491",
+    number = "3",
+    pages = "3101--3107",
+    year = "2020"
+}
+```
+
+
 
 ```
 @article{Bose:2020wch,
@@ -325,6 +343,37 @@ Respective bibtex entries:
     number = "3",
     pages = "3691--3702",
     year = "2022"
+}
+```
+
+```
+@article{Bose:2016qun,
+    author = "Bose, Benjamin and Koyama, Kazuya",
+    title = "{A Perturbative Approach to the Redshift Space Power Spectrum: Beyond the Standard Model}",
+    eprint = "1606.02520",
+    archivePrefix = "arXiv",
+    primaryClass = "astro-ph.CO",
+    doi = "10.1088/1475-7516/2016/08/032",
+    journal = "JCAP",
+    volume = "08",
+    pages = "032",
+    year = "2016"
+}
+```
+
+```
+@article{Bose:2018zpk,
+    author = "Bose, Benjamin and Taruya, Atsushi",
+    title = "{The one-loop matter bispectrum as a probe of gravity and dark energy}",
+    eprint = "1808.01120",
+    archivePrefix = "arXiv",
+    primaryClass = "astro-ph.CO",
+    reportNumber = "YITP-18-88",
+    doi = "10.1088/1475-7516/2018/10/019",
+    journal = "JCAP",
+    volume = "10",
+    pages = "019",
+    year = "2018"
 }
 ```
 
