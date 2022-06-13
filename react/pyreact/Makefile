@@ -12,9 +12,9 @@ CPPFLAGS +=
 
 # clang uses a different libstdc++ than GCC. Also remove OpenMP when using clang
 ifneq (,$(findstring clang,$(shell '$(CXX)' -v 2>&1)))
-LDFLAGS += -lc++
+LDFLAGS  += -lc++
 else
-LDFLAGS += -lstdc++
+LDFLAGS  += -lstdc++
 CXXFLAGS += -fopenmp
 endif
 
