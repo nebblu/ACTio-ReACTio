@@ -1,6 +1,6 @@
 FROM ubuntu:20.04
 
-MAINTAINER Ben Bose <ben.bose@ed.ac.uk>
+MAINTAINER Maria Tsedrik <mtsedrik@ed.ac.uk>
 
 ## Make sure building of image doesn't get stuck at any selection stages
 
@@ -9,10 +9,18 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 ## Update apt get
 
-RUN apt-get update && apt-get -y install
-
+RUN apt-get update && apt-get -y install 
 
     #######################################
+
+## Install pip install and gfortran
+
+RUN apt-get -y install python3-pip
+RUN apt-get update -y && \
+    apt-get install -y gfortran
+   
+    #######################################
+
 
 
 ## GCC, G++ and GSL
@@ -32,6 +40,12 @@ RUN apt-get -y install python3 && \
 
     #######################################
 
+## Jupyter 
+
+RUN pip3 install jupyter
+
+
+    ####################################### 
 
 ## git and vim
 
@@ -41,6 +55,10 @@ RUN apt-get -y install git && \
 
     #######################################
 
+## Install main packages
+
+RUN pip install scipy numpy matplotlib camb==1.3.5
+    #######################################
 
 ## Sundials
 
@@ -57,17 +75,35 @@ RUN apt-get -y install cmake && \
      make install && \
      cd
 
+     #######################################
 
+## pyHMcode
+
+RUN pip install pyhmcode
+
+    #pip install git+https://github.com/tilmantroester/HMx.git@python_interface#egg=pyhmx 
+
+    #pip install pyhmcode pyccl
+
+    #git clone --recursive https://github.com/tilmantroester/pyhmcode && \
+    #make && \
+    # make install && \ 
+    #cd pyhmcode/powerspectrum_interface && \
+    #pip install .  && \
+    #cd
+  
      #######################################
 
 ## React
 
 RUN  git clone https://github.com/nebblu/ACTio-ReACTio.git && \
-     cd ReACT && \
+     mv ACTio-ReACTio/react /ReACT  
+
+RUN  cd ReACT && \ 
      sed -i "s/CPPFLAGS +=/CPPFLAGS += -I\/sundials\/instdir\/include/g" pyreact/Makefile && \
-     sed -i "s/LDFLAGS +=/LDFLAGS += -L\/sundials\/instdir\/lib/g" pyreact/Makefile && \
+     sed -i "s/LDFLAGS +=/LDFLAGS += -L\/sundials\/instdir\/lib/g" pyreact/Makefile &&\
      python3 setup.py develop
 
 ## set correct library paths in the container environment
 
-ENV LD_LIBRARY_PATH /sundials/instdir/lib:/ReACT/reactions/lib
+ENV LD_LIBRARY_PATH /sundials/instdir/lib:ReACT/reactions/lib
