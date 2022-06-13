@@ -20,6 +20,7 @@
 #include <Copter/LinearPS.h>
 #include <Copter/SpecialFunctions.h>
 #include <Copter/SPT.h>
+#include <Copter/BeyondLCDM.h>
 
 //using namespace std;
 using std::ifstream;
@@ -31,7 +32,7 @@ vector<vector<double> > mytransl;
 vector<vector<double> > mypk;
 
 
-/* Example code to output the reaction and halo spectra for mg + neutrinos */
+/* Example code to output the reaction and halo spectra for EFTofDE & PPF parametrisations */
 
 int main(int argc, char* argv[]) {
 
@@ -46,10 +47,10 @@ double myz = 0.;
 
 double mnu = 0.00;  // mv = 0.0ev
 double alphak0 = 1.;  //  modified gravity param 2
-double alphab0 = 0.1;  //  modified gravity param 1
+double alphab0 = 0.01;  //  modified gravity param 1
 
 //output file name
-const char* output = "EFT_aK1_aB01_z0.dat";
+const char* output = "EFT_aK1_aB001_z0.dat";
 
 
 // Modified gravity active? This prompts the calculation of k_star and \mathcal{E}.

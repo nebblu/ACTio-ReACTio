@@ -19,6 +19,7 @@
 #include <Copter/GrowthFunction.h>
 #include <Copter/SpecialFunctions.h>
 #include <Copter/NoWigglePS.h>
+#include <Copter/BeyondLCDM.h>
 
 using namespace std;
 
@@ -105,9 +106,9 @@ int main(int argc, char* argv[]) {
 
     real p1,p2,p3,p4,p5,p6,p7,p8,p9;
 
-    int Nk =10;
+    int Nk =30;
     double kmin = 0.01;
-    double kmax = 0.4;
+    double kmax = 0.3;
 
 
 for(int i =0; i <Nk;  i ++) {

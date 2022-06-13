@@ -20,6 +20,7 @@
 #include <Copter/LinearPS.h>
 #include <Copter/SpecialFunctions.h>
 #include <Copter/SPT.h>
+#include <Copter/BeyondLCDM.h>
 
 using namespace std;
 

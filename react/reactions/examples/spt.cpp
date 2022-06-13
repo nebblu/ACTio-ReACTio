@@ -19,6 +19,7 @@
 #include <Copter/GrowthFunction.h>
 #include <Copter/SpecialFunctions.h>
 #include <Copter/NoWigglePS.h>
+#include <Copter/BeyondLCDM.h>
 
 using namespace std;
 vector<vector<double> > allDatamult;

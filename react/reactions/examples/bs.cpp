@@ -21,6 +21,7 @@
 #include <Copter/SpecialFunctions.h>
 #include <Copter/SPT.h>
 #include <Copter/BSPT.h>
+#include <Copter/BeyondLCDM.h>
 
 using namespace std;
 
