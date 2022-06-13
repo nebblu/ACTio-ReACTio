@@ -236,9 +236,9 @@ In Pyreact we currently have the following models
 4. quintessence : Quintessence w = w0 
 5. cpl : [CPL evolving dark energy](https://arxiv.org/abs/gr-qc/0009008) w = w0 + (1-a)wa ()
 6. ds : [Dark Scattering with CPL background](https://arxiv.org/abs/1605.05623)
-7. eftofdeA :  effective field theory of dark energy with a post parametrised friedmannian G_eff in spherical collapse equations ()
-8. eftofdeB :  effective field theory of dark energy without screening, i.e. G_{eff, non-linear} = G_{eff, linear} 
-9. eftofdeC :  effective field theory of dark energy with superscreening , i.e. G_{eff, non-linear} = G_{Newton} 
+7. eftppf :  effective field theory of dark energy with a post parametrised friedmannian G_eff in spherical collapse equations ()
+8. eftus :  effective field theory of dark energy without screening, i.e. G_{eff, non-linear} = G_{eff, linear} 
+9. eftss :  effective field theory of dark energy with superscreening , i.e. G_{eff, non-linear} = G_{Newton} 
 
 Model parameters are none, fR0, Omega_rc, w , {w,wa} respectively. 
 
