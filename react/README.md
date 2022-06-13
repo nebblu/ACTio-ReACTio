@@ -230,15 +230,26 @@ The internal flag **modcamb** tells ReACT whether or not to treat the input tran
 
 In Pyreact we currently have the following models
 
-gr : general relativity | f(r) : Hu-Sawicki f(R) | dgp : normal branch of DGP gravity | quintessence : Quintessence | cpl : CPL evolving dark energy | 
+1. gr : general relativity 
+2. f(r) : [Hu-Sawicki f(R)](https://arxiv.org/abs/0705.1158) 
+3. dgp : normal branch of [DGP gravity](https://arxiv.org/abs/hep-th/0005016)
+4. quintessence : Quintessence w = w0 
+5. cpl : [CPL evolving dark energy](https://arxiv.org/abs/gr-qc/0009008) w = w0 + (1-a)wa ()
+6. ds : [Dark Scattering with CPL background](https://arxiv.org/abs/1605.05623)
+7. eftofdeA :  effective field theory of dark energy with a post parametrised friedmannian G_eff in spherical collapse equations ()
+8. eftofdeB :  effective field theory of dark energy without screening, i.e. G_{eff, non-linear} = G_{eff, linear} 
+9. eftofdeC :  effective field theory of dark energy with superscreening , i.e. G_{eff, non-linear} = G_{Newton} 
 
 Model parameters are none, fR0, Omega_rc, w , {w,wa} respectively. 
 
-In C++ code this is specified as an integer. We have the following cases so far  
+In C++ code this is specified as the integer of each model in the last argument of the functions , e.g. for the 1-loop real space power spectrum in f(R) gravity we would specify the following functional call 
 
-1: GR | 2: Hu-Sawicki f(R) | 3: nDGP | 4: Quintessence | 5: CPL | 6 : | 7 : | 8 : | 9 : | 10 : |
+```
+PLOOPn2(1, k, pars, extpars, err, 2)
+```
+where 1 is a functional call to the 1-loop matter-matter calculation, k is the wave mode, pars hold base cosmological parameters, extpars[0] = fr0, err is the absolute error on the 1-loop integrals and 2 specifies f(R) gravity. 
 
-Note that all cases except 4 & 5 assume a LCDM background expansion. 
+Note that all cases except 4,5,6 assume a LCDM background expansion. 
 
 One can add in new models by simply going to the source code, `reactions/src/BeyondLCDM.cpp` and adding in a new `case n:` in all the functions with the required modified background and Poisson equation functions. The array extpars stores the theory parameters. The default size of this array is 20 and can be increased by changing the maxpars parameter in `reactions/src/BeyondLCDM.h`. 
 
