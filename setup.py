@@ -46,6 +46,11 @@ class clean(_clean):
         clean_library()
         super().run()
 
+print("")
+print("")
+print("ACTIO!")
+print("")
+print("")
 setup(name = "pyreact",
       description       = "Python interface for the ReACT library",
       author            = "Tilman Troester & Ben Bose",
@@ -59,3 +64,8 @@ setup(name = "pyreact",
                 "build_py"  : build,
                 "clean"     : clean},
         )
+print("")
+print("")
+print("REACTIO!! :O")
+print("")
+print("")
