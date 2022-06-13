@@ -13,6 +13,7 @@
 6. [Parameter description](https://github.com/nebblu/ACTio-ReACTio#parameters)
 7. [Citation](https://github.com/nebblu/ACTio-ReACTio#citation)
 8. [Notes](https://github.com/nebblu/ACTio-ReACTio#notes)
+9. [What's new?](https://github.com/nebblu/ACTio-ReACTio#what-is-new)
 
 
 ## Introduction
@@ -401,7 +402,7 @@ Respective bibtex entries:
 * Note if using the stand-alone version of ReACT, the reaction may have deviations away from unity of the order of ~0.1-0.3% for k<1e-3. Pyreact automatically sets it to unity at such large scales. 
 
 
-## What's new? 
+## What is new 
 
 We have implemented the following to v.2:
 
