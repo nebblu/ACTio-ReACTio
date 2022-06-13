@@ -19,7 +19,15 @@
 
 ReACT is a halo model and standard perturbation theory code based on the software packages [Copter](http://mwhite.berkeley.edu/Copter/) (0905.0479) and MG-Copter (1606.02520). It allows the efficient computation of many large scale structure observables for a wide class of gravity and dark energy models. 
 
-In particular, ReACT can perform the follwing calculations for general theories beyond LCDM
+The package is made up of 5 folders: 
+
+* reactions : contains all the c++ source code for the calculations. Specifically, this is in `reactions/src`. 
+* pyreact : contains the wrapper functions calling the c++ code from python. 
+* cosmosis : contains the cosmosis module for ReACT. 
+* notebooks : example python notebooks for ReACT computations and a Mathematica file performing translations between covariant theories and modifications to the Poisson equation. 
+
+
+ReACT can perform the follwing calculations for general theories beyond LCDM
 
 * Spherical collapse  (1812.05594): `reactions/src/SCOL.cpp`
 
@@ -34,6 +42,7 @@ In particular, ReACT can perform the follwing calculations for general theories 
 * Exact perturbation theory kernels up to 4th order** (1808.01120): `reactions/src/BSPTN.cpp`
 
 ** for LCDM, nDGP and f(R) gravity only. 
+
 
 ## Requirements
 
