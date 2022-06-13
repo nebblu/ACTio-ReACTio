@@ -240,7 +240,9 @@ In Pyreact we currently have the following models
 8. eftus :  effective field theory of dark energy without screening, i.e. G_{eff, non-linear} = G_{eff, linear} 
 9. eftss :  effective field theory of dark energy with superscreening , i.e. G_{eff, non-linear} = G_{Newton} 
 
-Model parameters are none, fR0, Omega_rc, w , {w,wa} respectively. 
+Model parameters are none, fR0, Omega_rc, w0 , {w0,wa}, {w0,wa,xi*h), {alpha_{k0},alpha_{b0},alpha_{m0},p1,...,p7}, {alpha_{k0},alpha_{b0},alpha_{m0}}, {alpha_{k0},alpha_{b0},alpha_{m0}} respectively. 
+
+**Note** For EFTofDE models (7-9), the scale factor dependence and scale factor derivatives of the alpha functions must be specified in `reactions/src/BeyondLCDM.cpp` - see `alphai_eft` and `dalphai_eft` functions respectively. 
 
 In C++ code this is specified as the integer of each model in the last argument of the functions , e.g. for the 1-loop real space power spectrum in f(R) gravity we would specify the following functional call 
 
