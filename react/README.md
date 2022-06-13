@@ -5,17 +5,15 @@
 
 ## Table of contents: 
 
-* [Introduction](https://github.com/nebblu/ReACT#introduction)
-* [Requirements](https://github.com/nebblu/ReACT#requirements)
-* [Installation](https://github.com/nebblu/ReACT#installation)
-* [Models of gravity and dark energy](https://github.com/nebblu/ReACT#models-of-gravity-and-dark-energy)
-* [Running ReACT](https://github.com/nebblu/ReACT#running-react)
-* [Massive neutrinos](https://github.com/nebblu/ReACT#extended-react-massive-neutrinos-with-modified-gravity-andor-evolving-dark-energy)
-* [Citation](https://github.com/nebblu/ReACT#citation)
-* [Notes on parameter ranges](https://github.com/nebblu/ReACT#notes-on-parameter-ranges-updated-220321)
-* [Miscellaneous](https://github.com/nebblu/ReACT#miscellaneous-notes-280520)
-* [Additional Libraries](https://github.com/nebblu/ReACT#additional-libraries-from-old-versions-of-mg-copter)
-* [Linux specific installtion](https://github.com/nebblu/ReACT#linux-specific-installation)
+1. [Introduction](https://github.com/nebblu/ACTio-ReACTio#introduction)
+2. [Requirements](https://github.com/nebblu/ACTio-ReACTio#requirements)
+3. [Installation](https://github.com/nebblu/ACTio-ReACTio#installation)
+4. [Running ReACT](https://github.com/nebblu/ACTio-ReACTio#running-react)
+5. [Models of gravity and dark energy](https://github.com/nebblu/ACTio-ReACTio#adding-in-models)
+6. [Parameter description](https://github.com/nebblu/ACTio-ReACTio#parameters)
+7. [Citation](https://github.com/nebblu/ACTio-ReACTio#citation)
+8. [Notes](https://github.com/nebblu/ACTio-ReACTio#notes)
+
 
 ## Introduction
 
@@ -241,7 +239,7 @@ make && make install
 
 If you want to add in this model to the Pyreact wrapper, you will also need to add in the `n'th model in `pyreact/react.py'.  
 
-## Parameters : WIP 
+## Parameters
 
 **modcamb** tells ReACT whether or not to treat the input transfer function file as in option (1) - true value - or option (2) - false value. Default is false as in the original version of the code. 
 
@@ -324,7 +322,9 @@ Respective bibtex entries:
 ```
 
 
-## Notes on parameter ranges (Updated: 22/03/21)
+## Notes 
+
+### Parameter ranges (Updated: 22/03/21)
 * To optimise root finding within the spherical collapse portion of the code, the maximum redshift that one can solve the reaction for currently is z=2.5. 
 * There are some current issues in the wCDM part of the code. Namely for very particular values of w0 and wa in the CPL evolving dark energy case, the spherical collapse library cannot solve the virial theorem. We advise sticking to the ranges 
 -1.3<w0<-0.7 and -1.5<wa<0.6 to avoid these issues. 
@@ -332,7 +332,7 @@ Respective bibtex entries:
 * We have tested the massive neutrino code for m_nu=0.48eV (Omega_nu = 0.0105) without issue in the absence of modified gravity or evolving dark energy. 
 * Spherical collapse may encounter issues for high fr0 values in combination with high Omega_nu. We have tested the code for Log[fr0]=-4 with m_nu=0.3eV with success but do not recommend higher values than these in combination.  
 
-## Miscellaneous notes (28/05/20)
+### Miscellaneous (Updated: 28/05/20)
 * If errors in spherical collapse are experienced for non-f(R) theories, try setting yenvf=0 in the scol_init function in reactions/src/HALO.cpp.
 * Note if using the stand-alone version of ReACT, the reaction may have deviations away from unity of the order of ~0.1-0.3% for k<1e-3. Pyreact automatically sets it to unity at such large scales. 
 
