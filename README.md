@@ -237,8 +237,8 @@ In Pyreact we currently have the following models and model parameters
 5. cpl : [CPL evolving dark energy](https://arxiv.org/abs/gr-qc/0009008) w = w0 + (1-a)wa () - extpars[0,1] =  {$w_0,w_a$}
 6. ds : [Dark Scattering with CPL background](https://arxiv.org/abs/1605.05623) - extpars[0-2] = {$w_0,w_a,\xi*h$)
 7. eftppf :  effective field theory of dark energy with a post parametrised friedmannian $G_{eff,non-linear}$ in spherical collapse equations - extpars[0-9] = {$\alpha_{k0},\alpha_{b0},\alpha_{m0},p1,...,p7$} 
-8. eftus :  effective field theory of dark energy without screening, i.e. $G_{eff, non-linear}$ = $G_{eff,linear}$ - extpars[0-2] ={$alpha_{k0},alpha_{b0},alpha_{m0}$} 
-9. eftss :  effective field theory of dark energy with superscreening , i.e. $G_{eff, non-linear}$ = $G_{N}$  - extpars[0-2] = {$alpha_{k0},alpha_{b0},alpha_{m0}$} 
+8. eftus :  effective field theory of dark energy without screening, i.e. $G_{eff, non-linear}$ = $G_{eff,linear}$ - extpars[0-2] ={$\alpha_{k0},\alpha_{b0},\alpha_{m0}$} 
+9. eftss :  effective field theory of dark energy with superscreening , i.e. $G_{eff, non-linear}$ = $G_{N}$  - extpars[0-2] = {$\alpha_{k0},\alpha_{b0},\alpha_{m0}$} 
 
 where a `0` subscript means the value today. 
 
