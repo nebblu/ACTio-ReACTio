@@ -50,7 +50,7 @@ struct Cosmology {
     real As;                // Initial amplitude
     real k0;                // Pivot scale
     array ki;                   // wavenumbers for transfer function (h/Mpc)
-    array Ti;                   // transfer function
+    array Ti;                   // transfer function (or Pofk if using myLinearPS in LinearPS.cpp)
 
     /* Calculated parameters */
     real H0;                    // Hubble parameter today (H0 = 100*h km/sec/Mpc)
