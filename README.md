@@ -231,14 +231,14 @@ The internal flag **modcamb** tells ReACT whether or not to treat the input tran
 In Pyreact we currently have the following models and model parameters 
 
 1. gr : general relativity - None 
-2. f(r) : [Hu-Sawicki f(R)](https://arxiv.org/abs/0705.1158) - extpars[0] = $f_{R0}$ 
-3. dgp : normal branch of [DGP gravity](https://arxiv.org/abs/hep-th/0005016) - extpars[0] = $\Omega_{rc}$ 
-4. quintessence : Quintessence  - extpars[0] = $w_0$
-5. cpl : [CPL evolving dark energy](https://arxiv.org/abs/gr-qc/0009008) w = w0 + (1-a)wa () - extpars[0,1] =  {$w_0,w_a$}
-6. ds : [Dark Scattering with CPL background](https://arxiv.org/abs/1605.05623) - extpars[0-2] = {$w_0,w_a,\xi*h$)
-7. eftppf :  effective field theory of dark energy with a post parametrised friedmannian $G_{eff,non-linear}$ in spherical collapse equations - extpars[0-9] = {$\alpha_{k0},\alpha_{b0},\alpha_{m0},p1,...,p7$} 
-8. eftus :  effective field theory of dark energy without screening, i.e. $G_{eff, non-linear}$ = $G_{eff,linear}$ - extpars[0-2] ={$\alpha_{k0},\alpha_{b0},\alpha_{m0}$} 
-9. eftss :  effective field theory of dark energy with superscreening , i.e. $G_{eff, non-linear}$ = $G_{N}$  - extpars[0-2] = {$\alpha_{k0},\alpha_{b0},\alpha_{m0}$} 
+2. f(r) : [Hu-Sawicki f(R)](https://arxiv.org/abs/0705.1158). **extpars[0-2]** = $f_{R0}$ 
+3. dgp : normal branch of [DGP gravity](https://arxiv.org/abs/hep-th/0005016). **extpars[0]** = $\Omega_{rc}$ 
+4. quintessence : Quintessence. **extpars[0]** = $w_0$
+5. cpl : [CPL evolving dark energy](https://arxiv.org/abs/gr-qc/0009008) w = w0 + (1-a)wa (). **extpars[0-1]**=  {$w_0,w_a$}
+6. ds : [Dark Scattering with CPL background](https://arxiv.org/abs/1605.05623). **extpars[0-2]** = {$w_0,w_a,\xi*h$)
+7. eftppf :  effective field theory of dark energy with a post parametrised friedmannian $G_{eff,non-linear}$ in spherical collapse equations. **extpars[0-9]** = {$\alpha_{k0},\alpha_{b0},\alpha_{m0},p1,...,p7$} 
+8. eftus :  effective field theory of dark energy without screening, i.e. $G_{eff, non-linear}$ = $G_{eff,linear}$. **extpars[0-2]** ={$\alpha_{k0},\alpha_{b0},\alpha_{m0}$} 
+9. eftss :  effective field theory of dark energy with superscreening , i.e. $G_{eff, non-linear}$ = $G_{N}$. **extpars[0-2]**  = {$\alpha_{k0},\alpha_{b0},\alpha_{m0}$}.  
 
 where a `0` subscript means the value today. 
 
@@ -424,9 +424,9 @@ We have implemented the following to v.2:
 * Added in Dark Scattering model to react_with_neutrinos branch. 
 * Split off beyond LCDM functions to BeyondLCDM.cpp in src directory for easily adding in new models. 
 * Upgraded all beyond LCDM functions to use an n-dimensional array for parameters allowing for arbitrary number of theory parameters to be used. 
-* Upgraded redshift space functions to use an n-dimensional array for rsd and bias parameters
+* Upgraded redshift space functions to use an n-dimensional array for rsd and bias parameters.
 * Added in EFTofDE + PPF model for model independent predictions. 
 * Optimised RSD multipole computation. 
-* Created python wrapper for RSD multipoles and real space bispectrum. 
-* Created new example python notebooks for bispectrum, rsd and EFTofDE calculations. 
+* Created python wrapper for RSD multipoles. 
+* Created new example python notebooks for rsd multipoles and EFTofDE calculations. 
 
