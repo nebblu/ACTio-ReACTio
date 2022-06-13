@@ -3,9 +3,6 @@
 
 #include <vector>
 
-// maximum number of beyond-LCDM theory parameters: can easily adjust here.
-const int maxpars = 20;
-
 // angular integration limits - taken as the ends of the 128-point Gauss quadrature method - see end of file
 const real XMAX =  9.999561e-01;//x128[255];
 const real XMIN = -9.999561e-01; //x128[0];
@@ -57,25 +54,6 @@ double HA(double a, double omega0);
 double HA1(double a, double omega0);
 //-dH/dt/H^2
 double HA2(double a, double omega0);
-
-// Background function  ---   general
-double HAg(double a, double omega0, double extpars[], int model = 1 );
-double HA1g(double a, double omega0, double extpars[], int model = 1 );
-double HA2g(double a, double omega0, double extpars[], int model = 1 );
-
-// 3/(2H^2) * Omega_m
-double HA2g2(double a, double omega0, double extpars[], int model = 1);
-
-// Virial theorem contribution of DE
-double WEFF(double a, double omega0, double extpars[], int model = 1 );
-
-// Modified gravity functions
-// 1-loop PT (1606.02520)
-double mu(double a, double k0, double omega0, double extpars[], int model = 1  );
-double gamma2(double a, double omega0, double k0, double k1, double k2, double u1, double extpars[] , int model = 1 );
-double gamma3(double a, double omega0, double k0, double k1, double k2, double k3, double u1,double u2, double u3, double extpars[], int model = 1 );
-// Spherical collapse (1812.05594 - appendix)
-double mymgF(double a, double yh, double yenv, double Rth, double omega0, double extpars[], double delta_initial, int model = 1);
 
 
 // standard PT kernels

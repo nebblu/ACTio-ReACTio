@@ -12,7 +12,7 @@ libcopter_la_SOURCES = \
     LinearPS.cpp MonteCarlo.cpp NoWigglePS.cpp PowerSpectrum.cpp \
     Quadrature.cpp RPT.cpp SPT.cpp SimpleRG.cpp SpecialFunctions.cpp \
     Spline.cpp Timer.cpp \
-    array.cpp cfg.c pstring.cpp rng.c SCOL.cpp HALO.cpp
+    array.cpp cfg.c pstring.cpp rng.c SCOL.cpp HALO.cpp BeyondLCDM.cpp
 
 copterincdir = $(includedir)/Copter
 copterinc_HEADERS = \
@@ -23,4 +23,4 @@ copterinc_HEADERS = \
     LinearPS.h MonteCarlo.h NoWigglePS.h ODE.h ODE.inl PowerSpectrum.h \
     Quadrature.h Quadrature.inl RPT.h SPT.h SimpleRG.h SpecialFunctions.h \
     Spline.h Timer.h \
-    array.h cfg.h pstring.h rng.h SCOL.h HALO.h
+    array.h cfg.h pstring.h rng.h SCOL.h HALO.h BeyondLCDM.h

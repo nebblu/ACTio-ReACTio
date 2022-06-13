@@ -94,7 +94,7 @@ am_libcopter_la_OBJECTS =  libcopter_la-Closure.lo libcopter_la-BSPT.lo libcopte
 	libcopter_la-Timer.lo libcopter_la-array.lo \
 	libcopter_la-cfg.lo libcopter_la-pstring.lo \
 	libcopter_la-rng.lo \
-	libcopter_la-SCOL.lo libcopter_la-HALO.lo
+	libcopter_la-SCOL.lo libcopter_la-HALO.lo libcopter_la-BeyondLCDM.lo
 	libcopter_la_OBJECTS = $(am_libcopter_la_OBJECTS)
 libcopter_la_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(libcopter_la_CXXFLAGS) \
@@ -281,7 +281,7 @@ libcopter_la_SOURCES = \
     LinearPS.cpp MonteCarlo.cpp NoWigglePS.cpp PowerSpectrum.cpp \
     Quadrature.cpp RPT.cpp SPT.cpp SimpleRG.cpp SpecialFunctions.cpp \
     Spline.cpp Timer.cpp \
-    array.cpp cfg.c pstring.cpp rng.c SCOL.cpp HALO.cpp
+    array.cpp cfg.c pstring.cpp rng.c SCOL.cpp HALO.cpp BeyondLCDM.cpp
 
 copterincdir = $(includedir)/Copter
 copterinc_HEADERS = \
@@ -292,7 +292,7 @@ copterinc_HEADERS = \
     LinearPS.h MonteCarlo.h NoWigglePS.h ODE.h ODE.inl PowerSpectrum.h \
     Quadrature.h Quadrature.inl RPT.h SPT.h SimpleRG.h SpecialFunctions.h \
     Spline.h Timer.h \
-    array.h cfg.h pstring.h rng.h SCOL.h HALO.h
+    array.h cfg.h pstring.h rng.h SCOL.h HALO.h BeyondLCDM.h
 
 all: all-am
 
@@ -399,6 +399,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcopter_la-pstring.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcopter_la-rng.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcopter_la-SCOL.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcopter_la-BeyondLCDM.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcopter_la-HALO.Plo@am__quote@
 
 
@@ -667,6 +668,13 @@ libcopter_la-HALO.lo: HALO.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='HALO.cpp' object='libcopter_la-HALO.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcopter_la_CPPFLAGS) $(CPPFLAGS) $(libcopter_la_CXXFLAGS) $(CXXFLAGS) -c -o libcopter_la-HALO.lo `test -f 'HALO.cpp' || echo '$(srcdir)/'`HALO.cpp
+
+libcopter_la-BeyondLCDM.lo: BeyondLCDM.cpp
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcopter_la_CPPFLAGS) $(CPPFLAGS) $(libcopter_la_CXXFLAGS) $(CXXFLAGS) -MT libcopter_la-BeyondLCDM.lo -MD -MP -MF $(DEPDIR)/libcopter_la-BeyondLCDM.Tpo -c -o libcopter_la-BeyondLCDM.lo `test -f 'BeyondLCDM.cpp' || echo '$(srcdir)/'`BeyondLCDM.cpp
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libcopter_la-BeyondLCDM.Tpo $(DEPDIR)/libcopter_la-BeyondLCDM.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='BeyondLCDM.cpp' object='libcopter_la-BeyondLCDM.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcopter_la_CPPFLAGS) $(CPPFLAGS) $(libcopter_la_CXXFLAGS) $(CXXFLAGS) -c -o libcopter_la-BeyondLCDM.lo `test -f 'BeyondLCDM.cpp' || echo '$(srcdir)/'`BeyondLCDM.cpp
 
 mostlyclean-libtool:
 	-rm -f *.lo

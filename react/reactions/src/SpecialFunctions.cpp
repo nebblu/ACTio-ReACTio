@@ -8,8 +8,7 @@
 #include "Common.h"
 #include "Quadrature.h"
 #include "SpecialFunctions.h"
-
-//#include<omp.h>
+#include "BeyondLCDM.h"
 
 #include <stdio.h>
 #include <gsl/gsl_errno.h>
@@ -28,21 +27,8 @@ using std::cref;
 using std::bind;
 
 
-/* All modified gravity functions and ODE solvers for density and velocity SPT kernels up to 3rd order */
 
-/* We also include analytic EdS kernels for GR and nDGP up to 3rd and 4th order (inite and inite2)
-/* See 1606.02520, 1808.01120, 2005.12184  for more details */
-
-// Throughout the values of pars, extpars and model are:
-// pars: base parameters. Currently used: 0: scale factor, 1: total matter fraction today, 2: total massive neutrino fraction today
-// extpars: extended parameters. extpars[0] = Omega_rc for nDGP, fr0 for f(R), w0 for CPL, extpars[1] = wa for CPL
-// for EFTofDE and LCDM background we have extpars[i] = alpha_{K0},alpha_{B0},alpha_{M0}
-// for KGB with CPL background we have extpars[i] = w0, wa, alpha_{K0},alpha_{B0},alpha_{M0}
-// model selects MG or DE model (1 = GR, MG: 2 = f(R), 3 = DGP, DE models: 4 = quintessence, 5 = CPL, 6 = HyP)
-// 7-10: EFTofDE with PPF, unscreened, superscreened and KGB non-linear implementations.
-
-
-/* BACKGROUND QUANTITIES - LCDM - assumed in modified gravity computations */
+/* LCDM BACKGROUND QUANTITIES  */
 
 // Normalized Hubble parameter H
 double HA(double a, double omega0){
@@ -59,575 +45,6 @@ double HA1(double a, double omega0){
 double HA2(double a, double omega0){
 	return 3.*omega0/(2.*HA(a,omega0)*HA(a,omega0)*pow(a,3))
 	;}
-
-
-
-                                        ////
-                                    /////////////
-                            //////////////////////////////
-                      /////////////////////////////////////////
-                ///////////////////////////////////////////////////////
-            /////////////////////////////////////////////////////////////////
-      //////////////////////////////////////////////////////////////////////////
-    ///////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////
-
-
-/* GENERAL BACKGROUND EXPANSION --- p2 and p3 unused but  can be added to include more complicated dynamics
-Used in:
-initn_lin
-initn2
-initn2_pseudo
-initn3
-initn_rsd  */
-
-/* HYP model uses the  additional two functions */
-static double omega_hyp(double w0, double wa,double av){
-	double whyp = w0+wa/2.*(1+tanh(1./av-3.5));
-	return 3.*(1.+whyp)/av;
-}
-static double omega_var_hyp(double w0, double wa, double a){
-	return Integrate(bind(omega_hyp, w0, wa, std::placeholders::_1), a, 1, 1e-4);
-}
-
-// Default --- LCDM
-// Included are all models from  Baldi and Fergus : https://academic.oup.com/mnras/article-lookup/doi/10.1093/mnras/stw2702 */
-// QUINTESSENCE ---- p1 = w0
-// CPL --- p1 = w_0, p2 = w_a
-// HYP --- p1 only free param
-double HAg(double a, double omega0, double extpars[], int model){
-	double A, omegaf, omegaL;
-	switch(model) {
-		case 1:
-		/* LCDM */
-		 return HA( a, omega0);
-
-		 case 2:
- 		/* f(R) */
- 		 return HA( a, omega0);
-
-		 case 3:
-		 /* DGP */
-			return HA( a, omega0);
-
-			case 4:
-			/* QUINTESSENCE */
-			A = -3.*(1.+extpars[0]);
-			omegaf = pow(a,A);
-			omegaL= (1.-omega0)*omegaf;
-			return  sqrt(omega0/pow(a,3)+omegaL);
-
-			case 5:
-			/* CPL */
-			A = -3.*(1.+extpars[0]+extpars[1]);
-			omegaf = pow(a,A)*exp(3.*(-1.+a)*extpars[1]);
-			omegaL= (1.-omega0)*omegaf;
-			return  sqrt(omega0/pow(a,3)+omegaL);
-
-			case 6:
-			/* HYP */
-			A = omega_var_hyp(extpars[0],extpars[1],a);
-			omegaf = exp(A);
-			omegaL= (1.-omega0)*omegaf;
-			return  sqrt(omega0/pow(a,3)+omegaL);
-
-			case 7:
-			/* EFTofDE: PPF - set to LCDM background for now  */
-			return HA( a, omega0);
-
-			case 8:
-			/* EFTofDE: unscreened approx */
-			return  HA( a, omega0);
-
-			case 9:
-			/* EFTofDE: superscreened approx */
-			return  HA( a, omega0);
-
-			case 10:
-			/* KGB with CPL background  */
-			A = -3.*(1.+extpars[0]+extpars[1]);
-			omegaf = pow(a,A)*exp(3.*(-1.+a)*extpars[1]);
-			omegaL= (1.-omega0)*omegaf;
-			return  sqrt(omega0/pow(a,3)+omegaL);
-
-			default:
-					warning("SpecialFunctions: invalid model choice, model = %d \n", model);
-					return 0;
-}
-}
-
-// aH dH/da / H0^2
-double HA1g(double a, double omega0, double extpars[], int model){
-	double A, omegaf, omegaL;
-	switch(model) {
-		case 1:
-		/* LCDM */
-		 return HA1( a, omega0);
-
-		 case 2:
- 		/* f(R) */
- 		 return HA1( a, omega0);
-
-		 case 3:
-		 /* DGP */
-			return HA1( a, omega0);
-
-			case 4:
-		/*QUINTESSENCE*/
-		A = -3.*(1.+extpars[0]);
-		omegaf = pow(a,A);
-		omegaL= (1.-omega0)*omegaf;
-		return -3*omega0/(2.*pow(a,3)) + A*omegaL/2.;
-
-		 case 5:
-	  /* CPL */
-		A = -3.*(1.+extpars[0]+extpars[1]);
-	  omegaf = pow(a,A)*exp(3*(-1.+a)*extpars[1]);
-		omegaL= (1.-omega0)*omegaf;
-	  return -3.*omega0/(2.*pow(a,3)) + (A+3.*a*extpars[1])*omegaL/2.;
-
-		case 6:
-	  /*HYP*/
-		A = omega_var_hyp(extpars[0],extpars[1],a);
-		omegaf = exp(A);
-	  omegaL= (1.-omega0)*omegaf;
-		return -3.*omega0/(2.*pow(a,3)) + A*a*omegaL/2.;
-
-		case 7:
-		/* EFTofDE: PPF - set to LCDM background for now  */
-		return HA1( a, omega0);
-
-		case 8:
-		/* EFTofDE: unscreened approximation */
-		return HA1( a, omega0);
-
-		case 9:
-		/* EFTofDE: superscreened approximation */
-		return HA1( a, omega0);
-
-		case 10:
-		/* KGB with CPL background  */
-		A = -3.*(1.+extpars[0]+extpars[1]);
-	  omegaf = pow(a,A)*exp(3*(-1.+a)*extpars[1]);
-		omegaL= (1.-omega0)*omegaf;
-	  return -3.*omega0/(2.*pow(a,3)) + (A+3.*a*extpars[1])*omegaL/2.;
-
-		default:
-				warning("SpecialFunctions: invalid model choice, model = %d \n", model);
-				return 0;
-}
-}
-
-
-//HA2g = -dH/dt/H^2 = -a dH/da / H
-double HA2g(double a, double omega0, double extpars[], int model){
-   	return -HA1g(a,omega0,extpars,model)/pow2(HAg(a,omega0,extpars,model));
-}
-
-//3 H0^2/(2H^2) * Omega_{m,0}/a^3
-double HA2g2(double a, double omega0, double extpars[], int model){
-   	return 3.*omega0/(2.*pow2(HAg(a,omega0,extpars,model))*pow(a,3));
-}
-
-
-
-// Dark energy contribution to virial theorem - see Eq.A9 of 1812.05594
-double  WEFF(double a, double omega0, double extpars[], int model){
-	double h2;
-	switch(model) {
-		case 1:
-		/* LCDM */
-		return 2.*(1.-omega0);
-
-		 case 2:
-		/* f(R) */
-		return 2.*(1.-omega0);
-
-		 case 3:
-		 /* DGP */
-		 return 2.*(1.-omega0);
-
-		 case 4:
-		/* QUINTESSENCE*/
-		return -(1.-omega0)*(1.+3.*extpars[0]);
-
-		case 5:
-		/*CPL*/
-		 h2 = pow2(HAg(a,omega0,extpars,model));
-		 return -(1.+3.*(extpars[0]+(1.-a)*extpars[1]))*(h2-omega0/pow3(a));
-
-		 case 6:
-		 /* Hyp 5/04/2021: WORK IN PROGRESS - NEED TO DERIVE WEFF FOR HYP MODEL! SET TO LCDM  */
-		 return 2.*(1.-omega0);
-
-		 case 7:
-		 /* EFTofDE: PPF */
-		 return 2.*(1.-omega0);
-
-		 case 8:
-		 /* EFTofDE: unscreened approximation */
-		 return 2.*(1.-omega0);
-
-		 case 9:
-		 /* EFTofDE: superscreened approximation */
-		 return 2.*(1.-omega0);
-
-		 case 10:
-		 /* KGB with CPL background */
-		 h2 = pow2(HAg(a,omega0,extpars,model));
-		 return -(1.+3.*(extpars[0]+(1.-a)*extpars[1]))*(h2-omega0/pow3(a));
-
-
-		 default:
-				 warning("SpecialFunctions: invalid model choice, model = %d \n", model);
-				 return 0;
-}
-}
-
-/*MODIFIED GRAVITY MODEL FUNCTIONS (see 1606.02520) ----- background is always taken as LCDM for these functions */
-
-/*useful kernels for modified gravity functions */
-
-//1-mu^2
-static double ker1(double u1){
-	return 1.-u1*u1;
-}
-
-//beta function for nDGP
-// omega_rc as described in 1606.02520  for example
-inline double beta(double a, double omega0, double omegarc){
-	return 1.+  HA(a,omega0)/sqrt(omegarc)*(1.+HA1(a,omega0)/(3.*HA(a,omega0)*HA(a,omega0)));}
-
-// time evolution form of alpha_i for EFTofDE
-// edit as necessary - but also edit the scale factor derivative function accordingly!
-inline double alphai_eft(double a, double omega0, double alpha0){
-	return alpha0*a;
-}
-
-// scale factor derivatives of alphai_eft
-inline double dalphai_eft(double a, double omega0, double alpha0){
-	return alpha0;
-}
-
-
-/* PERTURBATIVE POISSON EQUATION FUNCTIONS UP TO 3RD ORDER */
-//p1,p2,p3 are theory parameters
-//k1,k2,k3 are the mode magnitudes
-//u1 cosine of the angle between k2 and k3; u2 between k1 and k2; u3 between k1 and k3
-
-// model; 1: GR, 2: f(R) Hu Sawicki, n=1  3: DGP normal branch
-
-double mu(double a, double k0, double omega0, double extpars[], int model){
-	double h0 = 1./2997.92458;
-	double var1, var2, alphaofa[5],dalphaofa[5];
-	switch(model) {
-		case 1:
-		/* GR */
-						return  1. ;
-		case 2:
-		/* f(R) Hu-Sawicki */
-						var1 = pow2(k0/a);
-	  				return 1. + var1/(3.*(var1+pow3(omega0/pow3(a)-4.*(omega0-1.))/(2.*extpars[0]/pow2(h0)*pow2(4.-3.*omega0))));
-    case 3:
-		/* nDGP */
-						return 1.+1./(3.*beta(a,omega0,extpars[0]));
-		case 4:
-		/* QUINTESSENCE */
-						return  1. ;
-		case 5:
-		/* CPL */
-						return  1. ;
-		case 6:
-		/* HYP */
-						return  1. ;
-
-		/* k->infinity limit of EFTofDE. See Eq. 26 of 1606.05339*/
-		// 7-10: PPF, unscreened, superscreened, KGB
-		case 7:
-						alphaofa[0] = alphai_eft(a,omega0,extpars[0]); // alpha_K(a) = alpha_{K0}*a
-						alphaofa[1] = alphai_eft(a,omega0,extpars[1]); // alpha_B(a) = alpha_{B0}*a
-						alphaofa[2] = alphai_eft(a,omega0,extpars[2]); // alpha_M(a) = alpha_{M0}*a
-						// scale factor derivatives of alpha_i(a)
-						dalphaofa[0] = dalphai_eft(a,omega0,extpars[0]);
-						dalphaofa[1] = dalphai_eft(a,omega0,extpars[1]);
-						dalphaofa[2] = dalphai_eft(a,omega0,extpars[2]);
-
-					  var1 = alphaofa[0] + 3./2.*pow2(alphaofa[1]); // alpha
-						var2 = 2./var1*( (1.-	alphaofa[1]/2.) * (alphaofa[1]/2. + HA2g(a,omega0,extpars,model))
-																					 + a*dalphaofa[1]/2.- HA2g2(a,omega0,extpars,model)); //cs^2
-					  return 1. + pow2(alphaofa[1])/(2.*var2*var1);
-
-	  case 8:
-						alphaofa[0] = alphai_eft(a,omega0,extpars[0]); // alpha_K(a) = alpha_{K0}*a
-						alphaofa[1] = alphai_eft(a,omega0,extpars[1]); // alpha_B(a) = alpha_{B0}*a
-						alphaofa[2] = alphai_eft(a,omega0,extpars[2]); // alpha_M(a) = alpha_{M0}*a
-						// scale factor derivatives of alpha_i(a)
-						dalphaofa[0] = dalphai_eft(a,omega0,extpars[0]);
-						dalphaofa[1] = dalphai_eft(a,omega0,extpars[1]);
-						dalphaofa[2] = dalphai_eft(a,omega0,extpars[2]);
-					  var1 = alphaofa[0] + 3./2.*pow2(alphaofa[1]); // alpha
-						var2 = 2./var1*( (1.-	alphaofa[1]/2.) * (alphaofa[1]/2. + HA2g(a,omega0,extpars,model))
-																					 + a*dalphaofa[1]/2.- HA2g2(a,omega0,extpars,model)); //cs^2
-					  return 1. + pow2(alphaofa[1])/(2.*var2*var1);
-
-		case 9:
-						alphaofa[0] = alphai_eft(a,omega0,extpars[0]); // alpha_K(a) = alpha_{K0}*a
-						alphaofa[1] = alphai_eft(a,omega0,extpars[1]); // alpha_B(a) = alpha_{B0}*a
-						alphaofa[2] = alphai_eft(a,omega0,extpars[2]); // alpha_M(a) = alpha_{M0}*a
-						// scale factor derivatives of alpha_i(a)
-						dalphaofa[0] = dalphai_eft(a,omega0,extpars[0]);
-						dalphaofa[1] = dalphai_eft(a,omega0,extpars[1]);
-						dalphaofa[2] = dalphai_eft(a,omega0,extpars[2]);
-
-					  var1 = alphaofa[0] + 3./2.*pow2(alphaofa[1]); // alpha
-						var2 = 2./var1*( (1.-	alphaofa[1]/2.) * (alphaofa[1]/2. + HA2g(a,omega0,extpars,model))
-																					 + a*dalphaofa[1]/2.- HA2g2(a,omega0,extpars,model)); //cs^2
-					  return 1. + pow2(alphaofa[1])/(2.*var2*var1);
-		case 10:
-		// CPL background so we use extpars[0]=w0, extpars[1]=wa
-						alphaofa[0] = alphai_eft(a,omega0,extpars[2]); // alpha_K(a) = alpha_{K0}*a
-						alphaofa[1] = alphai_eft(a,omega0,extpars[3]); // alpha_B(a) = alpha_{B0}*a
-						alphaofa[2] = alphai_eft(a,omega0,extpars[4]); // alpha_M(a) = alpha_{M0}*a
-						// scale factor derivatives of alpha_i(a)
-						dalphaofa[0] = dalphai_eft(a,omega0,extpars[2]);
-						dalphaofa[1] = dalphai_eft(a,omega0,extpars[3]);
-						dalphaofa[2] = dalphai_eft(a,omega0,extpars[4]);
-
-					  var1 = alphaofa[0] + 3./2.*pow2(alphaofa[1]); // alpha
-						var2 = 2./var1*( (1.-	alphaofa[1]/2.) * (alphaofa[1]/2. + HA2g(a,omega0,extpars,model))
-																					 + a*dalphaofa[1]/2.- HA2g2(a,omega0,extpars,model)); //cs^2
-					  return 1. + pow2(alphaofa[1])/(2.*var2*var1);
-
-		default:
-				warning("SpecialFunctions: invalid model choice, model = %d \n", model);
-				return 0;
-}
-}
-
-
-double gamma2(double a, double omega0, double k0, double k1, double k2, double u1, double extpars[], int model){
-	double h0 = 1./2997.92458;
-	double var1,var2,var3,var4,var5,var6;
-	switch(model) {
-		case 1:
-		/* GR */
-						return  0. ;
-		case 2:
-		/* f(R) Hu- Sawicki */
-						var1 = pow3(a);
-						var2 = pow3(var1);
-						var3 = pow2(h0);
-						var4 = pow2(3.*omega0-4.);
-						var5 = pow3(omega0-4.*var1*(omega0-1.))/(2.*var2*extpars[0]/var3*var4);
-						var6 = pow2(k0/a);
-							 return -(9.*var6*pow2(omega0/var1)*pow(omega0-4.*var1*(-1.+omega0),5))/
-									    (48.*pow(var1,5)*pow2(extpars[0]/var3)*pow2(HA(a,omega0))*pow2(var4)
-									   *(var6+var5)
-									   *(pow2(k1/a)+var5)
-							 		   *(pow2(k2/a)+var5));
-		case 3:
-		/* DGP */
-						return -1./(HA(a,omega0)*HA(a,omega0)*24.*pow(beta(a,omega0,extpars[0]),3)*extpars[0])*pow(omega0/(a*a*a),2)*ker1(u1);
-		case 4:
-		/* QUINTESSENCE */
-						return  0. ;
-		case 5:
-		/* CPL */
-						return  0. ;
-		case 6:
-		/* HYP */
-						return  0. ;
-		case 7:
-		/* EFTofDE PPF*/
-						return  0. ;
-		case 8:
-		/* EFTofDE - unscreened  approximation  */
-						return  0. ;
-		case 9:
-		/* EFTofDE - superscreened approximation  */
-						return  0. ;
-		case 10:
-		/* KGB  with CPL background*/
-						return  0. ;
-		default:
-		warning("SpecialFunctions: invalid model choice, model = %d \n", model);
-				return 0;
-}
-}
-
-// partially symmetric gamma3 (in last 2 arguments) for DGP
-double gamma3(double a, double omega0, double k0, double k1, double k2, double k3, double u1,double u2, double u3, double extpars[], int model){
-	double h0 = 1./2997.92458;
-	double var1,var2,var3,var4,var5,var6,var7,var8,var9,var10,var11,k23 ;
-
-	switch(model) {
-	  case 1:
-		/* GR */
-						return  0. ;
-	  case 2:
-		/* f(R) Hu- Sawicki */
-						var1 = pow3(a);
-						var2 = pow3(var1);
-						var3 = pow2(h0);
-						var4 = pow2(3.*omega0-4.);
-						var5 = pow3(omega0-4.*var1*(omega0-1.))/(2.*var2*extpars[0]/var3*var4);
-						var6 = pow(var1,5);
-						var7 = var6*pow2(var1);
-						k23 = sqrt(k2*k2+k3*k3+2.*k2*k3*u1);
-						var8 = pow2(k0/a);
-						var9 = pow2(k23/a);
-						var10 = pow2(extpars[0]/var3);
-						var11 = pow2(var4);
-
-						  return 1./3.*(var8*pow2(1./HA(a,omega0))*pow3(omega0/var1)/(36.
-						 										*(var8+var5)
-						 										*(pow2(k1/a)+var5)
-						 										*(pow2(k2/a)+var5)
-						 										*(pow2(k3/a)+var5)
-						 				 					  *(var9+var5))
-						 		 								*(-45./8.*(var9+var5)/(var7*var10*(extpars[0]/var3))*pow(omega0-4.*var1*(omega0-1.),7)/var11/var4
-						 		   							+pow2(9./(4.*var6*var10)*pow(omega0-4.*var1*(omega0-1.),5)/var11)));
-	  case 3:
-		/* nDGP */
-							return 1./(HA(a,omega0)*HA(a,omega0)*144.*pow(beta(a,omega0,extpars[0]),5)*pow(extpars[0],2))*pow(omega0/(a*a*a),3)*ker1(u1)*ker1((k2*u2+k3*u3)/sqrt(k2*k2+2.*k2*k3*u1+k3*k3));
-		case 4:
-		/* QUINTESSENCE */
-						return  0. ;
-		case 5:
-		/* CPL */
-						return  0. ;
-		case 6:
-		/* HYP */
-						return  0. ;
-		case 7:
-		/* EFTofDE PPF  */
-						return  0. ;
-		case 8:
-		/* EFTofDE - unscreened  approximation  */
-						return  0. ;
-		case 9:
-		/* EFTofDE - superscreened approximation  */
-						return  0. ;
-		case 10:
-		/* KGB  with CPL background*/
-						return  0. ;
-		default:
-		warning("SpecialFunctions: invalid model choice, model = %d \n", model);
-				return 0;
-}
-}
-
-
-/// Modified gravity function for spherical collapse (see for example A.1 of appendix of 1812.05594) ////
-
-double mymgF(double a, double yh, double yenv, double Rth, double omega0, double extpars[], double delta_initial, int model){
-	double h0 = 1./2997.92;
-	double dod, dod2, dRRth, fr0, var1, var2, var3, term1, term2;
-	double betadgp,xm3,xterm,delta,deltaenv,Mvir;
-	double alphaofa[5],dalphaofa[5],lambda2; //EFTofDE
-	switch(model) {
-	  case 1:
-						return  0. ; // GR
-	  case 2:
-		/* f(R)  - Hu-Sawicki model, n =1 */
-						fr0 = extpars[0]/h0/h0;
-						var1 = pow2(3.*omega0 -4.);
-
-						term1 = 1./pow2(omega0/pow3(yenv * a) + 4. - 4.*omega0);
-						term2 = 1./pow2(omega0/pow3(yh * a) + 4. - 4.*omega0);
-
-						dod = fr0 * yh * a *var1 * (term1 - term2) / Rth/ Rth / omega0 ;
-						dod2 = pow2(dod);
-
-						dRRth = dod - dod2 + dod2*dod/3.;
-
-						return gsl_min(dRRth,1./3.);
-
-	 case 3:
-	 				/*DGP normal branch*/
-		      betadgp = beta(a,omega0,extpars[0]);
-
-		      delta = (1.+delta_initial)/pow3(yh) - 1.;
-
-		      xterm = 9.*pow2(betadgp)*extpars[0]/(2.*omega0/pow3(a)*delta);
-
-		      xm3 = 1./xterm;
-
-		      return 2./(3.*betadgp)*(sqrt(1.+ xm3)-1.)/xm3;
-
-			case 4:
-			/* QUINTESSENCE */
-							return  0. ;
-			case 5:
-			/* CPL */
-							return  0. ;
-			case 6:
-			/* HYP */
-							return  0. ;
-
-			case 7:
-			/* EFTofDE - PPF */
-			// p1-p7 : extpars[3-9] , extpars[0-2] : alpha_{K0}, alpha_{B0}, alpha_{M0}
-					var1 = extpars[3]/(extpars[3]-1.)*extpars[5]; // a
-					Mvir = pow3(Rth/0.1)*5.*omega0; // virial mass x Gnewton - see definition in scol_init in HALO.cpp
-
-					delta = (1.+delta_initial)/pow3(yh) - 1.; // non-linear over density of halo
-					deltaenv = (1.+delta_initial)/pow3(yenv) - 1.; // non-linear over density of environment
-
-					var2 = pow(1./delta,1./3.); // yh with 1608.00522 definitions
-					var3 = pow(1./deltaenv,1./3.);  // yenv with 1608.00522 definitions
-
-					term1 = extpars[6]*pow(a,extpars[7])*pow(2.*h0*Mvir,extpars[8])*pow(var3/var2,extpars[9]); // y0
-
-					xm3 = pow(term1/var2,var1); // (y0/yh)^a
-
-
-							return extpars[3]*extpars[4]*(pow(1.+ xm3,1./extpars[3])-1.) / xm3 ;
-
-			case 8:
-			/* EFTofDE - unscreened approximation  */
-							return mu(a,0.001,omega0,extpars,model)-1.;
-			case 9:
-			/* EFTofDE - superscreened approximation  */
-							return 0.;
-
-			case 10:
-			/* KGB with CPL background */
-			// CPL background so we use extpars[0]=w0, extpars[1]=wa
-					alphaofa[0] = alphai_eft(a,omega0,extpars[2]); // alpha_K(a) = alpha_{K0}*a
-					alphaofa[1] = alphai_eft(a,omega0,extpars[3]); // alpha_B(a) = alpha_{B0}*a
-					alphaofa[2] = alphai_eft(a,omega0,extpars[4]); // alpha_M(a) = alpha_{M0}*a
-					// scale factor derivatives of alpha_i(a)
-					dalphaofa[0] = dalphai_eft(a,omega0,extpars[2]);
-					dalphaofa[1] = dalphai_eft(a,omega0,extpars[3]);
-					dalphaofa[2] = dalphai_eft(a,omega0,extpars[4]);
-
-					var1 = alphaofa[0] + 3./2.*pow2(alphaofa[1]); // alpha
-					var2 = 2./var1*( (1.-	alphaofa[1]/2.) * (alphaofa[1]/2. + HA2g(a,omega0,extpars,model))
-																				 + a*dalphaofa[1]/2.- HA2g2(a,omega0,extpars,model)); //cs^2
-
-					lambda2 = alphaofa[1]/pow2(HAg(a,omega0,extpars,model))/var1/var2; // perhaps 1 less power of H here?
-
-					delta = (1.+delta_initial)/pow3(yh) - 1.;
-					xm3 = 4.*omega0/pow3(a)*lambda2*delta; // perhaps extra power of lambda here ?
-
-					term1 = 2.*pow2(alphaofa[1])/(2.*var2*var1); // 2 (mu_L -1)
-
-					return term1*(sqrt(1.+ xm3)-1.)/xm3;
-		default:
-					warning("SpecialFunctions: invalid model choice, model = %d \n", model);
-				  return 0;
-  }
-}
-
-
-////////////////////////////////////////////////////////////////////////////////////////
-    ///////////////////////////////////////////////////////////////////////////////
-      //////////////////////////////////////////////////////////////////////////
-                  /////////////////////////////////////////////////
-                         //////////////////////////////////
-                                  //////////////////
-                                        /////////
 
 
 
@@ -654,6 +71,18 @@ double alphas(double k1, double k2, double u1){
 double beta1(double k1, double k2, double u1){
 	return u1*(k1*k1+k2*k2+2.*k1*k2*u1)/(2.*k1*k2);
 }
+
+//1-mu^2
+static double ker1(double u1){
+	return 1.-u1*u1;
+}
+
+//beta function for nDGP
+// omega_rc as described in 1606.02520  for example
+inline double beta(double a, double omega0, double omegarc){
+	return 1. +  HA(a,omega0)/sqrt(omegarc)*(1.+HA1(a,omega0)/(3.*HA(a,omega0)*HA(a,omega0)));}
+
+
 
 
 //Jacobian of the system required when calling the system evolver, the below is not needed for solving
@@ -717,7 +146,6 @@ double F3_nkp;
 double G3_nkp;
 
 
-
 ///////// Numerical kernel solvers up to 3rd order  //////////////
 
 /* Euler and Continuity equations for numerical kernels */
@@ -754,12 +182,15 @@ int funcn_lin(double a, const double G[], double F[], void *params)
 
 	double rescale = omegacb/p.omega0;
 
+	// dark scattering model friction term -  CPL
+	double fric = myfricF(a, omegacb, p.extpars, p.model)/ HAg(a,p.omega0,p.extpars,p.model);
+
 	double mu1 = mu(a,p.kv[0],p.omega0,p.extpars,p.model);
 
 	/* 1st order */
 	//1. F1/G1(k)
 	F[0] = -G[1]/a;
-	F[1] =1./a*(-(2.-hade1)*G[1]-hade2*G[0]*mu1*rescale);
+	F[1] =1./a*(-(2.+fric-hade1)*G[1]-hade2*G[0]*mu1*rescale);
 
 	return GSL_SUCCESS;
 }
@@ -828,34 +259,38 @@ int funcn1(double a, const double G[], double F[], void *params)
 	mu3 = mu(a,p.args[0],p.omega0,p.extpars,p.model);
 	mu4 = mu(a,p.args[3],p.omega0,p.extpars,p.model);
 
+	// dark scattering model friction term -  CPL
+	double fric = myfricF(a, omegacb, p.extpars, p.model)/ HAg(a,p.omega0,p.extpars,p.model);
+
+
 	// Poisson sourced by CB density, not total matter
 	double rescale = omegacb/p.omega0;
 
 	/* 1st order */
 	//1. F1/G1(k)
 	F[0] = -G[1]/a;
-	F[1] =1./a*(-(2.-hade1)*G[1]-hade2*G[0]*mu1*rescale);
+	F[1] =1./a*(-(2.+fric-hade1)*G[1]-hade2*G[0]*mu1*rescale);
 
 	//2. F1/G1(k-p)
 	F[2] = -G[3]/a;
-	F[3] =1./a*(-(2.-hade1)*G[3]-hade2*G[2]*mu3*rescale);
+	F[3] =1./a*(-(2.+fric-hade1)*G[3]-hade2*G[2]*mu3*rescale);
 
 	//3. F1/G1(p)
 	F[4] = -G[5]/a;
-	F[5] =1./a*(-(2.-hade1)*G[5]-hade2*G[4]*mu2*rescale);
+	F[5] =1./a*(-(2.+fric-hade1)*G[5]-hade2*G[4]*mu2*rescale);
 
 	/* 2nd order */
 	//4. F2/G2(p,k-p) (P22)
 	F[6] =1./a*(-(p.alpha[0]*G[5]*G[2]+p.alpha[1]*G[3]*G[4])/2.-G[7]);
-	F[7] =1./a*(-(2.-hade1)*G[7]-hade2*G[6]*mu1*rescale - gamma2(a, p.omega0, p.kv[0], p.kv[1],p.args[0],(p.kv[0]*p.xv[1]-p.kv[1])/p.args[0],p.extpars,p.model)*G[4]*G[2] - p.beta[0]*G[5]*G[3]);
+	F[7] =1./a*(-(2.+fric-hade1)*G[7]-hade2*G[6]*mu1*rescale - gamma2(a, p.omega0, p.kv[0], p.kv[1],p.args[0],(p.kv[0]*p.xv[1]-p.kv[1])/p.args[0],p.extpars,p.model)*G[4]*G[2] - p.beta[0]*G[5]*G[3]);
 
 	//5. F2/G2(p,k)
 	F[8] =1./a*(-(p.alpha[2]*G[5]*G[0]+p.alpha[3]*G[1]*G[4])/2.-G[9]) ;
-	F[9] =1./a*(-(2.-hade1)*G[9]-hade2*G[8]*mu4*rescale - gamma2(a, p.omega0, p.args[3], p.kv[1],p.kv[0],p.xv[1],p.extpars,p.model)*G[4]*G[0]-p.beta[1]*G[5]*G[1]);
+	F[9] =1./a*(-(2.+fric-hade1)*G[9]-hade2*G[8]*mu4*rescale - gamma2(a, p.omega0, p.args[3], p.kv[1],p.kv[0],p.xv[1],p.extpars,p.model)*G[4]*G[0]-p.beta[1]*G[5]*G[1]);
 
 	//6. F2/G2(-p,k)=F2/G2(p,-k)
 	F[10] =1./a*(-(p.alpha[4]*G[5]*G[0]+p.alpha[5]*G[1]*G[4])/2.-G[11]) ;
-	F[11] =1./a*(-(2.-hade1)*G[11]-hade2*G[10]*mu3*rescale -gamma2(a, p.omega0, p.args[0], p.kv[2],p.kv[0],p.xv[2],p.extpars,p.model)*G[4]*G[0]-p.beta[2]*G[5]*G[1]);
+	F[11] =1./a*(-(2.+fric-hade1)*G[11]-hade2*G[10]*mu3*rescale -gamma2(a, p.omega0, p.args[0], p.kv[2],p.kv[0],p.xv[2],p.extpars,p.model)*G[4]*G[0]-p.beta[2]*G[5]*G[1]);
 
 	//7. 3rd order  ~ F3/G3(k,p,-p)
 	F[12] = - 1./(3.*a)*(p.alpha[6]*G[8]*G[5]
@@ -867,7 +302,7 @@ int funcn1(double a, const double G[], double F[], void *params)
 						+3.*G[13]) ;
 
 
-	F[13] =1./(3.*a)*(-3.*(2.-hade1)*G[13]-3.*hade2*G[12]*mu1*rescale
+	F[13] =1./(3.*a)*(-3.*(2.+fric-hade1)*G[13]-3.*hade2*G[12]*mu1*rescale
 
 					 -2.*p.beta[3]*G[5]*G[9]
 					 -2.*p.beta[4]*G[5]*G[11]
@@ -1355,6 +790,9 @@ int funcn_rsd(double a, const double G[], double F[], void *params)
 	mu3 = mu(a,p.args[0],p.omega0,p.extpars,p.model);
 	mu4 = mu(a,p.args[3],p.omega0,p.extpars,p.model);
 
+	// dark scattering model friction term -  CPL
+	double fric = myfricF(a, omegacb, p.extpars, p.model)/ HAg(a,p.omega0,p.extpars,p.model);
+
 	// Poisson sourced by CB density, not total matter
 	double rescale = omegacb/p.omega0;
 
@@ -1362,28 +800,28 @@ int funcn_rsd(double a, const double G[], double F[], void *params)
 
 	//1. F1/G1(k)
 	F[0] = -G[1]/a;
-	F[1] =1./a*(-(2.-hade1)*G[1]-hade2*G[0]*mu1*rescale);
+	F[1] =1./a*(-(2.+fric-hade1)*G[1]-hade2*G[0]*mu1*rescale);
 
 	//2. F1/G1(k-p)
 	F[2] = -G[3]/a;
-	F[3] =1./a*(-(2.-hade1)*G[3]-hade2*G[2]*mu3*rescale);
+	F[3] =1./a*(-(2.+fric-hade1)*G[3]-hade2*G[2]*mu3*rescale);
 
 	//3. F1/G1(p)
 	F[4] = -G[5]/a;
-	F[5] =1./a*(-(2.-hade1)*G[5]-hade2*G[4]*mu2*rescale);
+	F[5] =1./a*(-(2.+fric-hade1)*G[5]-hade2*G[4]*mu2*rescale);
 
 	/* 2nd order */
 	//4. F2/G2(p,k-p) (P22)
 	F[6] =1./a*(-(p.alpha[0]*G[5]*G[2]+p.alpha[1]*G[3]*G[4])/2.-G[7]);
-	F[7] =1./a*(-(2.-hade1)*G[7]-hade2*G[6]*mu1*rescale - gamma2(a, p.omega0, p.kv[0], p.kv[1],p.args[0],(p.kv[0]*p.xv[1]-p.kv[1])/p.args[0],p.extpars,p.model)*G[4]*G[2] - p.beta[0]*G[5]*G[3]);
+	F[7] =1./a*(-(2.+fric-hade1)*G[7]-hade2*G[6]*mu1*rescale - gamma2(a, p.omega0, p.kv[0], p.kv[1],p.args[0],(p.kv[0]*p.xv[1]-p.kv[1])/p.args[0],p.extpars,p.model)*G[4]*G[2] - p.beta[0]*G[5]*G[3]);
 
 	//5. F2/G2(p,k)
 	F[8] =1./a*(-(p.alpha[2]*G[5]*G[0]+p.alpha[3]*G[1]*G[4])/2.-G[9]) ;
-	F[9] =1./a*(-(2.-hade1)*G[9]-hade2*G[8]*mu4*rescale - gamma2(a, p.omega0, p.args[3], p.kv[1],p.kv[0],p.xv[1],p.extpars,p.model)*G[4]*G[0]-p.beta[1]*G[5]*G[1]);
+	F[9] =1./a*(-(2.+fric-hade1)*G[9]-hade2*G[8]*mu4*rescale - gamma2(a, p.omega0, p.args[3], p.kv[1],p.kv[0],p.xv[1],p.extpars,p.model)*G[4]*G[0]-p.beta[1]*G[5]*G[1]);
 
 	//6. F2/G2(-p,k)=F2/G2(p,-k)
 	F[10] =1./a*(-(p.alpha[4]*G[5]*G[0]+p.alpha[5]*G[1]*G[4])/2.-G[11]) ;
-	F[11] =1./a*(-(2.-hade1)*G[11]-hade2*G[10]*mu3*rescale -gamma2(a, p.omega0, p.args[0], p.kv[2],p.kv[0],p.xv[2],p.extpars,p.model)*G[4]*G[0]-p.beta[2]*G[5]*G[1]);
+	F[11] =1./a*(-(2.+fric-hade1)*G[11]-hade2*G[10]*mu3*rescale -gamma2(a, p.omega0, p.args[0], p.kv[2],p.kv[0],p.xv[2],p.extpars,p.model)*G[4]*G[0]-p.beta[2]*G[5]*G[1]);
 
 	//7. 3rd order  ~ F3/G3(k,p,-p)
 	F[12] = - 1./(3.*a)*(p.alpha[6]*G[8]*G[5]
@@ -1395,7 +833,7 @@ int funcn_rsd(double a, const double G[], double F[], void *params)
 						+3.*G[13]) ;
 
 
-	F[13] =1./(3.*a)*(-3.*(2.-hade1)*G[13]-3.*hade2*G[12]*mu1*rescale
+	F[13] =1./(3.*a)*(-3.*(2.+fric-hade1)*G[13]-3.*hade2*G[12]*mu1*rescale
 
 					 -2.*p.beta[3]*G[5]*G[9]
 					 -2.*p.beta[4]*G[5]*G[11]
@@ -1409,7 +847,7 @@ int funcn_rsd(double a, const double G[], double F[], void *params)
 
  	//8. F2/G2(-k,k-p)
  	F[14] =1./a*(-(p.alpha[10]*G[1]*G[2]+p.alpha[11]*G[3]*G[0])/2.-G[15]);
- 	F[15] =1./a*(-(2.-hade1)*G[15]-hade2*G[14]*mu2 - gamma2(a, p.omega0, p.kv[1], p.kv[0], p.args[0],(p.kv[1]*p.xv[1]-p.kv[0])/ p.args[0],p.extpars,p.model)*G[2]*G[0] - p.beta[5]*G[3]*G[1]);
+ 	F[15] =1./a*(-(2.+fric-hade1)*G[15]-hade2*G[14]*mu2 - gamma2(a, p.omega0, p.kv[1], p.kv[0], p.args[0],(p.kv[1]*p.xv[1]-p.kv[0])/ p.args[0],p.extpars,p.model)*G[2]*G[0] - p.beta[5]*G[3]*G[1]);
 
 	return GSL_SUCCESS;
 }
@@ -1477,7 +915,7 @@ void IOW::initn_rsd(double pars[], double extpars[], double k[], double x[], dou
 			//  this gives the system, the method, the initial interval step, the absolute error and the relative error.
 				gsl_odeiv2_driver * d =
 				gsl_odeiv2_driver_alloc_y_new (&sys, gsl_odeiv2_step_rk8pd,
-										   1e-4, 1e-3, 1e-2);
+										   pars[7], pars[8], pars[9]);
 
 
 				int status1 = gsl_odeiv2_driver_apply (d, &a, A, G);
@@ -1553,9 +991,6 @@ int funcnorm(double a, const double G[], double F[], void *params)
 		double hub2 = HA1g(a,p.omega0,p.extpars,p.model);
 		double ap5 = pow(a,5);
 
-		// Poisson sourced by CB density, not total matter
-	//	double rescale = omegacb/p.omega0;
-
 
 	F[0] = G[1];
 	F[1] = -1./a*(3.+hub2/hub1)*G[1] + 3./2.*omegacb/(hub1*ap5)*G[0];
@@ -1567,7 +1002,7 @@ int funcnorm(double a, const double G[], double F[], void *params)
 // correction to virial concentration in wCDM case - see HALO.cpp
 double g_de;
 
-// Normalisation for power spectra with and without evolving DE
+// Normalisation for power spectra with and without evolving DE and initialisation of correction to virial concentration
 // pars[0] = scale factor
 // pars[1] = omega_m0
 // pars[2] = omega_nu
@@ -1621,7 +1056,6 @@ void IOW::initnorm(double pars[], double extpars[], int model) //double A, doubl
 			  	G1[0] = a;
 					G1[1] = 1.;
 
-
 					// LCDM growth @ a=A for Omega_cb
 					mypars2.omega0 = omega0;
 					mypars2.omeganu = omeganu;
@@ -1644,12 +1078,37 @@ void IOW::initnorm(double pars[], double extpars[], int model) //double A, doubl
 					gsl_odeiv2_driver_free(d2);
 
 			// correction to virial concentration
-					g_de = dnorm_spt1/dnorm_spt;
+			// check if we have Dark Scattering model
+			if(model == 6){
+				//reset
+				a = 3e-5;
+				G1[0] = a;
+				G1[1] = -a;
+				/*Parameters passed to system of equations */
+	      struct param_type3 mypars2;
+
+					mypars2.kv[0]=1.;
+					mypars2.omega0 = omega0;
+					mypars2.omeganu = omeganu;
+					mypars2.model = model;
+					for (int i=0; i<maxpars;i++){
+						mypars2.extpars[i] = 	extpars[i];
+					}
+				// wCDM + xi growth @ a=1 for Omega_cb
+				gsl_odeiv2_system sys3 = {funcn_lin, jac, 2, &mypars2};
+				gsl_odeiv2_driver * d3 = gsl_odeiv2_driver_alloc_y_new (&sys3, gsl_odeiv2_step_rk8pd,
+									 1e-4, 1e-4, 1e-4);
+
+				int status3 = gsl_odeiv2_driver_apply (d3, &a, 1., G1);
+
+				double dnorm_spt_ide  = G1[0] ;
+
+				g_de = dnorm_spt1/dnorm_spt_ide;
+			}
+			else{
+				g_de = dnorm_spt1/dnorm_spt;
+			}
 }
-
-
-
-
 
 
 ///////////////////// Analytic (Einstein-de Sitter approx) 1-LOOP SPECTRUM in nDGP and GR ///////////////////////////
@@ -1848,8 +1307,6 @@ void IOW::inite(double pars[], double extpars[], int model)
 int funce2(double a, const double G[], double F[], void *params)
 {
 		param_type2 p = *(param_type2 *)(params);
-
-		double omegacb = p.omega0 - p.omeganu;
 
 		/* Background quantities */
 		double hub1 = pow2(HA(a,p.omega0));

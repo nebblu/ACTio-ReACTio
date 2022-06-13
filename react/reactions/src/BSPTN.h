@@ -4,6 +4,7 @@
 #include <vector>
 #include <gsl/gsl_sf_bessel.h>
 #include "SpecialFunctions.h"
+#include "BeyondLCDM.h"
 
 
 class BSPTN {

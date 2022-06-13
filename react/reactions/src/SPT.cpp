@@ -747,7 +747,7 @@ static double ploopn2_mgdd_pseudo( const PowerSpectrum& P_L, double pars[], doub
 }
 
 
-// Choose a {0,...,4}: P_linear, P_dd,P_dt, P_tt (MG), P_dd pseudo (see HALO.cpp)
+// Choose a {0,...,4}: P_linear and 1-loop: P_dd,P_dt, P_tt (MG), P_dd pseudo (see HALO.cpp)
 
 //pars: 0 =  scale factor, 1= omega_m(z=0), 2 = Omega_nu(z=0)
 // extpars - beyond lcdm parameters
@@ -1965,7 +1965,9 @@ real SPT::sigmav_init(double pars[], double extpars[], int model) const{
   }
 
 /////// REDSHIFT SPACE MODIFIED GRAVITY SPECTRUM ////////
-// a {0,..,3}  : 0=Kaiser, 1 = TNS q-bias [1507.01592], 2 = TNS lag bias (MG) - incomplete!, 3 = 1-loop SPT (MG) [see Eq.23 of 1006.0699 for example]
+// a {0,..,3}  : 0=Kaiser, 1 = TNS q-bias [1507.01592], 2 = TNS lag bias (MG) - incomplete!
+//  3 = 1-loop SPT (MG) [see Eq.23 of 1006.0699 for example]
+// TODO: 4 = EFTofLSS with and without resummation 
 // b {1,2,3} :  1 = monopole, 2 = quadrupole, 3 = hexdecapole
 // bias[] :  0 = linear bias, 1,2 = qbias param or lagrangian bias params (b_2, N)
 // pars: 0 =  scale factor, 1= omega_m(z=0)

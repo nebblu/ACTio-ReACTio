@@ -181,7 +181,6 @@ else{
      sig2 = Integrate<ExpSub>(bind(sigma8d_integrand_modcamb, cref(P_cbl), 8., std::placeholders::_1), 1e-4, 50., 1e-5,1e-5);
   }
 
-
  if (!gsl_finite(sig1)) {
   react_error_halo("sigma_8 evaluated to non-numerical value");
 }
@@ -953,6 +952,7 @@ void HALO::initialise(double pars[], double extpars[], bool modcamb, bool modg, 
   if ( fabs(pars[2])>1e-6 && !modcamb) {
     react_error_halo("Omega neutrino is not 0 but you have specified a LCDM transfer - set modcamb = true or set Omega_nu = 0");
   }
+
   iow.initnorm(pars,extpars,model);   // LCDM (or wCDM) linear growth rates
   scol_init(pars, extpars, modcamb,model); // real spherical collapse quantities
   scol_initp(pars, modcamb); // pseudo spherical collapse quantities

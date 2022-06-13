@@ -9,6 +9,7 @@
 #include "Quadrature.h"
 #include "SpecialFunctions.h"
 #include "BSPTN.h"
+#include "BeyondLCDM.h"
 
 //#include<omp.h>
 

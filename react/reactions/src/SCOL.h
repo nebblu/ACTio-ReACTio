@@ -2,6 +2,7 @@
 #define SCOL_H
 #include "Common.h"
 #include "SpecialFunctions.h"
+#include "BeyondLCDM.h"
 // SP_IVP.h
 // Spherical Collapse IVP
 //#include <omp.h>

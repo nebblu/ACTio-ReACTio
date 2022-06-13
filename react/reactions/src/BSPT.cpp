@@ -12,6 +12,7 @@
 #include "Spline.h"
 #include "SpecialFunctions.h"
 #include "LinearPS.h"
+#include "BeyondLCDM.h"
 
 
 #include <cerrno>
