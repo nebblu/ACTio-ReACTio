@@ -386,7 +386,6 @@ Respective bibtex entries:
 }
 ```
 
-
 ## Notes 
 
 ### Parameter ranges (Updated: 22/03/21)
@@ -401,4 +400,18 @@ Respective bibtex entries:
 * If errors in spherical collapse are experienced for non-f(R) theories, try setting yenvf=0 in the scol_init function in reactions/src/HALO.cpp.
 * Note if using the stand-alone version of ReACT, the reaction may have deviations away from unity of the order of ~0.1-0.3% for k<1e-3. Pyreact automatically sets it to unity at such large scales. 
 
+
+## What's new? 
+
+We have implemented the following to v.2:
+
+* Cleaned up directories, added heavy commenting in source code and notebooks and re ordered some source code for clarity. 
+* Added in Dark Scattering model to react_with_neutrinos branch. 
+* Split off beyond LCDM functions to BeyondLCDM.cpp in src directory for easily adding in new models. 
+* Upgraded all beyond LCDM functions to use an n-dimensional array for parameters allowing for arbitrary number of theory parameters to be used. 
+* Upgraded redshift space functions to use an n-dimensional array for rsd and bias parameters
+* Added in EFTofDE + PPF model for model independent predictions. 
+* Optimised RSD multipole computation. 
+* Created python wrapper for RSD multipoles and real space bispectrum. 
+* Created new example python notebooks for bispectrum, rsd and EFTofDE calculations. 
 
