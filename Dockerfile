@@ -9,7 +9,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 ## Update apt get
 
-RUN apt-get update && apt-get -y install 
+RUN apt-get update && apt-get -y install
 
     #######################################
 
@@ -18,7 +18,7 @@ RUN apt-get update && apt-get -y install
 RUN apt-get -y install python3-pip
 RUN apt-get update -y && \
     apt-get install -y gfortran
-   
+
     #######################################
 
 
@@ -40,12 +40,12 @@ RUN apt-get -y install python3 && \
 
     #######################################
 
-## Jupyter 
+## Jupyter
 
 RUN pip3 install jupyter
 
 
-    ####################################### 
+    #######################################
 
 ## git and vim
 
@@ -81,29 +81,28 @@ RUN apt-get -y install cmake && \
 
 RUN pip install pyhmcode
 
-    #pip install git+https://github.com/tilmantroester/HMx.git@python_interface#egg=pyhmx 
+    #pip install git+https://github.com/tilmantroester/HMx.git@python_interface#egg=pyhmx
 
     #pip install pyhmcode pyccl
 
     #git clone --recursive https://github.com/tilmantroester/pyhmcode && \
     #make && \
-    # make install && \ 
+    # make install && \
     #cd pyhmcode/powerspectrum_interface && \
     #pip install .  && \
     #cd
-  
+
      #######################################
 
 ## React
 
 RUN  git clone https://github.com/nebblu/ACTio-ReACTio.git && \
-     mv ACTio-ReACTio/react /ReACT  
 
-RUN  cd ReACT && \ 
+RUN  cd ACTio-ReACTio && \
      sed -i "s/CPPFLAGS +=/CPPFLAGS += -I\/sundials\/instdir\/include/g" pyreact/Makefile && \
      sed -i "s/LDFLAGS +=/LDFLAGS += -L\/sundials\/instdir\/lib/g" pyreact/Makefile &&\
      python3 setup.py develop
 
 ## set correct library paths in the container environment
 
-ENV LD_LIBRARY_PATH /sundials/instdir/lib:ReACT/reactions/lib
+ENV LD_LIBRARY_PATH /sundials/instdir/lib:ACTio-ReACTio/reactions/lib
