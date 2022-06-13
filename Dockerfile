@@ -105,4 +105,4 @@ RUN  cd ACTio-ReACTio && \
 
 ## set correct library paths in the container environment
 
-ENV LD_LIBRARY_PATH /sundials/instdir/lib:ACTio-ReACTio/reactions/lib
+ENV LD_LIBRARY_PATH /sundials/instdir/lib:/ACTio-ReACTio/reactions/lib
