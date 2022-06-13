@@ -247,7 +247,7 @@ In C++ code this is specified as the integer of each model in the last argument 
 ```
 PLOOPn2(1, k, pars, extpars, err, 2)
 ```
-where 1 is a functional call to the 1-loop matter-matter calculation, k is the wave mode, pars hold base cosmological parameters, extpars[0] = fr0, err is the absolute error on the 1-loop integrals and 2 specifies f(R) gravity. 
+where the arguments are: 1 specifies a call to the 1-loop matter-matter calculation, k is the wave mode, pars hold base cosmological parameters, extpars[0] = fr0, err is the absolute error on the 1-loop integrals and 2 specifies f(R) gravity respectively. We forward to `reactions/src/examples` for more details.  
 
 Note that all cases except 4,5,6 assume a LCDM background expansion. 
 
