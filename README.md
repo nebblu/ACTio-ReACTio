@@ -172,6 +172,11 @@ docker run -v /Users/bbose/Desktop/myfolder:/home -i -t mybuild
 
 This will also automatically take all the local files in `/Users/bbose/Desktop/myfolder` to the `/home` folder within the container. Anything placed in the home folder from within the container will then automatically show up locally. This lets you transfer ReACT output produced within the container to the local system. 
 
+Alternatively, if you would like to use jupyter notebooks, then you should assign a port to your container in order to allow the connection from a host browser
+```
+docker run -v /Users/bbose/Desktop/myfolder:/home -it -p 8888:8888 mybuild
+```
+
 I've tested this works on the tests and example files within the `reactions/examples` and `reactions/tests` directories. You can use the following command to run them
 
 ```
@@ -180,6 +185,12 @@ g++ -I/ACTio-ReACTio/reactions/include -L/ACTio-ReACTio/reactions/lib  spt.cpp -
 ```
 ./a.out
 ```
+
+To run jupyter notebooks you can jump to the 'ACTio-ReACTio/notebooks'-folder and run the following command:
+```
+jupyter notebook --ip 0.0.0.0 --allow-root
+```
+You can access the notebooks through your desktops browser on http://localhost:8888 , i.e. copy-paste the second automatically generated hyperlink.  
 
 To exit the container simply use the exit command 
 
