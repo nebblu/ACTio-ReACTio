@@ -81,22 +81,15 @@ RUN apt-get -y install cmake && \
 
 RUN pip install pyhmcode
 
-    #pip install git+https://github.com/tilmantroester/HMx.git@python_interface#egg=pyhmx
-
-    #pip install pyhmcode pyccl
-
-    #git clone --recursive https://github.com/tilmantroester/pyhmcode && \
-    #make && \
-    # make install && \
-    #cd pyhmcode/powerspectrum_interface && \
-    #pip install .  && \
-    #cd
-
      #######################################
 
 ## React
 
+<<<<<<< HEAD
 RUN  git clone https://github.com/nebblu/ACTio-ReACTio.git
+=======
+RUN  git clone https://github.com/nebblu/ACTio-ReACTio.git 
+>>>>>>> 08042ca5f50cf866f3569f023247717b6b238002
 
 RUN  cd ACTio-ReACTio && \
      sed -i "s/CPPFLAGS +=/CPPFLAGS += -I\/sundials\/instdir\/include/g" pyreact/Makefile && \
@@ -105,4 +98,4 @@ RUN  cd ACTio-ReACTio && \
 
 ## set correct library paths in the container environment
 
-ENV LD_LIBRARY_PATH /sundials/instdir/lib:ACTio-ReACTio/reactions/lib
+ENV LD_LIBRARY_PATH /sundials/instdir/lib:/ACTio-ReACTio/reactions/lib
