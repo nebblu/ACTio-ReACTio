@@ -1,6 +1,3 @@
-  
-# ReACT v2: ACT-io et ReACT-io 
-=======
 
 # [ReACT v2: ACT-io et ReACT-io](reactions/data/doggie.jpeg)
 
