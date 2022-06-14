@@ -584,7 +584,7 @@ double mymgF(double a, double yh, double yenv, double Rth, double omega0, double
 
 			case 10:
 			/* KGB with CPL background */
-							return 0.
+							return 0.;
 		default:
 					warning("SpecialFunctions: invalid model choice, model = %d \n", model);
 				  return 0;
