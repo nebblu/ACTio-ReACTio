@@ -434,13 +434,12 @@ Respective bibtex entries:
 
 We have implemented the following to v.2:
 
+* Added in EFTofDE + PPF model for model independent predictions. 
 * Cleaned up directories, added heavy commenting in source code and notebooks and re ordered some source code for clarity. 
-* Added in Dark Scattering model to react_with_neutrinos branch. 
+* Merged [Dark Scattering model](https://github.com/PedroCarrilho/ReACT/tree/react_with_interact_baryons). 
 * Split off beyond LCDM functions to BeyondLCDM.cpp in src directory for easily adding in new models. 
 * Upgraded all beyond LCDM functions to use an n-dimensional array for parameters allowing for arbitrary number of theory parameters to be used. 
 * Upgraded redshift space functions to use an n-dimensional array for rsd and bias parameters.
-* Added in EFTofDE + PPF model for model independent predictions. 
 * Optimised RSD multipole computation. 
 * Created python wrapper for RSD multipoles. 
 * Created new example python notebooks for rsd multipoles and EFTofDE calculations. 
-
