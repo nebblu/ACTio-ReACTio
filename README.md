@@ -276,10 +276,54 @@ If you want to add in this model to the Pyreact wrapper, you will also need to a
 
 ## Parameters
 
+# Python parameters 
+
+**model** Selects which theoretical model is to be applied (see section: [Models of gravity and dark energy](https://github.com/nebblu/ACTio-ReACTio#adding-in-models)). 
+
+**mass_loop** is the number of mass bins to be sampled over the range  5<Log10[M]<20, M in solar masses. Default is 30. 
+
+**is_transfer** Is the input Pk a transfer function or power spectrum? Default is linear power spectrum (false value). 
+
+**h,n_s,omega_m,omega_b** are the base LCDM cosmological parameters assumed in producing the linear power spectrum or transfer function input.
+
+
+**For the compute_reaction function - basic halo model reaction function for fixed models ** 
+
+**sigma_8** is the input power spectrum sigma8 value at z=0.
+
+**z** array of output redshifts in ascending order (note that z<2.5 to ensure code stability).
+
+**k** array of wave mode outputs in ascending order. 
+
+**Pk** Linear z=0 LCDM power spectrum array. 
+
+**fR0,Omega_rc,w,wa** values of f(R), DGP, Quintessence or CPL model parameters. 
+
+
+
+**For the compute_reaction_ext function - halo model reaction function for more general models ** 
+
+**extpars** array of theory parameters (see section: [Models of gravity and dark energy](https://github.com/nebblu/ACTio-ReACTio#adding-in-models)). 
+
+
+**For the compute_reaction_nu_ext function - for massive neutrino cosmologies ** 
+
+**omega_nu** massive neutrino density fraction at z=0. 
+
+**As** is the primordial spectrum amplitude. Needed to rescale the various input transfer functions
+
+**pscale** is the pivot scalar.
+
+**Tm,Tcb** are transfer function arrays of z x k for the total matter and total CDM+baryons in the target cosmology. 
+
+**Tcblcdm** is the LCDM CDM+baryon transfer function array of z x k.
+
+
+# C++ parameters 
+
 **modcamb** tells ReACT whether or not to treat the input transfer function file as in option (1) - true value - or option (2) - false value. Default is false as in the original version of the code. 
 
 **modg**: Tells ReACT to manually set $k_\star$ and $\mathcal{E}$ to LCDM values (1e-6 and 1. resp.). This is needed because of sensitivity of $\mathcal{E}$ to the ratio of 1-halo terms which may not be exactly equal at large scales for different cosmologies even when modified gravity isn't present. 
-
 
 **Note** the cosmoSIS module has not yet been extended to include massive neutrinos. 
 
