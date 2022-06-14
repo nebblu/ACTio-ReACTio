@@ -1,10 +1,8 @@
-<<<<<<< HEAD
  
 # ReACT v2: ACT-io et ReACT-io 
 =======
 
 # [ReACT v2: ACT-io et ReACT-io](reactions/data/doggie.jpeg)
->>>>>>> 08042ca5f50cf866f3569f023247717b6b238002
 
 ## This repository contains version 2 of the [ReACT](https://github.com/nebblu/ReACT) code. 
 

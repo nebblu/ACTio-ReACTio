@@ -85,11 +85,7 @@ RUN pip install pyhmcode
 
 ## React
 
-<<<<<<< HEAD
 RUN  git clone https://github.com/nebblu/ACTio-ReACTio.git
-=======
-RUN  git clone https://github.com/nebblu/ACTio-ReACTio.git 
->>>>>>> 08042ca5f50cf866f3569f023247717b6b238002
 
 RUN  cd ACTio-ReACTio && \
      sed -i "s/CPPFLAGS +=/CPPFLAGS += -I\/sundials\/instdir\/include/g" pyreact/Makefile && \
