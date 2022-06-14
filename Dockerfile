@@ -81,22 +81,11 @@ RUN apt-get -y install cmake && \
 
 RUN pip install pyhmcode
 
-    #pip install git+https://github.com/tilmantroester/HMx.git@python_interface#egg=pyhmx
-
-    #pip install pyhmcode pyccl
-
-    #git clone --recursive https://github.com/tilmantroester/pyhmcode && \
-    #make && \
-    # make install && \
-    #cd pyhmcode/powerspectrum_interface && \
-    #pip install .  && \
-    #cd
-
      #######################################
 
 ## React
 
-RUN  git clone https://github.com/nebblu/ACTio-ReACTio.git && \
+RUN  git clone https://github.com/nebblu/ACTio-ReACTio.git 
 
 RUN  cd ACTio-ReACTio && \
      sed -i "s/CPPFLAGS +=/CPPFLAGS += -I\/sundials\/instdir\/include/g" pyreact/Makefile && \
