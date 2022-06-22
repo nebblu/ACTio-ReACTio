@@ -158,26 +158,31 @@ $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/bose/react_tutorial/ACTio-ReACTi
 
 ### Docker
 
-We have also included a Docker file, `DockerFile'. Docker allows you to run the code within what is called a container which is a dedicated environment built according to specifications given in the Docker file. Once you've installed [docker](https://www.docker.com/) you can just place this file into a folder and build the images into a container
+We have also included a Docker file, `Dockerfile'. Docker allows you to run the code within what is called a container which is a dedicated environment built according to specifications given in the Docker file. To run ReACT in a Docker container you may follow these steps:
+
+* Install [docker](https://www.docker.com/) and open the app to get the docker daemon running
+* Create an empty folder on you laptop/machine
+* Copy the Dockerfile from this github-repo
+* Go to the folder with the Dockerfile you've created and run
 
 ```
 docker build -t mybuild . 
 ```
 
-Once this builds, you can jump into the container (which has ReACT installed) using the following command
+* Once this builds, you can jump into the container (which has ReACT installed) using the following command
 
 ```
-docker run -v /Users/bbose/Desktop/myfolder:/home -i -t mybuild
+docker run -v path-to-the-folder-with-the-Dockerfile:/home -i -t mybuild
 ```
 
-This will also automatically take all the local files in `/Users/bbose/Desktop/myfolder` to the `/home` folder within the container. Anything placed in the home folder from within the container will then automatically show up locally. This lets you transfer ReACT output produced within the container to the local system. 
+This will also automatically take all the local files in `path-to-the-folder-with-the-Dockerfile` (e.g. `/Users/bbose/Desktop/myfolder` on your machine) to the `/home` folder inside the container. Anything placed in the home folder from within the container will then automatically show up locally. This lets you transfer ReACT output produced within the container to the local system. 
 
-Alternatively, if you would like to use jupyter notebooks, then you should assign a port to your container in order to allow the connection from a host browser
+* Alternatively, if you would like to use jupyter notebooks, then you should assign a port to your container in order to allow the connection from a host browser
 ```
-docker run -v /Users/bbose/Desktop/myfolder:/home -it -p 8888:8888 mybuild
+docker run -v path-to-the-folder-with-the-Dockerfile:/home -it -p 8888:8888 mybuild
 ```
 
-I've tested this works on the tests and example files within the `reactions/examples` and `reactions/tests` directories. You can use the following command to run them
+* I've tested this works on the tests and example files within the `reactions/examples` and `reactions/tests` directories within the container. You can use the following command to run them
 
 ```
 g++ -I/ACTio-ReACTio/reactions/include -L/ACTio-ReACTio/reactions/lib  spt.cpp -lgsl -lcopter
@@ -186,17 +191,19 @@ g++ -I/ACTio-ReACTio/reactions/include -L/ACTio-ReACTio/reactions/lib  spt.cpp -
 ./a.out
 ```
 
-To run jupyter notebooks you can jump to the 'ACTio-ReACTio/notebooks'-folder and run the following command:
+* To run jupyter notebooks you can jump to the 'ACTio-ReACTio/notebooks'-folder and run the following command:
 ```
 jupyter notebook --ip 0.0.0.0 --allow-root
 ```
 You can access the notebooks through your desktops browser on http://localhost:8888 , i.e. copy-paste the second automatically generated hyperlink.  
 
-To exit the container simply use the exit command 
+* To exit the container simply use the exit command 
 
 ```
 exit 
 ```
+
+ * You can later come back to your image in the individual container by opening the Docker app -> going to Containers, where you will see a list of all your containers -> choose and run a container with the 'mybuild'-image you used before (e.g. charming_faraday: mybuild RUNNING PORT:8888) -> open the command line (CLI-option in the Docker app when you hover over a container). Alternatively, there is a Docker extension in VS-code where you can (re-)start your container and see the files there all at ones, which makes the navigation easier.
 
 ## Running ReACT
 
