@@ -7,6 +7,8 @@
 const int maxpars = 20;
 
 // Background functions
+double bespokehub(double a, double omega0, double extpars[]);
+
 double HAg(double a, double omega0, double extpars[], int model = 1);
 double HA1g(double a, double omega0, double extpars[], int model = 1);
 double HA2g(double a, double omega0, double extpars[], int model = 1);

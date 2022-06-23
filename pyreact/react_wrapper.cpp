@@ -277,15 +277,17 @@ extern "C" {
                      int* maxp, double* extpars, int* mass_loop, int* model,
                      int* N_k_react, int* N_z_react, double* output_react,
                      int* N_k_pl, int* N_z_pl, double* output_pl,
+                     int* N_k_pseudo, int* N_z_pseudo, double* output_pseudo,
                      double* modsig8,
+                     bool* compute_pseudo,
                      int* verbose)
     {
     int status = 0;
-    if(*N_k != *N_k_pk || *N_k != *N_k_react || *N_k != *N_k_pl){
+    if(*N_k != *N_k_pk || *N_k != *N_k_react || *N_k != *N_k_pl || *N_k != *N_k_pseudo){
         react_error("Inconsistency in k array sizes");
         return 1;
     }
-    if(*N_z != *N_z_react || *N_z != *N_z_pl){
+    if(*N_z != *N_z_react || *N_z != *N_z_pl || *N_z != *N_z_pseudo){
         react_error("Inconsistency in z array sizes");
         return 1;
     }
@@ -364,9 +366,9 @@ extern "C" {
 
     /* array set up for 1-loop spt splining over z and reaction splining over k */
     int loop_nk = 60; // number of bins between kvals[0] and kvals[Nk-1]
-    double ploopr[*N_z],ploopp[*N_z],react_tab[loop_nk],k2val[loop_nk];
+    double ploopr[*N_z],ploopp[*N_z],react_tab[loop_nk],k2val[loop_nk],pseudo_tab[loop_nk];
     /* declare splines */
-    Spline mysr,mysp,myreact;
+    Spline mysr,mysp,myreact,mypseudo;
 
     /*declare base cosmo parameter array*/
     double pars[8];
@@ -444,6 +446,11 @@ extern "C" {
         // kstar and mathcal E initialisation for multiple redshifts
         halo.react_init_nu_multiz(pars,mysr,mysp,modcamb,modg);
 
+        if (compute_pseudo) {
+          // initialise halofit parameters
+          halo.phinit_pseudo(pars,modcamb);
+          }
+
         // reaction
         //#pragma omp parallel for
         for(int i =0; i < loop_nk;  i ++) {
@@ -458,15 +465,24 @@ extern "C" {
             else {
                 react_tab[i] = halo.reaction_nu(k2val[i], pars, modcamb);
             }
+            if (compute_pseudo) {
+              pseudo_tab[i] = halo.PHALO_pseudo(k2val[i],modcamb);
+            }
         }
 
         // spline reaction over k
         myreact = CubicSpline(loop_nk, k2val, react_tab);
+        if (compute_pseudo) {
+          mypseudo = CubicSpline(loop_nk, k2val, pseudo_tab);
+        }
 
         // store to output arrays
         for(int i =0; i < *N_k;  i ++) {
             output_react[i*(*N_z)+j] =  myreact(kvals[i]);
             output_pl[i*(*N_z)+j] = pow2(halo.Lin_Grow(kvals[i]))*P_l(kvals[i]);
+            if (compute_pseudo) {
+            output_pseudo[i*(*N_z)+j] =  mypseudo(kvals[i]);
+              }
             if(*verbose > 1) {
                 printf(" %e %e %e \n",zvals[j], kvals[i], pow2(halo.Lin_Grow(kvals[i]))*P_l(kvals[i]));
             }
@@ -491,7 +507,9 @@ int compute_reaction_nu_ext(int* N_pk_m, double* torpk_m,
                      int* mass_loop, int* model,
                      int* N_k_react, int* N_z_react, double* output_react,
                      int* N_k_pl, int* N_z_pl, double* output_pl,
+                     int* N_k_pseudo, int* N_z_pseudo, double* output_pseudo,
                      double* modsig8,
+                     bool* compute_pseudo,
                      int* verbose)
 {
 
@@ -738,7 +756,7 @@ int compute_reaction_nu_ext(int* N_pk_m, double* torpk_m,
 
     /* PART 3: main loop to initialise reaction */
     int loop_nk = 60;
-    double react_tab[loop_nk],k2val[loop_nk];
+    double react_tab[loop_nk],k2val[loop_nk],pseudo_tab[loop_nk];
 
     for(int j = 0; j<*N_z; j++) {
         pars[0] = 1./(1.+zvals[j]);
@@ -761,6 +779,11 @@ int compute_reaction_nu_ext(int* N_pk_m, double* torpk_m,
         // initialise k_star and mathcal{E}
         myhalo[j].react_init_nu_multiz(pars,mysr,mysp,modcamb,modg);
 
+        if (compute_pseudo) {
+          // initialise halofit parameters
+          myhalo[j].phinit_pseudo(pars,modcamb);
+          }
+
         // reaction
         //#pragma omp parallel for
         for(int i =0; i < loop_nk;  i ++) {
@@ -772,15 +795,26 @@ int compute_reaction_nu_ext(int* N_pk_m, double* torpk_m,
             else {
                 react_tab[i] = myhalo[j].reaction_nu(k2val[i], pars, modcamb);
             }
+            if (compute_pseudo) {
+              pseudo_tab[i] = myhalo[j].PHALO_pseudo(k2val[i],modcamb);
+            }
         }
 
+        Spline myreact, mypseudo;
 
-        Spline myreact = CubicSpline(loop_nk, k2val, react_tab);
+        myreact = CubicSpline(loop_nk, k2val, react_tab);
+        if (compute_pseudo) {
+          mypseudo = CubicSpline(loop_nk, k2val, pseudo_tab);
+        }
+
 
     /* PART 4: Store results to output arrays */
         for(int i =0; i < *N_k;  i ++) {
             output_react[i*(*N_z)+j] =  myreact(kvals[i]);
             output_pl[i*(*N_z)+j] = mylps[4*j](kvals[i]);
+            if (compute_pseudo) {
+            output_pseudo[i*(*N_z)+j] =  mypseudo(kvals[i]);
+              }
             if(*verbose > 1) {
                 printf(" %e %e %e \n",zvals[j], kvals[i], mylps[4*j](kvals[i]));
             }

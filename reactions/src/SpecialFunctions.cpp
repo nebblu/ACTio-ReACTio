@@ -9,6 +9,8 @@
 #include "Quadrature.h"
 #include "SpecialFunctions.h"
 #include "BeyondLCDM.h"
+#include "Spline.h"
+#include "SCOL.h"
 
 #include <stdio.h>
 #include <gsl/gsl_errno.h>
@@ -45,6 +47,24 @@ double HA1(double a, double omega0){
 double HA2(double a, double omega0){
 	return 3.*omega0/(2.*HA(a,omega0)*HA(a,omega0)*pow(a,3))
 	;}
+
+
+
+/* Bespoke hubble function initialiser - see BeyondLCDM */
+Spline myhubble;
+
+void IOW::hubble_init(double omega0, double extpars[], int loop_N){
+	double a_tab[loop_N],hub_tab[loop_N];
+	double amax = 2.; // need to go all the way to 1. for g_de irrespective of output. Setting to 2 to sample up to 1 more densely
+	double amin = AINIT; // make sure it is smaller than amin for all ODE solvers i.e, < 3e-5 (ANIT is in SCOL.h)
+	for(int i = 0; i< loop_N; i++){
+	  a_tab[i] =  amin * exp(i*log(amax/amin)/(loop_N-1.)); // maybe we want to sample linearly?
+	  hub_tab[i] = bespokehub(a_tab[i], omega0, extpars); // see BeyondLCDM.cpp
+	    }
+
+	myhubble = CubicSpline(loop_N, a_tab , hub_tab);
+
+}
 
 
 
@@ -402,7 +422,7 @@ void IOW::initn2(double pars[], double extpars[], double k[], double x[], double
 				double omeganu = pars[2]; // massive neutrino fraction
 
 			// Initial scale factor for solving system of equations
-				double a = 0.0001;
+				double a = AMIN;
 
         // Non-Eds ICs
 			  double G[14] = { a,-a,a,-a,a,-a,0.,0.,0.,0.,0.,0.,0.,0.};
@@ -503,7 +523,7 @@ void IOW::initn2_unscr(double pars[], double extpars[], double k[], double x[], 
 					double omeganu = pars[2]; // massive neutrino fraction
 
 				// Initial scale factor for solving system of equations
-					double a = 0.0001;
+					double a = AMIN;
 
 	        // Non-Eds ICs
 				  double G[14] = { a,-a,a,-a,a,-a,0.,0.,0.,0.,0.,0.,0.,0.};
@@ -609,8 +629,8 @@ void IOW::initn3(double pars[], double extpars[], double redshifts[], int noz, d
 				double omeganu = pars[2]; // massive neutrino fraction
 
 			// Initial scale factor for solving system of equations
-				double a = 0.0001;
-				double ap = 0.0001;
+				double a = AMIN;
+				double ap = AMIN;
 
 				// Non-Eds ICs
 				double G[14] = { a,-a,a,-a,a,-a,0.,0.,0.,0.,0.,0.,0.,0.};
@@ -862,7 +882,7 @@ void IOW::initn_rsd(double pars[], double extpars[], double k[], double x[], dou
 			double omeganu = pars[2]; // massive neutrino fraction
 
 		// Initial scale factor for solving system of equations
-			double a = 0.0001;
+			double a = AMIN;
 
 			// Non-Eds ICs
 			double G[16] = { a,-a,a,-a,a,-a,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.};
@@ -1233,7 +1253,7 @@ void IOW::inite(double pars[], double extpars[], int model)
 			double omeganu = pars[2]; // massive neutrino fraction
 
 			// Initial scale factor for solving system of equations
-			double a = 0.00001;
+			double a = AMIN;
 
 			// Non-Eds ICs
 			double G[20] = {a,1., a, 1., a,  1., a, 1.,  a, 1., a, 1., a, 1., a, 1., a, 1.,a,1.}; // initial conditions
@@ -1565,7 +1585,7 @@ void IOW::inite2(double pars[], double extpars[], int model)
 				double omeganu = pars[2]; // massive neutrino fraction
 
 				// Initial scale factor for solving system of equations
-				double a = 0.00001;
+				double a = AMIN;
 
 				// Non-Eds ICs
 				double G[88] = {a,1., a, 1., a,  1., a, 1.,  a, 1., a, 1., a, 1., a, 1., a, 1.,a,1.,
