@@ -158,26 +158,31 @@ $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/bose/react_tutorial/ACTio-ReACTi
 
 ### Docker
 
-We have also included a Docker file, `DockerFile'. Docker allows you to run the code within what is called a container which is a dedicated environment built according to specifications given in the Docker file. Once you've installed [docker](https://www.docker.com/) you can just place this file into a folder and build the images into a container
+We have also included a Docker file, `Dockerfile'. Docker allows you to run the code within what is called a container which is a dedicated environment built according to specifications given in the Docker file. To run ReACT in a Docker container you may follow these steps:
+
+* Install [docker](https://www.docker.com/) and open the app to get the docker daemon running
+* Create an empty folder on you laptop/machine
+* Copy the Dockerfile from this github-repo
+* Go to the folder with the Dockerfile you've created and run
 
 ```
 docker build -t mybuild . 
 ```
 
-Once this builds, you can jump into the container (which has ReACT installed) using the following command
+* Once this builds, you can jump into the container (which has ReACT installed) using the following command
 
 ```
-docker run -v /Users/bbose/Desktop/myfolder:/home -i -t mybuild
+docker run -v path-to-the-folder-with-the-Dockerfile:/home -i -t mybuild
 ```
 
-This will also automatically take all the local files in `/Users/bbose/Desktop/myfolder` to the `/home` folder within the container. Anything placed in the home folder from within the container will then automatically show up locally. This lets you transfer ReACT output produced within the container to the local system. 
+This will also automatically take all the local files in `path-to-the-folder-with-the-Dockerfile` (e.g. `/Users/bbose/Desktop/myfolder` on your machine) to the `/home` folder inside the container. Anything placed in the home folder from within the container will then automatically show up locally. This lets you transfer ReACT output produced within the container to the local system. 
 
-Alternatively, if you would like to use jupyter notebooks, then you should assign a port to your container in order to allow the connection from a host browser
+* Alternatively, if you would like to use jupyter notebooks, then you should assign a port to your container in order to allow the connection from a host browser
 ```
-docker run -v /Users/bbose/Desktop/myfolder:/home -it -p 8888:8888 mybuild
+docker run -v path-to-the-folder-with-the-Dockerfile:/home -it -p 8888:8888 mybuild
 ```
 
-I've tested this works on the tests and example files within the `reactions/examples` and `reactions/tests` directories. You can use the following command to run them
+* I've tested this works on the tests and example files within the `reactions/examples` and `reactions/tests` directories within the container. You can use the following command to run them
 
 ```
 g++ -I/ACTio-ReACTio/reactions/include -L/ACTio-ReACTio/reactions/lib  spt.cpp -lgsl -lcopter
@@ -186,17 +191,19 @@ g++ -I/ACTio-ReACTio/reactions/include -L/ACTio-ReACTio/reactions/lib  spt.cpp -
 ./a.out
 ```
 
-To run jupyter notebooks you can jump to the 'ACTio-ReACTio/notebooks'-folder and run the following command:
+* To run jupyter notebooks you can jump to the 'ACTio-ReACTio/notebooks'-folder and run the following command:
 ```
 jupyter notebook --ip 0.0.0.0 --allow-root
 ```
 You can access the notebooks through your desktops browser on http://localhost:8888 , i.e. copy-paste the second automatically generated hyperlink.  
 
-To exit the container simply use the exit command 
+* To exit the container simply use the exit command 
 
 ```
 exit 
 ```
+
+ * You can later come back to your image in the individual container by opening the Docker app -> going to Containers, where you will see a list of all your containers -> choose and run a container with the 'mybuild'-image you used before (e.g. charming_faraday: mybuild RUNNING PORT:8888) -> open the command line (CLI-option in the Docker app when you hover over a container). Alternatively, there is a Docker extension in VS-code where you can (re-)start your container and see the files there all at ones, which makes the navigation easier.
 
 ## Running ReACT
 
@@ -276,10 +283,54 @@ If you want to add in this model to the Pyreact wrapper, you will also need to a
 
 ## Parameters
 
+# Python parameters 
+
+**model** Selects which theoretical model is to be applied (see section: [Models of gravity and dark energy](https://github.com/nebblu/ACTio-ReACTio#adding-in-models)). 
+
+**mass_loop** is the number of mass bins to be sampled over the range  5<Log10[M]<20, M in solar masses. Default is 30. 
+
+**is_transfer** Is the input Pk a transfer function or power spectrum? Default is linear power spectrum (false value). 
+
+**h,n_s,omega_m,omega_b** are the base LCDM cosmological parameters assumed in producing the linear power spectrum or transfer function input.
+
+
+**For the compute_reaction function - basic halo model reaction function for fixed models ** 
+
+**sigma_8** is the input power spectrum sigma8 value at z=0.
+
+**z** array of output redshifts in ascending order (note that z<2.5 to ensure code stability).
+
+**k** array of wave mode outputs in ascending order. 
+
+**Pk** Linear z=0 LCDM power spectrum array. 
+
+**fR0,Omega_rc,w,wa** values of f(R), DGP, Quintessence or CPL model parameters. 
+
+
+
+**For the compute_reaction_ext function - halo model reaction function for more general models ** 
+
+**extpars** array of theory parameters (see section: [Models of gravity and dark energy](https://github.com/nebblu/ACTio-ReACTio#adding-in-models)). 
+
+
+**For the compute_reaction_nu_ext function - for massive neutrino cosmologies ** 
+
+**omega_nu** massive neutrino density fraction at z=0. 
+
+**As** is the primordial spectrum amplitude. Needed to rescale the various input transfer functions
+
+**pscale** is the pivot scalar.
+
+**Tm,Tcb** are transfer function arrays of z x k for the total matter and total CDM+baryons in the target cosmology. 
+
+**Tcblcdm** is the LCDM CDM+baryon transfer function array of z x k.
+
+
+# C++ parameters 
+
 **modcamb** tells ReACT whether or not to treat the input transfer function file as in option (1) - true value - or option (2) - false value. Default is false as in the original version of the code. 
 
 **modg**: Tells ReACT to manually set $k_\star$ and $\mathcal{E}$ to LCDM values (1e-6 and 1. resp.). This is needed because of sensitivity of $\mathcal{E}$ to the ratio of 1-halo terms which may not be exactly equal at large scales for different cosmologies even when modified gravity isn't present. 
-
 
 **Note** the cosmoSIS module has not yet been extended to include massive neutrinos. 
 
@@ -431,12 +482,12 @@ Respective bibtex entries:
 
 We have implemented the following to v.2:
 
+* Added in EFTofDE + PPF model for model independent predictions. 
 * Cleaned up directories, added heavy commenting in source code and notebooks and re ordered some source code for clarity. 
-* Added in Dark Scattering model to react_with_neutrinos branch. 
+* Merged [Dark Scattering model](https://github.com/PedroCarrilho/ReACT/tree/react_with_interact_baryons). 
 * Split off beyond LCDM functions to BeyondLCDM.cpp in src directory for easily adding in new models. 
 * Upgraded all beyond LCDM functions to use an n-dimensional array for parameters allowing for arbitrary number of theory parameters to be used. 
 * Upgraded redshift space functions to use an n-dimensional array for rsd and bias parameters.
-* Added in EFTofDE + PPF model for model independent predictions. 
 * Optimised RSD multipole computation. 
 * Created python wrapper for RSD multipoles. 
 * Created new example python notebooks for rsd multipoles and EFTofDE calculations. 
