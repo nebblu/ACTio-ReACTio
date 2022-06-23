@@ -9,6 +9,7 @@
 #include "Quadrature.h"
 #include "BeyondLCDM.h"
 #include "SpecialFunctions.h"
+#include "Spline.h"
 
 #include <stdio.h>
 #include <gsl/gsl_errno.h>
@@ -79,10 +80,10 @@ initn_rsd  */
 
 
 
-/* BACKGROUND QUANTITIES * /
-
+/* BACKGROUND QUANTITIES */
 
 /*  Scale factor evolution of alpha_i for EFTofDE */
+
 // edit as necessary - but also edit the analytic scale factor derivative function accordingly
 inline double alphai_eft(double a, double omega0, double alpha0){
 	return alpha0*a;
@@ -92,6 +93,17 @@ inline double alphai_eft(double a, double omega0, double alpha0){
 inline double dalphai_eft(double a, double omega0, double alpha0){
 	return alpha0;
 }
+
+/* Background hubble general solution for initialisation with hub_init in SpecialFunctions.cpp */
+// Useful if H(a) does not have a straight forward analytic form
+// e.g. if we need to solve some equation for H(a):
+// we will create a splined function using hub_init instead of solving the equation at each call
+double bespokehub(double a, double omega0,double extpars[]){
+	/* Insert solver */
+
+			return 0.;
+}
+
 
 
 double HAg(double a, double omega0, double extpars[], int model){
@@ -141,6 +153,10 @@ double HAg(double a, double omega0, double extpars[], int model){
 			case 9:
 			/* EFTofDE: superscreened approx */
 			return  HA( a, omega0);
+
+			case 10:
+ 			/* Custom background - see bespokehub above */
+			return myhubble(a);
 
 			default:
 					warning("SpecialFunctions: invalid model choice, model = %d \n", model);
@@ -198,6 +214,7 @@ double HA1g(double a, double omega0, double extpars[], int model){
 		case 9:
 		/* EFTofDE: superscreened approximation */
 		return HA1( a, omega0);
+
 
 		default:
 				warning("SpecialFunctions: invalid model choice, model = %d \n", model);
@@ -461,7 +478,7 @@ double mymgF(double a, double yh, double yenv, double Rth, double omega0, double
 	double h0 = 1./2997.92;
 	double dod, dod2, dRRth, fr0, var1, var2, var3, term1, term2;
 	double betadgp,xm3,xterm,delta,deltaenv,Mvir;
-	double alphaofa[5],dalphaofa[5],lambda2; //EFTofDE
+//	double alphaofa[5],dalphaofa[5],lambda2; //EFTofDE
 	switch(model) {
 	  case 1:
 		/* LCDM */

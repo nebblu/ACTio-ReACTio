@@ -135,6 +135,7 @@ class ReACT:
     def compute_reaction_ext(self, h, n_s, omega_m, omega_b, sigma_8,
                                z, k, Pk,
                                model, extpars,
+                               compute_pseudo=False,
                                is_transfer=False, mass_loop=30,
                                verbose=True):
 
@@ -185,11 +186,14 @@ class ReACT:
                       ct.POINTER(ct.c_int),        # model (1: GR, 2: f(R), 3; DGP, 4: quintessence, 5: CPL)
                       *array_ctype(ndim=2, dtype=np.float64), # reaction (output)
                       *array_ctype(ndim=2, dtype=np.float64), # linear MG power spectrum (output)
+                      *array_ctype(ndim=2, dtype=np.float64), # pseudo spectrum
                       np.ctypeslib.ndpointer(ndim=1, dtype=np.float64, flags="C"),     # modified sigma_8 storage variable
+                      ct.POINTER(ct.c_bool),       # compute_pseudo
                       ct.POINTER(ct.c_int),        # verbose
                      ]
         reaction = np.zeros((len(k), len(z)), dtype=Pk.dtype, order="C")
         p_lin = np.zeros((len(k), len(z)), dtype=Pk.dtype, order="C")
+        pseudo = np.zeros((len(k), len(z)), dtype=Pk.dtype, order="C")
         sigma8 = np.zeros(1, dtype=Pk.dtype, order="C")
 
         r =   f(*array_arg(np.ascontiguousarray(Pk, dtype=np.float64)),
@@ -202,7 +206,9 @@ class ReACT:
                 ct.c_int(reaction_model),
                 *array_arg(reaction),
                 *array_arg(p_lin),
+                *array_arg(pseudo),
                 sigma8,
+                ct.c_bool(compute_pseudo),
                 ct.c_int(verbose),
                 )
         if r != 0:
@@ -211,7 +217,7 @@ class ReACT:
             raise RuntimeError(f"ReACT code terminated with an error: {error_message}")
         # Get into CAMB ordering (z, k), with increasing z
         #Tilman: to check output of modsig8
-        return reaction[:,::-1].T, p_lin[:,::-1].T, sigma8[0]
+        return reaction[:,::-1].T, p_lin[:,::-1].T, sigma8[0], pseudo[:,::-1].T
 
 
 
@@ -219,6 +225,7 @@ class ReACT:
                                z, k, Tm, Tcb, klcdm, Tcblcdm,
                                pscale,
                                model, extpars,
+                               compute_pseudo=False,
                                is_transfer=False, mass_loop=30,
                                verbose=True):
 
@@ -275,12 +282,15 @@ class ReACT:
                       ct.POINTER(ct.c_int),        # model (1: GR, 2: f(R), 3; DGP, 4: quintessence, 5: CPL)
                       *array_ctype(ndim=2, dtype=np.float64), # reaction (output)
                       *array_ctype(ndim=2, dtype=np.float64), # linear MG power spectrum (output)
+                      *array_ctype(ndim=2, dtype=np.float64), # pseudo spectrum
                       np.ctypeslib.ndpointer(ndim=1, dtype=np.float64, flags="C"),     # modified sigma_8 storage variable
+                      ct.POINTER(ct.c_bool), # compute_pseudo
                       ct.POINTER(ct.c_int),        # verbose
                      ]
 
         reaction = np.zeros((len(k), len(z)), dtype=k.dtype, order="C")
         p_lin = np.zeros((len(k), len(z)), dtype=k.dtype, order="C")
+        pseudo = np.zeros((len(k), len(z)), dtype=k.dtype, order="C")
         sigma8 = np.zeros(1, dtype=k.dtype, order="C")
 
 
@@ -298,7 +308,9 @@ class ReACT:
                 ct.c_int(reaction_model),
                 *array_arg(reaction),
                 *array_arg(p_lin),
+                *array_arg(pseudo),
                 sigma8,
+                ct.c_bool(compute_pseudo),
                 ct.c_int(verbose),
                 )
         if r != 0:
@@ -306,7 +318,7 @@ class ReACT:
             error_message = string_type.in_dll(self.lib, "error_message").value.decode()
             raise RuntimeError(f"ReACT code terminated with an error: {error_message}")
 
-        return reaction[:,::-1].T, p_lin[:,::-1].T, sigma8[0]
+        return reaction[:,::-1].T, p_lin[:,::-1].T, sigma8[0], pseudo[:,::-1].T
 
 
 
