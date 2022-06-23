@@ -11,8 +11,15 @@ const real XMIN = -9.999561e-01; //x128[0];
 const real QMINp = 1e-4;
 const real QMAXp = 30.;
 
+const real AMIN = 0.0001;
+
 class IOW {
 public:
+
+    // Initialisation of bespoke hubble function
+    // omega0 is the total matter density fraction today
+    // extpars are beyond LCDM pars and loop_N is how many bins between 1e-5 and amax taken logarithmically
+    void hubble_init(double omega0, double extpars[], int loop_N);
 
   	// Initialisation of evolution factors for analytic kernels as well as linear power spectrum normalisation (dnorm_spt)
     // pars: base parameters. Currently used: 0: scale factor, 1: total matter fraction today, 2: total massive neutrino fraction today
@@ -55,6 +62,8 @@ double HA1(double a, double omega0);
 //-dH/dt/H^2
 double HA2(double a, double omega0);
 
+// bespoke hubble function spline
+extern Spline myhubble;
 
 // standard PT kernels
 double alpha(double k1, double k2, double u1);
