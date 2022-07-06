@@ -257,8 +257,8 @@ In Pyreact we currently have the following models and model parameters
 5. cpl : [CPL evolving dark energy](https://arxiv.org/abs/gr-qc/0009008) w = w0 + (1-a)wa (). **extpars[0-1]**=  {$w_0,w_a$}.
 6. ds : [Dark Scattering with CPL background](https://arxiv.org/abs/1605.05623). **extpars[0-2]** = {$w_0,w_a,\xi*h$}.
 7. eftppf :  effective field theory of dark energy with a post parametrised friedmannian $G_{eff,non-linear}$ in spherical collapse equations. **extpars[0-9]** = {$\alpha_{k0},\alpha_{b0},\alpha_{m0},p1,...,p7$}. 
-8. eftus :  effective field theory of dark energy without screening, i.e. $G_{eff, non-linear}$ = $G_{eff,linear}$. **extpars[0-2]** ={$\alpha_{k0},\alpha_{b0},\alpha_{m0}$}. 
-9. eftss :  effective field theory of dark energy with superscreening , i.e. $G_{eff, non-linear}$ = $G_{N}$. **extpars[0-2]**  = {$\alpha_{k0},\alpha_{b0},\alpha_{m0}$}.  
+8. eftus :  effective field theory of dark energy without screening, i.e. $G_{eff, non-linear} = G_{eff,linear}$. **extpars[0-2]** = {$\alpha_{k0}$,$\alpha_{b0}$,$\alpha_{m0}$}. 
+9. eftss :  effective field theory of dark energy with superscreening , i.e. $G_{eff, non-linear} = G_{N}$. **extpars[0-2]**  = {$\alpha_{k0}$,$\alpha_{b0}$,$\alpha_{m0}$}.  
 
 where a `0` subscript means the value today. 
 
@@ -273,7 +273,7 @@ where the arguments are: 1 specifies a call to the 1-loop matter-matter calculat
 
 Note that all cases except 4,5,6 assume a LCDM background expansion. 
 
-One can add in new models by simply going to the source code, `reactions/src/BeyondLCDM.cpp` and adding in a new `case n:` in all the functions with the required modified background and Poisson equation functions. The array extpars stores the theory parameters. The default size of this array is 20 and can be increased by changing the maxpars parameter in `reactions/src/BeyondLCDM.h`. 
+One can add in new models by simply going to the source code, `reactions/src/BeyondLCDM.cpp` and adding in a new `case n:` in all the functions with the required modified background and Poisson equation functions. The array extpars stores the theory parameters. The default size of this array is 20 and can be increased by changing the **maxpars** parameter in `reactions/src/BeyondLCDM.h`. 
 
 Once you have added in the required background, linear, 1-loop and non-linear modifications you just need to re-compile the source code by going to the `reactions` directory and running 
 
