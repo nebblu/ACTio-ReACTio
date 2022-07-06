@@ -30,17 +30,17 @@ The package is made up of 5 folders:
 
 ReACT can perform the follwing calculations for general theories beyond LCDM
 
-* Spherical collapse  (1812.05594): `reactions/src/SCOL.cpp`.
+* [Spherical collapse](https://inspirehep.net/literature/1708948): `reactions/src/SCOL.cpp`.
 
-* Halo model power spectrum (1812.05594):  `reactions/src/HALO.cpp`.
+* [Halo model power spectrum](https://inspirehep.net/literature/1708948):  `reactions/src/HALO.cpp`.
 
-* Real and redshift space LSS 2 point statistics (1606.02520): `reactions/src/SPT.cpp`.
+* [Real and redshift space LSS 2 point statistics](https://inspirehep.net/literature/1468143): `reactions/src/SPT.cpp`.
 
-* Numerical perturbation theory kernels up to 3rd order (1606.02168): `reactions/src/SpericalFunctions.cpp`.
+* [Numerical perturbation theory kernels up to 3rd order](https://inspirehep.net/literature/1468053): `reactions/src/SpericalFunctions.cpp`.
 
-* Real space bispectrum at 1-loop level** (1808.01120): `reactions/src/BSPT.cpp`.
+* [Real space bispectrum at 1-loop level](https://inspirehep.net/literature/1684991)** : `reactions/src/BSPT.cpp`.
 
-* Exact perturbation theory kernels up to 4th order** (1808.01120): `reactions/src/BSPTN.cpp`.
+* [Exact perturbation theory kernels up to 4th order](https://inspirehep.net/literature/1684991)**: `reactions/src/BSPTN.cpp`.
 
 ** for LCDM, nDGP and f(R) gravity only. 
 
@@ -394,24 +394,32 @@ Respective bibtex entries:
 
 ```
 @article{Bose:2020wch,
-    author = "Bose, Benjamin and Cataneo, Matteo and Tröster, Tilman and Xia, Qianli and Heymans, Catherine and Lombriser, Lucas",
-    title = "{On the road to per-cent accuracy IV: ReACT -- computing the non-linear power spectrum beyond $\Lambda$CDM}",
+    author = {Bose, Benjamin and Cataneo, Matteo and Tr\"oster, Tilman and Xia, Qianli and Heymans, Catherine and Lombriser, Lucas},
+    title = "{On the road to per cent accuracy IV: ReACT \textendash{} computing the non-linear power spectrum beyond \ensuremath{\Lambda}CDM}",
     eprint = "2005.12184",
     archivePrefix = "arXiv",
     primaryClass = "astro-ph.CO",
-    month = "5",
+    doi = "10.1093/mnras/staa2696",
+    journal = "Mon. Not. Roy. Astron. Soc.",
+    volume = "498",
+    number = "4",
+    pages = "4650--4662",
     year = "2020"
 }
 ```
 
 ```
 @article{Bose:2021mkz,
-    author = "Bose, Benjamin and Wright, Bill S. and Cataneo, Matteo and Pourtsidou, Alkistis and Giocoli, Carlo and Lombriser, Lucas and McCarthy, Ian G. and Baldi, Marco and Pfeifer, Simon and Xia, Qianli",
-    title = "{On the road to percent accuracy V: the non-linear power spectrum beyond $\Lambda$CDM with massive neutrinos and baryonic feedback}",
+    author = "Bose, Benjamin and Wright, Bill S. and Cataneo, Matteo and Pourtsidou, Alkistis and Giocoli, Carlo and Lombriser, Lucas and McCarthy, Ian G. and Baldi, Marco and Pfeifer, Simon and Xia., Qianli",
+    title = "{On the road to per cent accuracy \textendash{} V. The non-linear power spectrum beyond \ensuremath{\Lambda}CDM with massive neutrinos and baryonic feedback}",
     eprint = "2105.12114",
     archivePrefix = "arXiv",
     primaryClass = "astro-ph.CO",
-    month = "5",
+    doi = "10.1093/mnras/stab2731",
+    journal = "Mon. Not. Roy. Astron. Soc.",
+    volume = "508",
+    number = "2",
+    pages = "2479--2491",
     year = "2021"
 }
 ```
