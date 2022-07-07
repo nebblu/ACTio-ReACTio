@@ -323,7 +323,7 @@ If you want to add in this model to the Pyreact wrapper, you will also need to a
 
 **pscale** is the pivot scalar.
 
-**Tm,Tcb** are transfer function arrays of z x k for the total matter and total CDM+baryons in the target cosmology. 
+**Tm,Tcb** are transfer function arrays of z $\times$ k for the total matter and total CDM+baryons in the target cosmology. 
 
 **Tcblcdm** is the LCDM CDM+baryon transfer function array of z x k.
 
@@ -332,7 +332,7 @@ If you want to add in this model to the Pyreact wrapper, you will also need to a
 
 **modcamb** tells ReACT whether or not to treat the input transfer function file as in option (1) - true value - or option (2) - false value (see C++ section of [Running ReACT](https://github.com/nebblu/ACTio-ReACTio#running-react)) . Default is false as in the original version of the code. 
 
-**modg**: Tells ReACT to manually set $k_\star$ and $\mathcal{E}$ to LCDM values (1e-6 and 1. resp.). This is needed because of sensitivity of $\mathcal{E}$ to the ratio of 1-halo terms which may not be exactly equal at large scales for different cosmologies even when modified gravity isn't present. 
+**modg**: Tells ReACT to manually set $k_\star$ and $E$ to LCDM values (1e-6 and 1. resp.). This is needed because of sensitivity of $E$ to the ratio of 1-halo terms which may not be exactly equal at large scales for different cosmologies even when modified gravity isn't present. 
 
 **Note** the cosmoSIS module has not yet been extended to include massive neutrinos. 
 
