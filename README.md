@@ -330,7 +330,7 @@ If you want to add in this model to the Pyreact wrapper, you will also need to a
 
 # C++ parameters 
 
-**modcamb** tells ReACT whether or not to treat the input transfer function file as in option (1) - true value - or option (2) - false value. Default is false as in the original version of the code. 
+**modcamb** tells ReACT whether or not to treat the input transfer function file as in option (1) - true value - or option (2) - false value (see C++ section of [Running ReACT](https://github.com/nebblu/ACTio-ReACTio#running-react)) . Default is false as in the original version of the code. 
 
 **modg**: Tells ReACT to manually set $k_\star$ and $\mathcal{E}$ to LCDM values (1e-6 and 1. resp.). This is needed because of sensitivity of $\mathcal{E}$ to the ratio of 1-halo terms which may not be exactly equal at large scales for different cosmologies even when modified gravity isn't present. 
 
