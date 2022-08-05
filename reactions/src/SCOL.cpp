@@ -690,11 +690,12 @@ double SCOL::myscol(double myscolparams[], double acol, double omegacb, double o
        double wn =  prefac*(1.+mydelt);
         // modified gravity, dark energy  and Kinetic energy contributions
        double wphi, weff, ke, wds;
-       
+
        if(model==1){
          wphi = 0.;
          weff = 2.*(1.-omega0)*pow2(myy/arat);
          ke =  pow2(HA(ai, omega0)*(myy + myp)/arat);
+         wds = 0.;
        }
        else{
          wphi = prefac * mymgF(ai, myy, myyenv, Rthp, omegacb, extpars, myscolparams[0],model)*mydelt;
