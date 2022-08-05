@@ -2,7 +2,6 @@
 #define SPECIALFUNCTIONS_H
 
 #include <vector>
-#include <Copter/>
 
 // angular integration limits - taken as the ends of the 128-point Gauss quadrature method - see end of file
 const real XMAX =  9.999561e-01;//x128[255];

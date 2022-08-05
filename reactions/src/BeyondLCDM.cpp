@@ -54,19 +54,41 @@ initn_rsd  */
 
 /* See 1606.02520, 1808.01120, 2005.12184  for more details */
 
-// model selects MG or DE model (1 = GR, MG: 2 = f(R), 3 = DGP, DE models: 4 = quintessence, 5 = CPL, 6 = CPL with dark scattering)
-// 7-10: EFTofDE with PPF, unscreened, superscreened and KGB non-linear implementations.
+// "model" selects MG or DE model:
+// 1: GR
+// 2: Hu-Sawicki f(R) [LCDM background]
+// 3: normal branch DGP [LCDM background]
+// 4: quintessence
+// 5: CPL
+// 6: CPL with dark scattering
+// 7: EFTofDE with mu in k->infinity limit & PPF G_eff for non-linear scales [gamma2 = gamma3 = 0]
+// 8: EFTofDE with mu in k->infinity limit & linear G_eff for non-linear scales [gamma2 = gamma3 = 0]
+// 9: EFTofDE with mu in k->infinity limit & G_Newton for non-linear scales [gamma2 = gamma3 = 0]
+// 10: EFTofDE with full mu & PPF G_eff for non-linear scales [gamma2 = gamma3 = 0]
+// 11: EFTofDE with full mu & linear G_eff for non-linear scales [gamma2 = gamma3 = 0]
 
 // Throughout the values of pars, extpars and model are:
-// pars: base parameters. Currently used: 0: scale factor, 1: total matter fraction today, 2: total massive neutrino fraction today
-// extpars: extended parameters.
-// extpars[0] = Omega_rc for nDGP, fr0 for f(R), w0 for CPL
-// extpars[1] = wa for CPL
-// extpars[2] = xi * h for Dark scattering
-// for EFTofDE and LCDM background we have:
-// extpars[0-2] = alpha_{K0},alpha_{B0},alpha_{M0} resp
-// for KGB with CPL background we have:
-// extpars[0-4] = w0, wa, alpha_{K0},alpha_{B0},alpha_{M0}
+
+// "pars[]" : base parameters. Currently used:
+// 0: scale factor
+// 1: total matter fraction today
+// 2: total massive neutrino fraction today
+
+// extpars[maxpars]: extended model parameters  (maxpars = 20 default, see BeyondLCDM.h)
+
+// 0: Omega_rc for nDGP, fr0 for f(R), w0 for CPL
+// 1: wa for CPL
+// 2: xi * h for Dark scattering
+
+// for EFTofDE (models 7-11) we have:
+// 0: alpha_K(a)
+// 1: alpha_B(a)
+// 2: alpha_M(a)
+// 3: alpha_T(a)
+// 4: M^2/M_planck^2
+
+// for models 7 & 10:
+// 5+ : PPF parameters
 
 
                                         ////
@@ -79,8 +101,9 @@ initn_rsd  */
     ///////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////
 
+// Some useful functions needed for EFTofDE computation of linear G_eff (mu-1)
 
-// Ricci background function in alpha_basis - see notebooks/GtoPT.nb - currently unused
+// Ricci background function - see notebooks/GtoPT.nb
 double riccibackground(double a, double omega0, double extpars[], int model){
 	double h0 = 1./2997.92458;
 	double a3 = pow3(a);
@@ -128,28 +151,28 @@ double riccibackgroundpp(double a, double omega0, double extpars[]){
 }
 
 
-/* Hu-Sawicki f(R) function */
+/* Hu-Sawicki f(R) function (we assume Ricci as given by model 11 - was used for tests)*/
 double fofR_hs(double a, double omega0, double fr0){
 	double extra[20];
-	double ricci = riccibackground(a,omega0,extra,11);
-	double ricci0 = riccibackground(1.,omega0,extra,11);
+	double ricci = riccibackground(a,omega0,extra,11); // background Ricci
+	double ricci0 = riccibackground(1.,omega0,extra,11); // background Ricci today
 	return fr0*pow2(ricci0/ricci);
 }
 
 // f_R'
 double fofRd_hs(double a, double omega0, double fr0){
 	double extra[20];
-	double ricci = riccibackground(a,omega0,extra,11);
-	double riccid = riccibackgroundp(a,omega0,extra,11);
+	double ricci = riccibackground(a,omega0,extra,11); // background Ricci
+	double riccid = riccibackgroundp(a,omega0,extra,11); // background Ricci sf derivative
 	return -2.*riccid/ricci * fofR_hs(a,omega0,fr0);
 }
 
 // f_R''
 double fofRdd_hs(double a, double omega0, double fr0){
 	double extra[20];
-	double ricci = riccibackground(a,omega0,extra,11);
-	double riccid = riccibackgroundp(a,omega0,extra,11);
-	double riccidd = riccibackgroundpp(a,omega0,extra);
+	double ricci = riccibackground(a,omega0,extra,11); // background Ricci
+	double riccid = riccibackgroundp(a,omega0,extra,11); // background Ricci sf derivative
+	double riccidd = riccibackgroundpp(a,omega0,extra); // background Ricci 2nd sf derivative
 	return 2.*fofR_hs(a,omega0,fr0) * (3.*pow2(riccid/ricci) - riccidd/ricci);
 }
 
@@ -176,23 +199,37 @@ double alpha_md_hs(double a, double omega0, double fr0){
 /*  Scale factor evolution of alpha_i for EFTofDE */
 // can add in different scale factor dependencies for different alphas
 // edit as necessary - but also edit the analytic scale factor derivative function [dalphai_eft] accordingly
+
+// If Hubble is specified, then we should define M^2 as the integral of alpha_M
+
+// integral to calculate time dependence of variation to planck mass from alpham generically
+inline double M2integral(double alpha0, double omega0, double a){
+	double alpham = alpha0 * a; // insert consistent expression for alpha_M as appearing in case 3 below
+	return alpham / a ;
+}
+
 inline double alphai_eft(double a, double omega0, double alpha0, int model){
 	switch(model) {
 		case 1:
 				return alpha0*a; // alpha_K(a)
 		case 2:
-				return -alpha_m_hs(a,omega0,alpha0);//alpha0*a; // alpha_B(a)
+				return alpha0*a; // alpha_B(a)
+				// return -alpha_m_hs(a,omega0,alpha0); // Hu-Sawicki form
 		case 3:
-				return alpha_m_hs(a,omega0,alpha0);//alpha0*a; // alpha_M(a)
+				return alpha0*a; // alpha_M(a)
+				// return alpha_m_hs(a,omega0,alpha0); // Hu-Sawicki form
 		case 4:
 				return alpha0*a; // alpha_T(a)
 		case 5:
-				return (1.+fofR_hs(a,omega0,alpha0)); //alpha0; // M2(a)/m_planck - but in principle we should use the integral of alphaM multiplied by a constant ?
+				  return exp(alpha0*a); // M2(a)/m_planck = e^{Integrate[alpha_M / a]}  [We define alpha_M = a (dM^2/da) / M^2]
+		//		return Integrate(bind(M2integral, alpha0, omega0, std::placeholders::_1), AMIN , a, 1e-3); // M2(a)/m_planck generic integral of alpha_M/a
+		//		return (1.+fofR_hs(a,omega0,alpha0)); // Hu-Sawicki form
 		default:
 				warning("BeyondLCDM: invalid model choice, model = %d \n", model);
 				return 0;
 			}
 }
+
 
 // scale factor derivatives of alphai_eft
 inline double dalphai_eft(double a, double omega0, double alpha0, int model){
@@ -200,13 +237,15 @@ inline double dalphai_eft(double a, double omega0, double alpha0, int model){
 		case 1:
 				return alpha0; // alpha_K'(a)
 		case 2:
-				return -alpha_md_hs(a,omega0,alpha0);//alpha0; // alpha_B'(a)
+				return alpha0; // alpha_B'(a)
+			//	return -alpha_md_hs(a,omega0,alpha0);  // Hu-Sawicki form
 		case 3:
-				return alpha_md_hs(a,omega0,alpha0);//alpha0; // alpha_M'(a)
+				return alpha0; // alpha_M'(a)
+		//		return alpha_md_hs(a,omega0,alpha0); // Hu-Sawicki form
 		case 4:
 				return alpha0; // alpha_T'(a)
 		case 5:
-				return 0.; // doesn't appear in equations (this is directly related to alpha_m)
+				return alpha0*exp(alpha0*a); // doesn't appear in equations (this is directly related to alpha_m)
 		default:
 				warning("BeyondLCDM: invalid model choice, model = %d \n", model);
 				return 0;
@@ -230,12 +269,6 @@ inline double ddalphai_eft(double a, double omega0, double alpha0, int model){
 				warning("BeyondLCDM: invalid model choice, model = %d \n", model);
 				return 0;
 		}
-}
-
-
-// integral to calculate time dependence of variation to planck mass from alpham
-inline double M2integral(double alpham0, double omega0, int model, double a){
-	return alphai_eft(a, omega0, alpham0, model)/a;
 }
 
 /* Background normalised hubble function: general solution for initialisation with hub_init in SpecialFunctions.cpp */
