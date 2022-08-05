@@ -7,12 +7,15 @@
 const int maxpars = 20;
 
 // Background functions
-double bespokehub(double a, double omega0, double extpars[]);
+double bespokehub(double a, double omega0, double extpars[], int model);
+double bespokehubd(double a, double omega0, double extpars[], int model);
+double bespokehubdd(double a, double omega0, double extpars[], int model);
 
 double HAg(double a, double omega0, double extpars[], int model = 1);
 double HA1g(double a, double omega0, double extpars[], int model = 1);
 double HA2g(double a, double omega0, double extpars[], int model = 1);
 double HA2g2(double a, double omega0, double extpars[], int model = 1);
+
 
 // Dark scattering friction term (1605.05623)
 double myfricF(double a, double omega0, double extpars[], int model = 1);

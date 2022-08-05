@@ -189,6 +189,7 @@ if (!gsl_finite(sig2)) {
   react_error_halo("sigma_8 derivative evaluated to non-numerical value");
 }
 
+printf("%s %e \n","LCDM sigma8: ", sqrt(sig1) );
 
 // log(mass) loop for calculating the collapse quantities
 //#pragma omp parallel for
@@ -289,6 +290,9 @@ double sig1,sig2;
      sig1 = Integrate<ExpSub>(bind(sigma_integrandp_modcamb, cref(P_l), 8., std::placeholders::_1), 1e-4, 50., 1e-5,1e-5);
      sig2 = Integrate<ExpSub>(bind(sigma8d_integrandp_modcamb, cref(P_l), 8., std::placeholders::_1), 1e-4, 50., 1e-5,1e-5);
   }
+
+
+  printf("%s %e \n", "Modified sigma8: ", sqrt(sig1) );
 
 // feed back modified sigma8 for other uses (see pyreact or cosmosis modules)
     pars[6] = sqrt(sig1);
@@ -957,7 +961,7 @@ void HALO::initialise(double pars[], double extpars[], bool modcamb, bool modg, 
   scol_init(pars, extpars, modcamb,model); // real spherical collapse quantities
   scol_initp(pars, modcamb); // pseudo spherical collapse quantities
   react_init_nu(pars, extpars, modcamb,modg,model); // kstar and mathcal E for reaction
-  printf("%e %e \n", bigE, kstar);
+  printf("%s %e %s %e \n", "E:", bigE, "kstar:", kstar);
 }
 
 
@@ -971,7 +975,7 @@ void HALO::initialise_multiz(double pars[], double extpars[], Spline ploopr, Spl
   scol_init(pars, extpars, modcamb,model); // real spherical collapse quantities
   scol_initp(pars,modcamb); // pseudo spherical collapse quantities
   react_init_nu_multiz(pars,ploopr, ploopp, modcamb, modg); // kstar and mathcal E for reaction for multiple redshifts
-  printf("%e %e \n", bigE, kstar);
+  printf("%s %e %s %e \n", "E:", bigE, "kstar:", kstar);
 }
 
 

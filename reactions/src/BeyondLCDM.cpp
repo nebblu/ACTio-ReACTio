@@ -10,6 +10,7 @@
 #include "BeyondLCDM.h"
 #include "SpecialFunctions.h"
 #include "Spline.h"
+#include "SCOL.h"
 
 #include <stdio.h>
 #include <gsl/gsl_errno.h>
@@ -53,19 +54,41 @@ initn_rsd  */
 
 /* See 1606.02520, 1808.01120, 2005.12184  for more details */
 
-// model selects MG or DE model (1 = GR, MG: 2 = f(R), 3 = DGP, DE models: 4 = quintessence, 5 = CPL, 6 = CPL with dark scattering)
-// 7-10: EFTofDE with PPF, unscreened, superscreened and KGB non-linear implementations.
+// "model" selects MG or DE model:
+// 1: GR
+// 2: Hu-Sawicki f(R) [LCDM background]
+// 3: normal branch DGP [LCDM background]
+// 4: quintessence
+// 5: CPL
+// 6: CPL with dark scattering
+// 7: EFTofDE with mu in k->infinity limit & PPF G_eff for non-linear scales [gamma2 = gamma3 = 0]
+// 8: EFTofDE with mu in k->infinity limit & linear G_eff for non-linear scales [gamma2 = gamma3 = 0]
+// 9: EFTofDE with mu in k->infinity limit & G_Newton for non-linear scales [gamma2 = gamma3 = 0]
+// 10: EFTofDE with full mu & PPF G_eff for non-linear scales [gamma2 = gamma3 = 0]
+// 11: EFTofDE with full mu & linear G_eff for non-linear scales [gamma2 = gamma3 = 0]
 
 // Throughout the values of pars, extpars and model are:
-// pars: base parameters. Currently used: 0: scale factor, 1: total matter fraction today, 2: total massive neutrino fraction today
-// extpars: extended parameters.
-// extpars[0] = Omega_rc for nDGP, fr0 for f(R), w0 for CPL
-// extpars[1] = wa for CPL
-// extpars[2] = xi * h for Dark scattering
-// for EFTofDE and LCDM background we have:
-// extpars[0-2] = alpha_{K0},alpha_{B0},alpha_{M0} resp
-// for KGB with CPL background we have:
-// extpars[0-4] = w0, wa, alpha_{K0},alpha_{B0},alpha_{M0}
+
+// "pars[]" : base parameters. Currently used:
+// 0: scale factor
+// 1: total matter fraction today
+// 2: total massive neutrino fraction today
+
+// extpars[maxpars]: extended model parameters  (maxpars = 20 default, see BeyondLCDM.h)
+
+// 0: Omega_rc for nDGP, fr0 for f(R), w0 for CPL
+// 1: wa for CPL
+// 2: xi * h for Dark scattering
+
+// for EFTofDE (models 7-11) we have:
+// 0: alpha_K(a)
+// 1: alpha_B(a)
+// 2: alpha_M(a)
+// 3: alpha_T(a)
+// 4: M^2/M_planck^2
+
+// for models 7 & 10:
+// 5+ : PPF parameters
 
 
                                         ////
@@ -78,34 +101,243 @@ initn_rsd  */
     ///////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////
 
+// Some useful functions needed for EFTofDE computation of linear G_eff (mu-1)
+
+// Ricci background function - see notebooks/GtoPT.nb
+double riccibackground(double a, double omega0, double extpars[], int model){
+	double h0 = 1./2997.92458;
+	double a3 = pow3(a);
+	// solutions currently assume LCDM
+	switch(model) {
+		case 10:
+		/* EFTofDE with PPF and full k-dependence in linear modification */
+		return  3. * pow2(h0) * (omega0 + 4. * a3 * (1. - omega0)) / a3;
+
+		case 11:
+		/* EFTofDE unscreened and full k-dependence in linear modification */
+		return  3. * pow2(h0) * (omega0 + 4. * a3 * (1. - omega0)) / a3;
+
+		default:
+				warning("BeyondLCDM: invalid model choice, model = %d \n", model);
+				return 0;
+}
+}
+
+// Ricci background scale factor derivtative - see notebooks/GtoPT.nb
+double riccibackgroundp(double a, double omega0, double extpars[], int model){
+		// solutions currently assume LCDM
+		double h0 = 1./2997.92458;
+		double a4 = pow(a,4);
+		switch(model) {
+			case 10:
+			/* EFTofDE with PPF and full k-dependence in linear modification */
+			return  -9.*pow2(h0)*omega0/a4;
+
+			case 11:
+			/* EFTofDE unscreened and full k-dependence in linear modification */
+			return  -9.*pow2(h0)*omega0/a4;
+
+			default:
+					warning("BeyondLCDM: invalid model choice, model = %d \n", model);
+					return 0;
+	}
+}
+
+// Ricci background 2nd scale factor derivtative
+double riccibackgroundpp(double a, double omega0, double extpars[]){
+	double h0 = 1./2997.92458;
+	double a5 = pow(a,5);
+	return 36.*pow2(h0)*omega0/a5;
+}
+
+
+/* Hu-Sawicki f(R) function (we assume Ricci as given by model 11 - was used for tests)*/
+double fofR_hs(double a, double omega0, double fr0){
+	double extra[20];
+	double ricci = riccibackground(a,omega0,extra,11); // background Ricci
+	double ricci0 = riccibackground(1.,omega0,extra,11); // background Ricci today
+	return fr0*pow2(ricci0/ricci);
+}
+
+// f_R'
+double fofRd_hs(double a, double omega0, double fr0){
+	double extra[20];
+	double ricci = riccibackground(a,omega0,extra,11); // background Ricci
+	double riccid = riccibackgroundp(a,omega0,extra,11); // background Ricci sf derivative
+	return -2.*riccid/ricci * fofR_hs(a,omega0,fr0);
+}
+
+// f_R''
+double fofRdd_hs(double a, double omega0, double fr0){
+	double extra[20];
+	double ricci = riccibackground(a,omega0,extra,11); // background Ricci
+	double riccid = riccibackgroundp(a,omega0,extra,11); // background Ricci sf derivative
+	double riccidd = riccibackgroundpp(a,omega0,extra); // background Ricci 2nd sf derivative
+	return 2.*fofR_hs(a,omega0,fr0) * (3.*pow2(riccid/ricci) - riccidd/ricci);
+}
+
+// alpha_M(a) in Hu-Sawicki theory (see GtoPT.nb)
+double alpha_m_hs(double a, double omega0, double fr0){
+	double extra[20];
+	double fR = fofR_hs(a,omega0,fr0);
+	double fRp = fofRd_hs(a,omega0,fr0);
+	return a*fRp/(1.+fR);
+}
+
+// alpha_M'(a) in Hu-Sawicki theory (see GtoPT.nb)
+double alpha_md_hs(double a, double omega0, double fr0){
+	double extra[20];
+	double fR = fofR_hs(a,omega0,fr0);
+	double fRp = fofRd_hs(a,omega0,fr0);
+	double fRpp = fofRdd_hs(a,omega0,fr0);
+	return (fRp*(1.+fR - a*fRp)+a*(1.+fR)*fRpp)/pow2(1.+fR);
+}
 
 
 /* BACKGROUND QUANTITIES */
 
 /*  Scale factor evolution of alpha_i for EFTofDE */
+// can add in different scale factor dependencies for different alphas
+// edit as necessary - but also edit the analytic scale factor derivative function [dalphai_eft] accordingly
 
-// edit as necessary - but also edit the analytic scale factor derivative function accordingly
-inline double alphai_eft(double a, double omega0, double alpha0){
-	return alpha0*a;
+// If Hubble is specified, then we should define M^2 as the integral of alpha_M
+
+// integral to calculate time dependence of variation to planck mass from alpham generically
+inline double M2integral(double alpha0, double omega0, double a){
+	double alpham = alpha0 * a; // insert consistent expression for alpha_M as appearing in case 3 below
+	return alpham / a ;
 }
+
+inline double alphai_eft(double a, double omega0, double alpha0, int model){
+	switch(model) {
+		case 1:
+				return alpha0*a; // alpha_K(a)
+		case 2:
+				return alpha0*a; // alpha_B(a)
+				// return -alpha_m_hs(a,omega0,alpha0); // Hu-Sawicki form
+		case 3:
+				return alpha0*a; // alpha_M(a)
+				// return alpha_m_hs(a,omega0,alpha0); // Hu-Sawicki form
+		case 4:
+				return alpha0*a; // alpha_T(a)
+		case 5:
+				  return exp(alpha0*a); // M2(a)/m_planck = e^{Integrate[alpha_M / a]}  [We define alpha_M = a (dM^2/da) / M^2]
+		//		return Integrate(bind(M2integral, alpha0, omega0, std::placeholders::_1), AMIN , a, 1e-3); // M2(a)/m_planck generic integral of alpha_M/a
+		//		return (1.+fofR_hs(a,omega0,alpha0)); // Hu-Sawicki form
+		default:
+				warning("BeyondLCDM: invalid model choice, model = %d \n", model);
+				return 0;
+			}
+}
+
 
 // scale factor derivatives of alphai_eft
-inline double dalphai_eft(double a, double omega0, double alpha0){
-	return alpha0;
+inline double dalphai_eft(double a, double omega0, double alpha0, int model){
+	switch(model) {
+		case 1:
+				return alpha0; // alpha_K'(a)
+		case 2:
+				return alpha0; // alpha_B'(a)
+			//	return -alpha_md_hs(a,omega0,alpha0);  // Hu-Sawicki form
+		case 3:
+				return alpha0; // alpha_M'(a)
+		//		return alpha_md_hs(a,omega0,alpha0); // Hu-Sawicki form
+		case 4:
+				return alpha0; // alpha_T'(a)
+		case 5:
+				return alpha0*exp(alpha0*a); // doesn't appear in equations (this is directly related to alpha_m)
+		default:
+				warning("BeyondLCDM: invalid model choice, model = %d \n", model);
+				return 0;
+		}
 }
 
-/* Background hubble general solution for initialisation with hub_init in SpecialFunctions.cpp */
+// 2nd  scale factor derivatives of alphai_eft
+inline double ddalphai_eft(double a, double omega0, double alpha0, int model){
+	switch(model) {
+		case 1:
+				return 0.; // alpha_K''(a)
+		case 2:
+				return 0.; // alpha_B''(a)
+		case 3:
+				return 0.; // alpha_M''(a)
+		case 4:
+				return 0.; // alpha_T''(a)
+		case 5:
+				return 0.; // doesn't appear in equations
+		default:
+				warning("BeyondLCDM: invalid model choice, model = %d \n", model);
+				return 0;
+		}
+}
+
+/* Background normalised hubble function: general solution for initialisation with hub_init in SpecialFunctions.cpp */
 // Useful if H(a) does not have a straight forward analytic form
 // e.g. if we need to solve some equation for H(a):
 // we will create a splined function using hub_init instead of solving the equation at each call
-double bespokehub(double a, double omega0,double extpars[]){
+double bespokehub(double a, double omega0, double extpars[], int model){
 	/* Insert solver */
+	switch(model) {
+		case 10:
+		/* EFTofDE with PPF and full k-dependence in linear modification */
+		//can change to some solution for H in terms of extra parameters
+			return HA(a,omega0);
 
-			return 0.;
+		case 11:
+		/* EFTofDE unscreened and full k-dependence in linear modification */
+		//can change to some solution for H in terms of extra parameters
+			return HA(a,omega0);
+
+		default:
+				warning("BeyondLCDM: invalid model choice, model = %d \n", model);
+				return 0;
+}
+}
+
+//  (dH/dt / H0^2) = aH dH/da / H0^2
+// HA1 is the LCDM solution (see SpecialFunctions.cpp)
+double bespokehubd(double a, double omega0, double extpars[], int model){
+	/* Insert solver */
+	switch(model) {
+		case 10:
+		/* EFTofDE with PPF and full k-dependence in linear modification */
+		//can change to some solution for H in terms of extra parameters
+			return HA1(a,omega0);
+
+		case 11:
+		/* EFTofDE unscreened and full k-dependence in linear modification */
+		//can change to some solution for H in terms of extra parameters
+		 return HA1(a,omega0);
+
+		default:
+				warning("BeyondLCDM: invalid model choice, model = %d \n", model);
+				return 0;
+}
+}
+
+//d^2 H(a) / da^2  /H0
+// current solutions assume LCDM
+double bespokehubdd(double a, double omega0, double extpars[], int model){
+	double hub;
+	switch(model) {
+		case 10:
+		/* EFTofDE with PPF and full k-dependence in linear modification */
+		   hub = HA(a,omega0); // H / H0
+			return 3.*omega0*(-12.*(omega0-1.)/(4.*pow2(hub)) + 5.)/(4.*pow(a,5)*hub) ;
+
+		case 11:
+		/* EFTofDE unscreened and full k-dependence in linear modification */
+			hub = HA(a,omega0); // H / H0
+	 		return 3.*omega0*(-12.*(omega0-1.)/(4.*pow2(hub)) + 5.)/(4.*pow(a,5)*hub) ;
+
+		default:
+				warning("BeyondLCDM: invalid model choice, model = %d \n", model);
+				return 0;
+}
 }
 
 
-
+// H(a)/H0
 double HAg(double a, double omega0, double extpars[], int model){
 	double A, omegaf, omegaL;
 	switch(model) {
@@ -155,18 +387,22 @@ double HAg(double a, double omega0, double extpars[], int model){
 			return  HA( a, omega0);
 
 			case 10:
- 			/* Custom background - see bespokehub above */
-			return myhubble(a);
+			/* EFTofDE with PPF and full k-dependence in linear modification */
+			return HA( a, omega0); //myhubble(a);
+
+			case 11:
+			/* EFTofDE: unscreened approx and full k-dependence in linear modification */
+			return  HA( a, omega0);
 
 			default:
-					warning("SpecialFunctions: invalid model choice, model = %d \n", model);
+					warning("BeyondLCDM: invalid model choice, model = %d \n", model);
 					return 0;
 }
 }
 
-/* Must specify analytic derivatives - want to avoid numerical derivatives*/
+/* Normalised time derivative - specify form or use */
 
-// aH dH/da / H0^2
+//  (dH/dt / H0^2) = aH dH/da / H0^2
 double HA1g(double a, double omega0, double extpars[], int model){
 	double A, omegaf, omegaL;
 	switch(model) {
@@ -215,14 +451,43 @@ double HA1g(double a, double omega0, double extpars[], int model){
 		/* EFTofDE: superscreened approximation */
 		return HA1( a, omega0);
 
+		case 10:
+		/* EFTofDE with PPF and full k-dependence in linear modification */
+		return HA1( a, omega0);//myhubbled(a);
+
+		case 11:
+		/* EFTofDE unscreened and full k-dependence in linear modification */
+		return  HA1( a, omega0);
 
 		default:
-				warning("SpecialFunctions: invalid model choice, model = %d \n", model);
+				warning("BeyondLCDM: invalid model choice, model = %d \n", model);
 				return 0;
 }
 }
 
-// some useful definitions for SpecialFunctions.cpp
+/* Normalised time derivative - specify form or use */
+
+//d^2 H(a) / da^2  /H0
+double HA3g(double a, double omega0, double extpars[], int model){
+	double hub;
+	switch(model) {
+		case 10:
+		/* EFTofDE with PPF and full k-dependence in linear modification */
+		return myhubbledd(a);
+
+		case 11:
+		/* EFTofDE unscreened and full k-dependence in linear modification */
+		hub = HA(a,omega0); // H / H0
+	  return 3.*omega0*(-12.*(omega0-1.)/(4.*pow2(hub)) + 5.)/(4.*pow(a,5)*hub) ;
+
+		default:
+				warning("BeyondLCDM: invalid model choice, model = %d \n", model);
+				return 0;
+}
+}
+
+
+// some useful functions of Hubble for SpecialFunctions.cpp
 
 //HA2g = -dH/dt/H^2 = -a dH/da / H
 double HA2g(double a, double omega0, double extpars[], int model){
@@ -270,9 +535,15 @@ double myfricF(double a, double omega0, double extpars[], int model){
 		case 9:
 		/* EFTofDE: superscreened approx */
 					return 0.;
+		case 10:
+		/* EFTofDE with PPF and full k-dependence in linear modification */
+					return 0.;
+		case 11:
+		/* EFTofDE: unscreened approx and full k-dependence in linear modification */
+					return 0.;
 
 		default:
-					warning("SpecialFunctions: invalid model choice, model = %d \n", model);
+					warning("BeyondLCDM: invalid model choice, model = %d \n", model);
 				  return 0;
   }
 }
@@ -290,7 +561,14 @@ double myfricF(double a, double omega0, double extpars[], int model){
 // Linear modification mu
 double mu(double a, double k0, double omega0, double extpars[], int model){
 	double h0 = 1./2997.92458;
-	double var1, var2, alphaofa[5],dalphaofa[5];
+	double var1, var2, alphaofa[5],dalphaofa[5],ddalphaofa[5];
+	double myA[3],myB[3],myC[4],myf[4];
+	double hub, hubd, hubdd; // hubble and its derivatives
+	double ct2; // speed of grav waves
+	double ca; // background function
+	double R0d; // background Ricci scale factor derivative
+	double betaxi;
+	double epsilon; // to avoid singularity in full EFTofDE k-dependent mu
 	switch(model) {
 		case 1:
 		/* GR */
@@ -313,50 +591,223 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 						return  1. ;
 
 		/* k->infinity limit of EFTofDE. See Eq. 26 of 1606.05339*/
-		// 7-10: PPF, unscreened, superscreened, KGB
+		// 7-9: PPF, unscreened, superscreened assuming LCDM background and k->infinity limit
 		case 7:
-						alphaofa[0] = alphai_eft(a,omega0,extpars[0]); // alpha_K(a) = alpha_{K0}*a
-						alphaofa[1] = alphai_eft(a,omega0,extpars[1]); // alpha_B(a) = alpha_{B0}*a
-						alphaofa[2] = alphai_eft(a,omega0,extpars[2]); // alpha_M(a) = alpha_{M0}*a
-						// scale factor derivatives of alpha_i(a)
-						dalphaofa[0] = dalphai_eft(a,omega0,extpars[0]);
-						dalphaofa[1] = dalphai_eft(a,omega0,extpars[1]);
-						dalphaofa[2] = dalphai_eft(a,omega0,extpars[2]);
+						// 0: alpha_K(a)
+						// 1: alpha_B(a)
+						// 2: alpha_M(a)
+						// 3: alpha_T(a)
+						// 4: M^2/M_planck^2
+
+						// Initialise alpha_i (a) and their derivatives
+						for(int i=0; i<5; i++){
+							alphaofa[i] = alphai_eft(a,omega0,extpars[i],i+1);
+							dalphaofa[i] = dalphai_eft(a,omega0,extpars[i],i+1);
+							ddalphaofa[i] = ddalphai_eft(a,omega0,extpars[i],i+1);
+						}
+						ct2 = 1. + alphaofa[3];
 
 					  var1 = alphaofa[0] + 3./2.*pow2(alphaofa[1]); // alpha
-						var2 = 2./var1*( (1.-	alphaofa[1]/2.) * (alphaofa[1]/2. + HA2g(a,omega0,extpars,model))
+						var2 = 2./var1*( (1.-	alphaofa[1]/2.) * (alphaofa[1]/2.*ct2 + HA2g(a,omega0,extpars,model)
+																					 + alphaofa[2] - alphaofa[3])
 																					 + a*dalphaofa[1]/2.- HA2g2(a,omega0,extpars,model)); //cs^2
-					  return 1. + pow2(alphaofa[1])/(2.*var2*var1);
+
+						betaxi = 2./(var2*var1) * pow2(alphaofa[1]/2. * ct2 + alphaofa[2] - alphaofa[3]);
+
+
+					  return (1. + alphaofa[3] + betaxi) / (alphaofa[4]);
 
 	  case 8:
-						alphaofa[0] = alphai_eft(a,omega0,extpars[0]); // alpha_K(a) = alpha_{K0}*a
-						alphaofa[1] = alphai_eft(a,omega0,extpars[1]); // alpha_B(a) = alpha_{B0}*a
-						alphaofa[2] = alphai_eft(a,omega0,extpars[2]); // alpha_M(a) = alpha_{M0}*a
-						// scale factor derivatives of alpha_i(a)
-						dalphaofa[0] = dalphai_eft(a,omega0,extpars[0]);
-						dalphaofa[1] = dalphai_eft(a,omega0,extpars[1]);
-						dalphaofa[2] = dalphai_eft(a,omega0,extpars[2]);
-					  var1 = alphaofa[0] + 3./2.*pow2(alphaofa[1]); // alpha
-						var2 = 2./var1*( (1.-	alphaofa[1]/2.) * (alphaofa[1]/2. + HA2g(a,omega0,extpars,model))
+						// 0: alpha_K(a)
+						// 1: alpha_B(a)
+						// 2: alpha_M(a)
+						// 3: alpha_T(a)
+						// 4: M^2/M_planck^2
+						// Initialise alpha_i (a) and their derivatives
+						for(int i=0; i<5; i++){
+							alphaofa[i] = alphai_eft(a,omega0,extpars[i],i+1);
+							dalphaofa[i] = dalphai_eft(a,omega0,extpars[i],i+1);
+							ddalphaofa[i] = ddalphai_eft(a,omega0,extpars[i],i+1);
+						}
+
+						ct2 = 1. + alphaofa[3];
+
+						var1 = alphaofa[0] + 3./2.*pow2(alphaofa[1]); // alpha
+						var2 = 2./var1*( (1.-	alphaofa[1]/2.) * (alphaofa[1]/2.*ct2 + HA2g(a,omega0,extpars,model)
+																					 + alphaofa[2] - alphaofa[3])
 																					 + a*dalphaofa[1]/2.- HA2g2(a,omega0,extpars,model)); //cs^2
-					  return 1. + pow2(alphaofa[1])/(2.*var2*var1);
+
+						betaxi = 2./(var2*var1) * pow2(alphaofa[1]/2. * ct2 + alphaofa[2] - alphaofa[3]);
+
+						return (1. + alphaofa[3] + betaxi) / (alphaofa[4]);
 
 		case 9:
-						alphaofa[0] = alphai_eft(a,omega0,extpars[0]); // alpha_K(a) = alpha_{K0}*a
-						alphaofa[1] = alphai_eft(a,omega0,extpars[1]); // alpha_B(a) = alpha_{B0}*a
-						alphaofa[2] = alphai_eft(a,omega0,extpars[2]); // alpha_M(a) = alpha_{M0}*a
-						// scale factor derivatives of alpha_i(a)
-						dalphaofa[0] = dalphai_eft(a,omega0,extpars[0]);
-						dalphaofa[1] = dalphai_eft(a,omega0,extpars[1]);
-						dalphaofa[2] = dalphai_eft(a,omega0,extpars[2]);
+						// 0: alpha_K(a)
+						// 1: alpha_B(a)
+						// 2: alpha_M(a)
+						// 3: alpha_T(a)
+						// 4: M^2/M_planck^2
 
-					  var1 = alphaofa[0] + 3./2.*pow2(alphaofa[1]); // alpha
-						var2 = 2./var1*( (1.-	alphaofa[1]/2.) * (alphaofa[1]/2. + HA2g(a,omega0,extpars,model))
+						// Initialise alpha_i (a) and their derivatives
+						for(int i=0; i<5; i++){
+							alphaofa[i] = alphai_eft(a,omega0,extpars[i],i+1);
+							dalphaofa[i] = dalphai_eft(a,omega0,extpars[i],i+1);
+							ddalphaofa[i] = ddalphai_eft(a,omega0,extpars[i],i+1);
+						}
+
+						ct2 = 1. + alphaofa[3];
+
+						var1 = alphaofa[0] + 3./2.*pow2(alphaofa[1]); // alpha
+						var2 = 2./var1*( (1.-	alphaofa[1]/2.) * (alphaofa[1]/2.*ct2 + HA2g(a,omega0,extpars,model)
+																					 + alphaofa[2] - alphaofa[3])
 																					 + a*dalphaofa[1]/2.- HA2g2(a,omega0,extpars,model)); //cs^2
-					  return 1. + pow2(alphaofa[1])/(2.*var2*var1);
+
+						betaxi = 2./(var2*var1) * pow2(alphaofa[1]/2. * ct2 + alphaofa[2] - alphaofa[3]);
+
+						return (1. + alphaofa[3] + betaxi) / (alphaofa[4]);
+
+		case 10:
+					/* EFTofDE with PPF and full k-dependence in linear modification */
+						// 0: alpha_K(a)
+						// 1: alpha_B(a)
+						// 2: alpha_M(a)
+						// 3: alpha_T(a)
+						// 4: M^2/M_planck^2
+
+						// Initialise alpha_i (a) and their derivatives
+						for(int i=0; i<5; i++){
+							alphaofa[i] = alphai_eft(a,omega0,extpars[i],i+1); // alpha(a)
+							dalphaofa[i] = dalphai_eft(a,omega0,extpars[i],i+1); // alpha'(a)
+							ddalphaofa[i] = ddalphai_eft(a,omega0,extpars[i],i+1); // alpha''(a)
+						}
+
+						// We take expressions from Chapter B of GtoPT.nb
+						// Hubble
+						hub = HAg(a,omega0,extpars,model)*h0;
+						// Hubble scale factor derivative
+						hubd = HA1g(a,omega0,extpars,model)*pow2(h0)/(a*hub);
+						// Hubble 2nd scale factor derivative
+						hubdd = HA3g(a,omega0,extpars,model)*h0;
+						// Background Ricci scalar scale factor derivative
+						R0d = riccibackgroundp(a,omega0,extpars,model);
+						// speed of gravitational waves
+						ct2 = 1. + alphaofa[3];
+
+						// c(a) background function
+						ca = 	0*(- 3.*pow2(h0)*omega0/(2.*pow3(a)*alphaofa[4])
+									- 1./2.*hub * (a*( ct2*(2.+alphaofa[2]) + a*dalphaofa[3])*hubd
+					  			+ hub*(ct2*((alphaofa[2]-1.)*alphaofa[2] + a*dalphaofa[2]) + 2.*a*alphaofa[2]*dalphaofa[3]
+									+ a*a*ddalphaofa[3])));
+
+						// A terms
+						myA[0] = 2.;
+						myA[1] = alphaofa[1]*hub;
+						myA[2] = 0.;
+						// B terms
+						myB[0] = - 1./ct2;
+						myB[1] = 1.;
+						myB[2] = (-	alphaofa[2] + alphaofa[3])*hub / ct2;
+						// C terms
+						myC[0] = - ct2 * myB[2];
+						myC[1] = myA[1]/2.;
+
+						myC[2] = ca + hub/2. * (-2.*alphaofa[3]*hub + pow2(alphaofa[2])*ct2*hub
+						  			 + a*hub*dalphaofa[1] + a*hub*dalphaofa[2] + a*hub*alphaofa[3]*dalphaofa[2]
+										 + 2.*a*alphaofa[3]*hubd + pow2(a)*dalphaofa[3]*hubd
+										 + alphaofa[1]*((1.+alphaofa[2])*hub + a*hubd)
+										 + alphaofa[2]*(hub*(1.-alphaofa[3] + 2.*a*dalphaofa[3]) + a*ct2*hubd)
+									   + pow2(a)*hub*ddalphaofa[3]);
+
+
+						myC[3] = -a*hub/4. * (12.*ca*hubd + hub*(6.*pow2(alphaofa[2])*ct2*hub*hubd
+										+ 6.*alphaofa[1]*(2.*a*pow2(hubd) + hub*((4.+alphaofa[2])*hubd + a*hubdd))
+									  + alphaofa[2]*(ct2*(12.*a*pow2(hubd) - R0d) + 6.*hub*(2.*(2.*ct2 + a*dalphaofa[3])*hubd + a*ct2*hubdd))
+										+ a*(12.*(alphaofa[3] + a*dalphaofa[3])*pow2(hubd) - dalphaofa[3]*R0d
+										+ 6.*hub*(hubd*(dalphaofa[1] + ct2*dalphaofa[2] + 5.*dalphaofa[3] + a*ddalphaofa[3]) + a*dalphaofa[3]*hubdd))));
+
+
+						// f terms
+						myf[0] = myB[1]*myC[2] - myC[0]*myB[2];
+						myf[1] = myB[1]*myC[3];
+						myf[2] = myA[0]*(myB[2]*myC[1]-myB[0]*myC[2]) + myA[1]*(myB[0]*myC[0]-myB[1]*myC[1]) + myA[2]*(myB[1]*myC[2]-myB[2]*myC[0]);
+						myf[3] = myC[3]*(myA[2]*myB[1] - myA[0]*myB[0]);
+
+						var1 = pow2(k0/a);
+
+						return 2./alphaofa[4]  *  (myf[0]*var1 + myf[1] ) / (myf[2]*var1 + myf[3]);
+
+			case 11:
+					/* EFTofDE unscreened and full k-dependence in linear modification */
+						// 0: alpha_K(a)
+						// 1: alpha_B(a)
+						// 2: alpha_M(a)
+						// 3: alpha_T(a)
+						// 4: M^2/M_planck^2
+
+						// Initialise alpha_i (a) and their derivatives
+						for(int i=0; i<5; i++){
+							alphaofa[i] = alphai_eft(a,omega0,extpars[i],i+1);
+							dalphaofa[i] = dalphai_eft(a,omega0,extpars[i],i+1);
+							ddalphaofa[i] = ddalphai_eft(a,omega0,extpars[i],i+1);
+						}
+
+						// We take expressions from Chapter B of GtoPT.nb
+						// Hubble
+						hub = HAg(a,omega0,extpars,model)*h0;
+						// Hubble scale factor derivative
+						hubd = HA1g(a,omega0,extpars,model)*pow2(h0)/(a*hub);
+						// Hubble 2nd scale factor derivative
+						hubdd = HA3g(a,omega0,extpars,model)*h0;
+						// Background Ricci scalar scale factor derivative
+						R0d = riccibackgroundp(a,omega0,extpars,model);
+						// speed of gravitational waves
+						ct2 = 1. + alphaofa[3];
+
+						// c(a) background function
+						ca = 0.*(- 3.*pow2(h0)*omega0/(2.*pow3(a)*alphaofa[4])
+									- 1./2.*hub * (a*( ct2*(2.+alphaofa[2]) + a*dalphaofa[3])*hubd
+					  			+ hub*(ct2*((alphaofa[2]-1.)*alphaofa[2] + a*dalphaofa[2]) + 2.*a*alphaofa[2]*dalphaofa[3]
+									+ a*a*ddalphaofa[3]))); // c/M^2
+
+						// A terms
+						myA[0] = 2.;
+						myA[1] = alphaofa[1]*hub;
+						myA[2] = 0.;
+						// B terms
+						myB[0] = - 1./ct2;
+						myB[1] = 1.;
+						myB[2] = (-	alphaofa[2] + alphaofa[3])*hub / ct2;
+						// C terms
+						myC[0] = -ct2 * myB[2];
+						myC[1] = myA[1]/2.;
+
+						myC[2] = ca + hub/2. * (-2.*alphaofa[3]*hub + pow2(alphaofa[2])*ct2*hub
+						  			 + a*hub*dalphaofa[1] + a*hub*dalphaofa[2] + a*hub*alphaofa[3]*dalphaofa[2]
+										 + 2.*a*alphaofa[3]*hubd + pow2(a)*dalphaofa[3]*hubd
+										 + alphaofa[1]*((1.+alphaofa[2])*hub + a*hubd)
+										 + alphaofa[2]*(hub*(1.-alphaofa[3] + 2.*a*dalphaofa[3]) + a*ct2*hubd)
+									   + pow2(a)*hub*ddalphaofa[3]);
+
+
+						myC[3] = -a*hub/4. *  (12.*ca*hubd + hub*(6.*pow2(alphaofa[2])*ct2*hub*hubd
+										+ 6.*alphaofa[1]*(2.*a*pow2(hubd) + hub*((4.+alphaofa[2])*hubd + a*hubdd))
+									  + alphaofa[2]*(ct2*(12.*a*pow2(hubd) - R0d) + 6.*hub*(2.*(2.*ct2 + a*dalphaofa[3])*hubd + a*ct2*hubdd))
+										+ a*(12.*(alphaofa[3] + a*dalphaofa[3])*pow2(hubd) - dalphaofa[3]*R0d
+										+ 6.*hub*(hubd*(dalphaofa[1] + ct2*dalphaofa[2] + 5.*dalphaofa[3] + a*ddalphaofa[3]) + a*dalphaofa[3]*hubdd))));
+
+						// f terms
+						myf[0] = myB[1]*myC[2] - myC[0]*myB[2];
+						myf[1] = myB[1]*myC[3];
+						myf[2] = myA[0]*(myB[2]*myC[1]-myB[0]*myC[2]) + myA[1]*(myB[0]*myC[0]-myB[1]*myC[1]) + myA[2]*(myB[1]*myC[2]-myB[2]*myC[0]);
+						myf[3] = myC[3]*(myA[2]*myB[1] - myA[0]*myB[0]);
+
+						var1 = pow2(k0/a);
+
+						return 2./alphaofa[4]  *  (myf[0]*var1 + myf[1] ) / (myf[2]*var1 + myf[3]);
+
 
 		default:
-				warning("SpecialFunctions: invalid model choice, model = %d \n", model);
+				warning("BeyondLCDM: invalid model choice, model = %d \n", model);
 				return 0;
 }
 }
@@ -369,7 +820,7 @@ double gamma2(double a, double omega0, double k0, double k1, double k2, double u
 	switch(model) {
 		case 1:
 		/* GR */
-						return  0. ;
+						return  0.;
 		case 2:
 		/* f(R) Hu- Sawicki */
 						var1 = pow3(a);
@@ -388,25 +839,30 @@ double gamma2(double a, double omega0, double k0, double k1, double k2, double u
 						return -1./(HA(a,omega0)*HA(a,omega0)*24.*pow(beta(a,omega0,extpars[0]),3)*extpars[0])*pow(omega0/(a*a*a),2)*ker1(u1);
 		case 4:
 		/* QUINTESSENCE */
-						return  0. ;
+						return  0.;
 		case 5:
 		/* CPL */
-						return  0. ;
+						return  0.;
 		case 6:
 		/* Dark Scattering with CPL  */
-						return  0. ;
+						return  0.;
 		case 7:
 		/* EFTofDE PPF*/
-						return  0. ;
+						return  0.;
 		case 8:
 		/* EFTofDE - unscreened  approximation  */
-						return  0. ;
+						return  0.;
 		case 9:
 		/* EFTofDE - superscreened approximation  */
-						return  0. ;
-
+						return  0.;
+		case 10:
+		/* EFTofDE with PPF and full k-dependence in linear modification */
+					return 0.;
+		case 11:
+		/* EFTofDE - unscreened approximation with full k-dependence in linear modification */
+					return  0.;
 		default:
-		warning("SpecialFunctions: invalid model choice, model = %d \n", model);
+		warning("BeyondLCDM: invalid model choice, model = %d \n", model);
 				return 0;
 }
 }
@@ -464,9 +920,16 @@ double gamma3(double a, double omega0, double k0, double k1, double k2, double k
 		case 9:
 		/* EFTofDE - superscreened approximation  */
 						return  0. ;
+		case 10:
+		/* EFTofDE with PPF and full k-dependence in linear modification */
+					return 0.;
+
+		case 11:
+		/* EFTofDE unscreened and full k-dependence in linear modification */
+					return 0.;
 
 		default:
-		warning("SpecialFunctions: invalid model choice, model = %d \n", model);
+		warning("BeyondLCDM: invalid model choice, model = %d \n", model);
 				return 0;
 }
 }
@@ -496,6 +959,11 @@ double mymgF(double a, double yh, double yenv, double Rth, double omega0, double
 
 						dRRth = dod - dod2 + dod2*dod/3.;
 
+						Mvir = pow3(Rth/0.1)*5.*omega0; // virial mass x Gnewton - see definition in scol_init in HALO.cpp
+
+						printf("%s %e %s %e %s %e %s %e \n", "a:", a ,"Mvir*Gnewton:", Mvir, "yh:", yh, "yenv:", yenv );
+
+
 						return gsl_min(dRRth,1./3.);
 
 	   case 3:
@@ -504,7 +972,7 @@ double mymgF(double a, double yh, double yenv, double Rth, double omega0, double
 
 		      delta = (1.+delta_initial)/pow3(yh) - 1.;
 
-		      xterm = 9.*pow2(betadgp)*extpars[0]/(2.*omega0/pow3(a)*delta);
+		      xterm = 9.*pow2(betadgp)*extpars[0]/(2.*omega0/pow3(a)*(1.+delta));
 
 		      xm3 = 1./xterm;
 
@@ -526,8 +994,8 @@ double mymgF(double a, double yh, double yenv, double Rth, double omega0, double
 					var1 = extpars[3]/(extpars[3]-1.)*extpars[5]; // a
 					Mvir = pow3(Rth/0.1)*5.*omega0; // virial mass x Gnewton - see definition in scol_init in HALO.cpp
 
-					delta = (1.+delta_initial)/pow3(yh) - 1.; // non-linear over density of halo
-					deltaenv = (1.+delta_initial)/pow3(yenv) - 1.; // non-linear over density of environment
+					delta = (1.+delta_initial)/pow3(yh) -1. ; // non-linear over density of halo
+					deltaenv = (1.+delta_initial)/pow3(yenv) -1. ; // non-linear over density of environment
 
 					var2 = pow(1./delta,1./3.); // yh with 1608.00522 definitions
 					var3 = pow(1./deltaenv,1./3.);  // yenv with 1608.00522 definitions
@@ -537,17 +1005,48 @@ double mymgF(double a, double yh, double yenv, double Rth, double omega0, double
 					xm3 = pow(term1/var2,var1); // (y0/yh)^a
 
 
-							return extpars[3]*extpars[4]*(pow(1.+ xm3,1./extpars[3])-1.) / xm3 ;
+					return extpars[3]*extpars[4]*(pow(1.+ xm3,1./extpars[3])-1.) / xm3 ;
 
 			case 8:
 			/* EFTofDE - unscreened approximation  */
 							return mu(a,0.001,omega0,extpars,model)-1.;
+
 			case 9:
 			/* EFTofDE - superscreened approximation  */
 							return 0.;
 
+			case 10:
+			/* EFTofDE with PPF and full k-dependence in linear modification */
+			// extpars[i]:
+			// 0: alpha_K(a)
+			// 1: alpha_B(a)
+			// 2: alpha_M(a)
+			// 3: alpha_T(a)
+			// 4: M^2/M_planck^2
+			// 5-11 : p1-p7
+
+					var1 = extpars[5]/(extpars[5]-1.)*extpars[7]; // a
+					Mvir = pow3(Rth/0.1)*5.*omega0; // virial mass x Gnewton - see definition in scol_init in HALO.cpp
+
+					delta = (1.+delta_initial)/pow3(yh)-1.; // non-linear over density of halo
+					deltaenv = (1.+delta_initial)/pow3(yenv)-1.; // non-linear over density of environment
+
+					var2 = pow(1./delta,1./3.); // yh with 1608.00522 definitions
+					var3 = pow(1./deltaenv,1./3.);  // yenv with 1608.00522 definitions
+
+					term1 = extpars[8]*pow(a,extpars[9]) * pow(2.*h0*Mvir,extpars[10])*pow(var3/var2,extpars[11]); // y0
+
+					xm3 = pow(term1/var2,var1); // (y0/yh)^a
+
+			    return extpars[5]*extpars[6]*(pow(1.+ xm3, 1./extpars[5])-1.) / xm3 ;
+
+
+			case 11:
+			/* EFTofDE with full k-dependence and unscreened approximation  */
+							return mu(a,1.,omega0,extpars,model)-1.;
+
 		default:
-					warning("SpecialFunctions: invalid model choice, model = %d \n", model);
+					warning("BeyondLCDM: invalid model choice, model = %d \n", model);
 				  return 0;
   }
 }
@@ -594,12 +1093,19 @@ double  WEFF(double a, double omega0, double extpars[], int model){
 		 /* EFTofDE: superscreened approximation */
 		 return 2.*(1.-omega0);
 
+		 case 10:
+		 /* EFTofDE: PPF with full k dependency in mu - assumes LCDM */
+		 return 2.*(1.-omega0);
+
+		 case 11:
+		 /* EFTofDE: unscreened with full k dependency in mu - assumes LCDM */
+		 return 2.*(1.-omega0);
+
 		 default:
-				 warning("SpecialFunctions: invalid model choice, model = %d \n", model);
+				 warning("BeyondLCDM: invalid model choice, model = %d \n", model);
 				 return 0;
 }
 }
-
 
 
 
