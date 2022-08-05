@@ -63,7 +63,7 @@ bool modg = false;
 bool mgcamb = false;
 
 // Load modified transfer function at with all species at some redshift
-ifstream fin("transfers/SP3/transfer_out_z0.dat");
+ifstream fin("transfers/EFT/transfer_out_z0.dat");
 
 // Load in the transfer data
 string line;
@@ -120,6 +120,9 @@ double pars[7];
 double extpars[maxpars];
     extpars[0] = alphak0;
     extpars[1] = alphab0;
+    extpars[2] = 0.;
+    extpars[3] = 0.;
+    extpars[4] = 0.;
 
 
     // Load cosmology classes
