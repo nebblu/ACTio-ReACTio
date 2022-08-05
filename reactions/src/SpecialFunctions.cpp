@@ -32,37 +32,44 @@ using std::bind;
 
 /* LCDM BACKGROUND QUANTITIES  */
 
-// Normalized Hubble parameter H
+// Normalized Hubble parameter H/H0
 double HA(double a, double omega0){
 	double omegaL= 1.-omega0;
-	return  sqrt(omega0/pow(a,3)+omegaL);}
+	return  sqrt(omega0/pow(a,3)+omegaL);
+}
 
 // ONLY USED IN ANALYTIC EVOLUTION FACTORS
-// a*H*dH/da = dH/dt
+// a*H*dH/da / H0^2 = dH/dt / H0^2
 double HA1(double a, double omega0){
-	return -3.*omega0/(2.*pow(a,3));}
+	return -3.*omega0/(2.*pow(a,3));
+}
 
 // USED IN ALL DEs
 //-dH/dt/H^2 used in Euler eqn
 double HA2(double a, double omega0){
-	return 3.*omega0/(2.*HA(a,omega0)*HA(a,omega0)*pow(a,3))
-	;}
+	return 3.*omega0/(2.*HA(a,omega0)*HA(a,omega0)*pow(a,3));
+}
 
 
-
-/* Bespoke hubble function initialiser - see BeyondLCDM */
+/* Bespoke hubble function and its normalised time derivative initialiser - see BeyondLCDM */
 Spline myhubble;
+Spline myhubbled;
+Spline myhubbledd;
 
-void IOW::hubble_init(double omega0, double extpars[], int loop_N){
-	double a_tab[loop_N],hub_tab[loop_N];
-	double amax = 2.; // need to go all the way to 1. for g_de irrespective of output. Setting to 2 to sample up to 1 more densely
+void IOW::hubble_init(double omega0, double extpars[], int loop_N, int model){
+	double a_tab[loop_N],hub_tab[loop_N],hubd_tab[loop_N],hubdd_tab[loop_N];
+	double amax = 10.; // need to go all the way to 1. for g_de irrespective of output. Setting to 2 to sample up to 1 more densely
 	double amin = AINIT; // make sure it is smaller than amin for all ODE solvers i.e, < 3e-5 (ANIT is in SCOL.h)
 	for(int i = 0; i< loop_N; i++){
 	  a_tab[i] =  amin * exp(i*log(amax/amin)/(loop_N-1.)); // maybe we want to sample linearly?
-	  hub_tab[i] = bespokehub(a_tab[i], omega0, extpars); // see BeyondLCDM.cpp
+	  hub_tab[i] = bespokehub(a_tab[i], omega0, extpars, model); // Hubble : see BeyondLCDM.cpp
+		hubd_tab[i] = bespokehubd(a_tab[i], omega0, extpars, model); // Hubble time derivative: see BeyondLCDM.cpp
+		hubdd_tab[i] = bespokehubdd(a_tab[i], omega0, extpars, model); // Hubble 2nd time derivative: see BeyondLCDM.cpp
 	    }
 
-	myhubble = CubicSpline(loop_N, a_tab , hub_tab);
+	myhubble = LinearSpline(loop_N, a_tab , hub_tab);
+	myhubbled = LinearSpline(loop_N, a_tab , hubd_tab);
+	myhubbledd = LinearSpline(loop_N, a_tab , hubdd_tab);
 
 }
 
@@ -224,10 +231,10 @@ void IOW::initn_lin(double pars[], double extpars[], double k, int model)
 				double omega0 = pars[1]; // total matter fraction
 				double omeganu = pars[2]; // massive neutrino fraction
 
-				double a = 3e-5;
+				double a = AINIT;
 
 				// Non-Eds ICs
-			  double G[2] = { a,-a};
+			  double G[2] = {a,-a};
 
 			/*Parameters passed to system of equations */
       struct param_type3 mypars;
@@ -245,7 +252,7 @@ void IOW::initn_lin(double pars[], double extpars[], double k, int model)
 			//  this gives the system, the method, the initial interval step, the absolute error and the relative error.
 				gsl_odeiv2_driver * d =
 				gsl_odeiv2_driver_alloc_y_new (&sys, gsl_odeiv2_step_rk8pd,
-										   1e-4, 1e-4, 1e-4);
+										   1e-6, 1e-6, 1e-6);
 
 				int status1 = gsl_odeiv2_driver_apply (d, &a, A, G);
 
@@ -1022,7 +1029,9 @@ int funcnorm(double a, const double G[], double F[], void *params)
 // correction to virial concentration in wCDM case - see HALO.cpp
 double g_de;
 
-// Normalisation for power spectra with and without evolving DE and initialisation of correction to virial concentration
+// Initialise normalisation for LCDM power spectra and linear LCDM growth
+// and initialisation of correction to virial concentration coming from non-standard backgrounds
+
 // pars[0] = scale factor
 // pars[1] = omega_m0
 // pars[2] = omega_nu
@@ -1031,69 +1040,73 @@ double g_de;
 // extpars[1] = wa
 void IOW::initnorm(double pars[], double extpars[], int model) //double A, double omega0, double par1, double par2, double par3, int par4)
 {
-
 				double A = pars[0]; // target scale factor
 				double omega0 = pars[1]; // total matter fraction
 				double omeganu = pars[2]; // massive neutrino fraction
 
-			// Initial scale factor for solving system of equations
-			double a = 3e-5;
+				// Initial scale factor for solving system of equations
+			  double a = AMIN;
 
 				// Non-Eds ICs
 				double G1[2] = {a,1.}; // initial conditions
 
 			/*Parameters passed to system of equations */
 				struct param_type2 mypars, mypars2;
+				// Set up two systems - one to solve for target redshift and one for z=0 (to calculate g_de)
+				gsl_odeiv2_system sys1;
+				gsl_odeiv2_system sys2;
+				gsl_odeiv2_driver * d1;
+				gsl_odeiv2_driver * d2;
+				int status1,status2,status3;
 
+				/* LCDM normalisation */
 							mypars.omega0 = omega0;
 							mypars.omeganu = omeganu;
-							mypars.model = model;
-
+							mypars.model = 1;
+							// not needed since model is set to GR (1)
 							for (int i=0; i<maxpars;i++){
-								mypars.extpars[i] = 	extpars[i];
+								mypars.extpars[i] = extpars[i];
 							}
-
-			// Set up two systems - one to solve for target redshift and one for z=0 (to calculate g_de)
-			gsl_odeiv2_system sys1;
-			gsl_odeiv2_system sys2;
-			gsl_odeiv2_driver * d1;
-			gsl_odeiv2_driver * d2;
-			int status1,status2,status3;
-
 			  // Solutions of evolution factors @ a=A
 			  	sys1 = {funcnorm, jac, 2, &mypars};
 			  	d1 = gsl_odeiv2_driver_alloc_y_new (&sys1, gsl_odeiv2_step_rk8pd,
 			  								  1e-6, 1e-6, 1e-6);
 
-			  	status1 = gsl_odeiv2_driver_apply (d1, &a, 1. , G1);
+					// LCDM growth @ a = A
+			  	status1 = gsl_odeiv2_driver_apply (d1, &a, A , G1);
 
-			  	dnorm_spt = G1[0]; // D(z=0) for Omega_cb + DE  background
+					Dl_spt = G1[0]; // D(z) for Omega_cb + LCDM  background
+
+					// LCDM growth @ a = 1
+					status2 = gsl_odeiv2_driver_apply (d1, &A, 1. , G1);
+
+			  	dnorm_spt = G1[0]; // D(z=0) for Omega_cb + LCDM  background
 
 			  	gsl_odeiv2_driver_free(d1);
 
+
 					//reset
-					a = 3e-5;
+					a = AMIN;
 			  	G1[0] = a;
 					G1[1] = 1.;
 
-					// LCDM growth @ a=A for Omega_cb
+					// modified growth @ a=A for Omega_cb
 					mypars2.omega0 = omega0;
 					mypars2.omeganu = omeganu;
-					mypars2.model = 1;
+					mypars2.model = model;
+
+					for (int i=0; i<maxpars;i++){
+						mypars2.extpars[i] = 	extpars[i];
+					}
 
 			  // Solutions of evolution factors @ a=A
 			  	sys2 = {funcnorm, jac, 2, &mypars2};
 			  	d2 = gsl_odeiv2_driver_alloc_y_new (&sys2, gsl_odeiv2_step_rk8pd,
 			  								  1e-6, 1e-6, 1e-6);
 
-					status2 = gsl_odeiv2_driver_apply (d2, &a, A , G1);
+					status3 = gsl_odeiv2_driver_apply (d2, &a, 1. , G1);
 
-				 	Dl_spt = G1[0]; // D(z) for Omega_cb + LCDM  background
-
-			// Solutions of evolution factors @ a=1
-					status3 = gsl_odeiv2_driver_apply (d2, &A, 1. , G1);
-
-					double dnorm_spt1 = G1[0]; // D(z=0) for Omega_cb + LCDM  background
+				  double dnorm_spt1 = G1[0]; // D(z=0) for Omega_cb + modified  background
 
 					gsl_odeiv2_driver_free(d2);
 
@@ -1101,7 +1114,7 @@ void IOW::initnorm(double pars[], double extpars[], int model) //double A, doubl
 			// check if we have Dark Scattering model
 			if(model == 6){
 				//reset
-				a = 3e-5;
+				a = AMIN;
 				G1[0] = a;
 				G1[1] = -a;
 				/*Parameters passed to system of equations */
@@ -1123,11 +1136,12 @@ void IOW::initnorm(double pars[], double extpars[], int model) //double A, doubl
 
 				double dnorm_spt_ide  = G1[0] ;
 
-				g_de = dnorm_spt1/dnorm_spt_ide;
+				g_de = dnorm_spt/dnorm_spt_ide;
 			}
 			else{
-				g_de = dnorm_spt1/dnorm_spt;
+				g_de = dnorm_spt/dnorm_spt1;
 			}
+			printf("%s %e \n", "g_de: ", g_de);
 }
 
 

@@ -19,7 +19,7 @@ public:
     // Initialisation of bespoke hubble function
     // omega0 is the total matter density fraction today
     // extpars are beyond LCDM pars and loop_N is how many bins between 1e-5 and amax taken logarithmically
-    void hubble_init(double omega0, double extpars[], int loop_N);
+    void hubble_init(double omega0, double extpars[], int loop_N, int model);
 
   	// Initialisation of evolution factors for analytic kernels as well as linear power spectrum normalisation (dnorm_spt)
     // pars: base parameters. Currently used: 0: scale factor, 1: total matter fraction today, 2: total massive neutrino fraction today
@@ -57,13 +57,15 @@ public:
 // Background function ---  lcdm
 // H(a)/H0
 double HA(double a, double omega0);
-//a*H*dH/da = dH/dt
+// a*H*dH/da / H0^2 = dH/dt / H0^2
 double HA1(double a, double omega0);
-//-dH/dt/H^2
+//-dH/dt/H^2 
 double HA2(double a, double omega0);
 
-// bespoke hubble function spline
+// bespoke hubble function and its 1st and 2nd time derivative splines
 extern Spline myhubble;
+extern Spline myhubbled;
+extern Spline myhubbledd;
 
 // standard PT kernels
 double alpha(double k1, double k2, double u1);
