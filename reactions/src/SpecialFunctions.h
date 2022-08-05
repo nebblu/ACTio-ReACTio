@@ -2,6 +2,7 @@
 #define SPECIALFUNCTIONS_H
 
 #include <vector>
+#include <Copter/>
 
 // angular integration limits - taken as the ends of the 128-point Gauss quadrature method - see end of file
 const real XMAX =  9.999561e-01;//x128[255];
@@ -11,7 +12,8 @@ const real XMIN = -9.999561e-01; //x128[0];
 const real QMINp = 1e-4;
 const real QMAXp = 30.;
 
-const real AMIN = 0.0001;
+// set to same value used in Spherical Collapse (SCOL.cpp & SCOL.h)
+const real AMIN = 3e-5;
 
 class IOW {
 public:
@@ -59,7 +61,7 @@ public:
 double HA(double a, double omega0);
 // a*H*dH/da / H0^2 = dH/dt / H0^2
 double HA1(double a, double omega0);
-//-dH/dt/H^2 
+//-dH/dt/H^2
 double HA2(double a, double omega0);
 
 // bespoke hubble function and its 1st and 2nd time derivative splines
