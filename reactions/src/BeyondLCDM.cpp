@@ -214,10 +214,10 @@ inline double alphai_eft(double a, double omega0, double alpha0, int model){
 				return alpha0*a; // alpha_K(a)
 		case 2:
 				return alpha0*a; // alpha_B(a)
-				// return -alpha_m_hs(a,omega0,alpha0); // Hu-Sawicki form
+			//	 return -alpha_m_hs(a,omega0,alpha0); // Hu-Sawicki form
 		case 3:
 				return alpha0*a; // alpha_M(a)
-				// return alpha_m_hs(a,omega0,alpha0); // Hu-Sawicki form
+			//	 return alpha_m_hs(a,omega0,alpha0); // Hu-Sawicki form
 		case 4:
 				return alpha0*a; // alpha_T(a)
 		case 5:
@@ -693,8 +693,11 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 						// speed of gravitational waves
 						ct2 = 1. + alphaofa[3];
 
-						// c(a) background function
-						ca = 	0*(- 3.*pow2(h0)*omega0/(2.*pow3(a)*alphaofa[4])
+						// Note we have factorised M^2/G_N out of the following expressions
+						// It then appears as 1/alphaofa[4] in the final result
+
+						// c(a)  background function
+						ca = 	(- 3.*pow2(h0)*omega0/(2.*pow3(a)*alphaofa[4])
 									- 1./2.*hub * (a*( ct2*(2.+alphaofa[2]) + a*dalphaofa[3])*hubd
 					  			+ hub*(ct2*((alphaofa[2]-1.)*alphaofa[2] + a*dalphaofa[2]) + 2.*a*alphaofa[2]*dalphaofa[3]
 									+ a*a*ddalphaofa[3])));
@@ -763,11 +766,14 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 						// speed of gravitational waves
 						ct2 = 1. + alphaofa[3];
 
+						// Note we have factorised M^2/G_N out of the following expressions
+						// It then appears as 1/alphaofa[4] in the final result
+
 						// c(a) background function
-						ca = 0.*(- 3.*pow2(h0)*omega0/(2.*pow3(a)*alphaofa[4])
+						ca = (- 3.*pow2(h0)*omega0/(2.*pow3(a)*alphaofa[4])
 									- 1./2.*hub * (a*( ct2*(2.+alphaofa[2]) + a*dalphaofa[3])*hubd
 					  			+ hub*(ct2*((alphaofa[2]-1.)*alphaofa[2] + a*dalphaofa[2]) + 2.*a*alphaofa[2]*dalphaofa[3]
-									+ a*a*ddalphaofa[3]))); // c/M^2
+									+ a*a*ddalphaofa[3])));
 
 						// A terms
 						myA[0] = 2.;
