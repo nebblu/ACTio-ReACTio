@@ -141,7 +141,7 @@ int HALO::scol_init(double pars[], double extpars[], bool modcamb, int model) co
 double lgmass[loop_N],sigar[loop_N],scolar0[loop_N],scolar1[loop_N],scolar2[loop_N];
 
 // initialise linear growth spline for the theory of gravity/dark energy.
-int loop_Nk = 100;
+int loop_Nk = 300;
 double kmin = 1e-5;
 double kmax = 100.;
 double kval_tab[loop_Nk],ling_tab[loop_Nk];
