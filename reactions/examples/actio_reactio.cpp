@@ -47,10 +47,10 @@ double myz = 0.;
 
 double mnu = 0.00;  // mv = 0.0ev
 double alphak0 = 1.;  //  modified gravity param 2
-double alphab0 = 0.01;  //  modified gravity param 1
+double alphab0 = 0.5;  //  modified gravity param 1
 
 //output file name
-const char* output = "EFT_aK1_aB001_z0.dat";
+const char* output = "KGB_z0.dat";
 
 
 // Modified gravity active? This prompts the calculation of k_star and \mathcal{E}.
@@ -63,7 +63,7 @@ bool modg = false;
 bool mgcamb = false;
 
 // Load modified transfer function at with all species at some redshift
-ifstream fin("transfers/EFT/transfer_out_z0.dat");
+ifstream fin("transfers/EFT/transfer_out_0.dat");
 
 // Load in the transfer data
 string line;
