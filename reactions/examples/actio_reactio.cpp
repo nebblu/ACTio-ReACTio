@@ -62,7 +62,7 @@ bool modg = false;
 // Note that ReACT does not calculate growth factors for massive neutrino cosmologies and so the real transfer function should be supplied.
 bool mgcamb = false;
 
-// Load modified transfer function at with all species at some redshift
+// Load LCDM transfer at z=0 (mgcamb = false)
 ifstream fin("transfers/EFT/transfer_out_z0.dat");
 
 // Load in the transfer data
