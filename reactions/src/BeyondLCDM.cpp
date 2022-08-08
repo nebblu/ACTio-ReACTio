@@ -241,7 +241,7 @@ inline double dalphai_eft(double a, double omega0, double alpha0, int model){
 			//	return -alpha_md_hs(a,omega0,alpha0);  // Hu-Sawicki form
 		case 3:
 				return alpha0; // alpha_M'(a)
-		//		return alpha_md_hs(a,omega0,alpha0); // Hu-Sawicki form
+			//	return alpha_md_hs(a,omega0,alpha0); // Hu-Sawicki form
 		case 4:
 				return alpha0; // alpha_T'(a)
 		case 5:
@@ -569,6 +569,7 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 	double R0d; // background Ricci scale factor derivative
 	double betaxi;
 	double epsilon; // to avoid singularity in full EFTofDE k-dependent mu
+	double tol; // tolerance to avoid singularity in cases 10,11
 	switch(model) {
 		case 1:
 		/* GR */
@@ -673,6 +674,7 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 						// 2: alpha_M(a)
 						// 3: alpha_T(a)
 						// 4: M^2/M_planck^2
+						// 12: c(a) prefactor [needed to set it to 0 manually when assuming a LCDM background]
 
 						// Initialise alpha_i (a) and their derivatives
 						for(int i=0; i<5; i++){
@@ -697,8 +699,8 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 						// It then appears as 1/alphaofa[4] in the final result
 
 						// c(a)  background function
-						ca = 	(- 3.*pow2(h0)*omega0/(2.*pow3(a)*alphaofa[4])
-									- 1./2.*hub * (a*( ct2*(2.+alphaofa[2]) + a*dalphaofa[3])*hubd
+						ca = 	extpars[12]*(- 3.*pow2(h0)*omega0/(2.*pow3(a)*alphaofa[4])
+									- 1./2.*hub * (a*(ct2*(2.+alphaofa[2]) + a*dalphaofa[3])*hubd
 					  			+ hub*(ct2*((alphaofa[2]-1.)*alphaofa[2] + a*dalphaofa[2]) + 2.*a*alphaofa[2]*dalphaofa[3]
 									+ a*a*ddalphaofa[3])));
 
@@ -736,7 +738,11 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 						myf[3] = myC[3]*(myA[2]*myB[1] - myA[0]*myB[0]);
 
 						var1 = pow2(k0/a);
-
+						// avoid singularity by shifting denominator by small amount
+						tol = 1e-15;
+						if (fabs(myf[2]*var1 + myf[3])<tol) {
+							myf[3]*=0.001;
+						}
 						return 2./alphaofa[4]  *  (myf[0]*var1 + myf[1] ) / (myf[2]*var1 + myf[3]);
 
 			case 11:
@@ -746,6 +752,7 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 						// 2: alpha_M(a)
 						// 3: alpha_T(a)
 						// 4: M^2/M_planck^2
+						// 12: c(a) prefactor [needed to set it to 0 manually when assuming a LCDM background]
 
 						// Initialise alpha_i (a) and their derivatives
 						for(int i=0; i<5; i++){
@@ -770,10 +777,11 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 						// It then appears as 1/alphaofa[4] in the final result
 
 						// c(a) background function
-						ca = (- 3.*pow2(h0)*omega0/(2.*pow3(a)*alphaofa[4])
+						ca = extpars[12]*(- 3.*pow2(h0)*omega0/(2.*pow3(a)*alphaofa[4])
 									- 1./2.*hub * (a*( ct2*(2.+alphaofa[2]) + a*dalphaofa[3])*hubd
 					  			+ hub*(ct2*((alphaofa[2]-1.)*alphaofa[2] + a*dalphaofa[2]) + 2.*a*alphaofa[2]*dalphaofa[3]
 									+ a*a*ddalphaofa[3])));
+
 
 						// A terms
 						myA[0] = 2.;
@@ -808,8 +816,11 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 						myf[3] = myC[3]*(myA[2]*myB[1] - myA[0]*myB[0]);
 
 						var1 = pow2(k0/a);
-
-						return 2./alphaofa[4]  *  (myf[0]*var1 + myf[1] ) / (myf[2]*var1 + myf[3]);
+						tol = 1e-15;
+						if (fabs(myf[2]*var1 + myf[3])<tol) {
+							myf[3]*=0.001;
+						}
+						return 2./alphaofa[4]  *  (myf[0]*var1 + myf[1]) / (myf[2]*var1 + myf[3]);
 
 
 		default:
