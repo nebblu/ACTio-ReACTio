@@ -739,7 +739,7 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 
 						var1 = pow2(k0/a);
 						// avoid singularity by shifting denominator by small amount
-						tol = 1e-15;
+						tol = 1e-20;
 						if (fabs(myf[2]*var1 + myf[3])<tol) {
 							myf[3]*=0.001;
 						}
@@ -816,7 +816,7 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 						myf[3] = myC[3]*(myA[2]*myB[1] - myA[0]*myB[0]);
 
 						var1 = pow2(k0/a);
-						tol = 1e-15;
+						tol = 1e-20;
 						if (fabs(myf[2]*var1 + myf[3])<tol) {
 							myf[3]*=0.001;
 						}
