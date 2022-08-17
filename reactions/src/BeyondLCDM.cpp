@@ -178,7 +178,6 @@ double fofRdd_hs(double a, double omega0, double fr0){
 
 // alpha_M(a) in Hu-Sawicki theory (see GtoPT.nb)
 double alpha_m_hs(double a, double omega0, double fr0){
-	double extra[20];
 	double fR = fofR_hs(a,omega0,fr0);
 	double fRp = fofRd_hs(a,omega0,fr0);
 	return a*fRp/(1.+fR);
@@ -186,7 +185,6 @@ double alpha_m_hs(double a, double omega0, double fr0){
 
 // alpha_M'(a) in Hu-Sawicki theory (see GtoPT.nb)
 double alpha_md_hs(double a, double omega0, double fr0){
-	double extra[20];
 	double fR = fofR_hs(a,omega0,fr0);
 	double fRp = fofRd_hs(a,omega0,fr0);
 	double fRpp = fofRdd_hs(a,omega0,fr0);
@@ -564,12 +562,17 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 	double var1, var2, alphaofa[5],dalphaofa[5],ddalphaofa[5];
 	double myA[3],myB[3],myC[4],myf[4];
 	double hub, hubd, hubdd; // hubble and its derivatives
+
+	// parameters for cases 7-11:
 	double ct2; // speed of grav waves
 	double ca; // background function
 	double R0d; // background Ricci scale factor derivative
 	double betaxi;
-	double epsilon; // to avoid singularity in full EFTofDE k-dependent mu
 	double tol; // tolerance to avoid singularity in cases 10,11
+	double qsa_test; // condition given in Eq.39 of 1712.00444 for QSA to hold
+	double aqsa = 0.01; // scale factor at which we want condition to hold
+	double kqsa = 0.01; // scale at which we want condition to hold
+
 	switch(model) {
 		case 1:
 		/* GR */
@@ -613,6 +616,12 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 																					 + alphaofa[2] - alphaofa[3])
 																					 + a*dalphaofa[1]/2.- HA2g2(a,omega0,extpars,model)); //cs^2
 
+						 // QSA check for late times
+ 						qsa_test = k0/(HAg(a,omega0,extpars,model)*h0*a) -var2;
+ 						if (qsa_test<0 && a>aqsa && k0>kqsa) {
+							warning("BeyondLCDM: QSA violated at a: %e and k: %e \n", a,k0);
+ 						}
+
 						betaxi = 2./(var2*var1) * pow2(alphaofa[1]/2. * ct2 + alphaofa[2] - alphaofa[3]);
 
 
@@ -638,6 +647,12 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 																					 + alphaofa[2] - alphaofa[3])
 																					 + a*dalphaofa[1]/2.- HA2g2(a,omega0,extpars,model)); //cs^2
 
+						 // QSA check for late times
+ 						qsa_test = k0/(HAg(a,omega0,extpars,model)*h0*a) -var2;
+						if (qsa_test<0 && a>aqsa && k0>kqsa) {
+ 							warning("BeyondLCDM: QSA violated at a: %e and k: %e \n", a,k0);
+ 						}
+
 						betaxi = 2./(var2*var1) * pow2(alphaofa[1]/2. * ct2 + alphaofa[2] - alphaofa[3]);
 
 						return (1. + alphaofa[3] + betaxi) / (alphaofa[4]);
@@ -662,6 +677,12 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 						var2 = 2./var1*( (1.-	alphaofa[1]/2.) * (alphaofa[1]/2.*ct2 + HA2g(a,omega0,extpars,model)
 																					 + alphaofa[2] - alphaofa[3])
 																					 + a*dalphaofa[1]/2.- HA2g2(a,omega0,extpars,model)); //cs^2
+
+						 // QSA check for late times
+ 						qsa_test = k0/(HAg(a,omega0,extpars,model)*h0*a) -var2;
+						if (qsa_test<0 && a>aqsa && k0>kqsa) {
+							warning("BeyondLCDM: QSA violated at a: %e and k: %e \n", a,k0);
+ 						}
 
 						betaxi = 2./(var2*var1) * pow2(alphaofa[1]/2. * ct2 + alphaofa[2] - alphaofa[3]);
 
@@ -694,6 +715,17 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 						R0d = riccibackgroundp(a,omega0,extpars,model);
 						// speed of gravitational waves
 						ct2 = 1. + alphaofa[3];
+
+						var1 = alphaofa[0] + 3./2.*pow2(alphaofa[1]); // alpha
+						var2 = 2./var1*( (1.-	alphaofa[1]/2.) * (alphaofa[1]/2.*ct2 + HA2g(a,omega0,extpars,model)
+																					 + alphaofa[2] - alphaofa[3])
+																					 + a*dalphaofa[1]/2.- HA2g2(a,omega0,extpars,model)); //cs^2
+
+						// QSA check for late times
+						qsa_test = k0/(HAg(a,omega0,extpars,model)*h0*a) -var2;
+						if (qsa_test<0 && a>aqsa && k0>kqsa) {
+							warning("BeyondLCDM: QSA violated at a: %e and k: %e \n", a,k0);
+						}
 
 						// Note we have factorised M^2/G_N out of the following expressions
 						// It then appears as 1/alphaofa[4] in the final result
@@ -773,6 +805,18 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 						// speed of gravitational waves
 						ct2 = 1. + alphaofa[3];
 
+						var1 = alphaofa[0] + 3./2.*pow2(alphaofa[1]); // alpha
+						var2 = 2./var1*( (1.-	alphaofa[1]/2.) * (alphaofa[1]/2.*ct2 + HA2g(a,omega0,extpars,model)
+																					 + alphaofa[2] - alphaofa[3])
+																					 + a*dalphaofa[1]/2.- HA2g2(a,omega0,extpars,model)); //cs^2
+
+						// QSA check for late times
+						qsa_test = k0/(HAg(a,omega0,extpars,model)*h0*a) -var2;
+						if (qsa_test<0 && a>aqsa && k0>kqsa) {
+							warning("BeyondLCDM: QSA violated at a: %e and k: %e \n", a,k0);
+						}
+
+
 						// Note we have factorised M^2/G_N out of the following expressions
 						// It then appears as 1/alphaofa[4] in the final result
 
@@ -809,6 +853,7 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 										+ a*(12.*(alphaofa[3] + a*dalphaofa[3])*pow2(hubd) - dalphaofa[3]*R0d
 										+ 6.*hub*(hubd*(dalphaofa[1] + ct2*dalphaofa[2] + 5.*dalphaofa[3] + a*ddalphaofa[3]) + a*dalphaofa[3]*hubdd))));
 
+
 						// f terms
 						myf[0] = myB[1]*myC[2] - myC[0]*myB[2];
 						myf[1] = myB[1]*myC[3];
@@ -820,6 +865,7 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 						if (fabs(myf[2]*var1 + myf[3])<tol) {
 							myf[3]*=0.001;
 						}
+
 						return 2./alphaofa[4]  *  (myf[0]*var1 + myf[1]) / (myf[2]*var1 + myf[3]);
 
 
@@ -971,15 +1017,10 @@ double mymgF(double a, double yh, double yenv, double Rth, double omega0, double
 						term1 = 1./pow2(omega0/pow3(yenv * a) + 4. - 4.*omega0);
 						term2 = 1./pow2(omega0/pow3(yh * a) + 4. - 4.*omega0);
 
-						dod = fr0 * yh * a *var1 * (term1 - term2) / Rth/ Rth / omega0 ;
+						dod = fr0 * yh * a * var1 * (term1 - term2) / Rth/ Rth / omega0 ;
 						dod2 = pow2(dod);
 
 						dRRth = dod - dod2 + dod2*dod/3.;
-
-						Mvir = pow3(Rth/0.1)*5.*omega0; // virial mass x Gnewton - see definition in scol_init in HALO.cpp
-
-						printf("%s %e %s %e %s %e %s %e \n", "a:", a ,"Mvir*Gnewton:", Mvir, "yh:", yh, "yenv:", yenv );
-
 
 						return gsl_min(dRRth,1./3.);
 
