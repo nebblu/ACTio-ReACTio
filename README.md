@@ -493,3 +493,5 @@ We have implemented the following to v.2:
 * Created new example python notebooks for rsd multipoles and EFTofDE calculations. 
 * New option in compute_react_ext and compute_react_nu_ext (compute_pseudo) that computes the non-linear pseudo spectrum using Takahashi et al Halofit's prediction internally
 * Added in a new function in SpecialFunctions.cpp (hubble_init) to initialise a spline of a Hubble function H(a) calculated using the bespokehub function in BeyondLCDM.cpp. This is useful if there is not an analytic form for the Hubble function.  
+* Implemented two parametrisations of the nonlinear Poisson equation modification : a Parametrised Post Friedmannian approach and a phenomenological approach based on the error function. See reactions/examples .
+* Added in Hu-Sawicki forms for $\alpha$ EFTofDE basis in BeyondLCDM.cpp. 
