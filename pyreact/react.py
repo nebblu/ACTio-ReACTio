@@ -164,6 +164,12 @@ class ReACT:
             reaction_model = 8
         elif model.lower() == "eftss":
             reaction_model = 9
+        elif model.lower() == "fulleftppf":
+            reaction_model = 10
+        elif model.lower() == "fulleftus":
+            reaction_model = 11
+        elif model.lower() == "fullefterf":
+            reaction_model = 12
         else:
             raise ValueError(f"model '{model}' not supported.")
 
@@ -253,6 +259,12 @@ class ReACT:
             reaction_model = 8
         elif model.lower() == "eftss":
             reaction_model = 9
+        elif model.lower() == "fulleftppf":
+            reaction_model = 10
+        elif model.lower() == "fulleftus":
+            reaction_model = 11
+        elif model.lower() == "fullefterf":
+            reaction_model = 12
         else:
             raise ValueError(f"model '{model}' not supported.")
 
@@ -353,6 +365,12 @@ class ReACT:
             reaction_model = 8
         elif model.lower() == "eftss":
             reaction_model = 9
+        elif model.lower() == "fulleftppf":
+            reaction_model = 10
+        elif model.lower() == "fulleftus":
+            reaction_model = 11
+        elif model.lower() == "fullefterf":
+            reaction_model = 12
         else:
             raise ValueError(f"model '{model}' not supported.")
 
