@@ -222,7 +222,8 @@ The pyreact wrapper allows the C++ code (the native language of ReACT) to be cal
 ###  C++
 One can also run ReACT and MG-Copter in their native C++. Again, a number of example output C++ scripts have been included in `reactions/examples` as well as a number of cosmologies in `reactions/examples/transfers`. Specifically we have included : 
 
-* actio_reactio.cpp : Example code to output the reaction and halo spectra for EFTofDE & parametrised nonlinear modifications (see [this section](https://github.com/nebblu/ACTio-ReACTio#adding-in-models)).
+* actio_reactio_phen.cpp : Example code to output the reaction and halo spectra for EFTofDE linear & phenomenological nonlinear modifications (see [this section](https://github.com/nebblu/ACTio-ReACTio#adding-in-models)).
+* actio_reactio_ppf.cpp : Example code to output the reaction and halo spectra for EFTofDE linear & PPF parametrised nonlinear modifications (see [this section](https://github.com/nebblu/ACTio-ReACTio#adding-in-models)).
 * reaction_mnu.cpp : Example code to output the reaction and halo spectra for beyond LCDM physics & massive neutrinos.
 * halo_ps.cpp : Example code to output the halo model powerspectrum.
 * spt_rsd.cpp : Example code to output the 1-loop powerspectrum in real and redshift space.
@@ -253,26 +254,48 @@ The internal flag **modcamb** tells ReACT whether or not to treat the input tran
 
 In Pyreact we currently have the following models and model parameters 
 
+### Specific theories:
+
 1. gr : general relativity. No extra parameters.  
 2. f(r) : [Hu-Sawicki f(R)](https://arxiv.org/abs/0705.1158). **extpars[0]** = $f_{R0}$. 
 3. dgp : normal branch of [DGP gravity](https://arxiv.org/abs/hep-th/0005016). **extpars[0]** = $\Omega_{rc}$. 
 4. quintessence : Quintessence. **extpars[0]** = $w_0$.
-5. cpl : [CPL evolving dark energy](https://arxiv.org/abs/gr-qc/0009008) w = w0 + (1-a)wa (). **extpars[0-1]**=  {$w_0,w_a$}.
-6. ds : [Dark Scattering with CPL background](https://arxiv.org/abs/1605.05623). **extpars[0-2]** = {$w_0,w_a,\xi*h$}.
-7. eftppf :  effective field theory of dark energy with a post parametrised friedmannian $G_{eff,non-linear}$ in spherical collapse equations. **extpars[0-9]** = {$\alpha_{k0},\alpha_{b0},\alpha_{m0},p1,...,p7$}. 
-8. eftus :  effective field theory of dark energy without screening, i.e. $G_{eff, non-linear}$ = $G_{eff,linear}$. **extpars[0-2]** ={$\alpha_{k0},\alpha_{b0},\alpha_{m0}$}. 
-9. eftss :  effective field theory of dark energy with superscreening , i.e. $G_{eff, non-linear}$ = $G_{N}$. **extpars[0-2]**  = {$\alpha_{k0},\alpha_{b0},\alpha_{m0}$}.  
+5. cpl : [CPL evolving dark energy](https://arxiv.org/abs/gr-qc/0009008) $w = w_0 + (1-a)w_a$ . **extpars[0-1]**=  $\{w_0,w_a\}$.
+6. ds : [Dark Scattering with CPL background](https://arxiv.org/abs/1605.05623). **extpars[0-2]** = $w_0,w_a,\xi*h$.
 
-where a `0` subscript means the value today. 
+### Parametrised theory (all assume no 2nd and 3rd order modifications to the Poisson equation )
+These models assume the [effective field theory of dark energy](https://arxiv.org/abs/1907.03150v2) (EFTofDE) at the background and linear level. We have **extpars[0-4]**  = $\alpha_{K0},\alpha_{B0},\alpha_{M0},\alpha_{T0},M^2/m_P^2$, where the `0` indicates the value today and $m_P^2$ is the Planck mass. 
 
-**Note** For EFTofDE models (7-9), the scale factor dependence and scale factor derivatives of the alpha functions must be specified in `reactions/src/BeyondLCDM.cpp` - see `alphai_eft` and `dalphai_eft` functions respectively. 
+Models assuming $k\rightarrow \infty$ limit in linear modification.. 
 
-In C++ code this is specified as the integer of each model in the last argument of the functions , e.g. for the 1-loop real space power spectrum in f(R) gravity we would specify the following functional call 
+7. eftppf :  EFTofDE with a [post parametrised friedmannian (PPF)](https://arxiv.org/abs/1608.00522) $G_{eff,non-linear}$ in spherical collapse equations. **extpars[5-11]** = $p_1,...,p_7$. 
+8. eftus :  EFTofDE without screening, i.e. $G_{eff, non-linear}$ = $G_{eff,linear}$.  
+9. eftss : EFTofDE with superscreening , i.e. $G_{eff, non-linear}$ = $G_{N}$.  
+
+Full k-dependence in linear modification: 
+
+10. fulleftppf : same as case 7.
+11. fulleftus : same as case 8
+12. fullefterf : EFTofDE with a phenomenological $G_{eff,non-linear}$ in spherical collapse equations. **extpars[5-8]** = $p_1,...,p_4$. See [this paper]() for details.
+
+**Note** For EFTofDE models (7-12), the scale factor dependence, 1st and 2nd scale factor derivatives of the alpha functions must be specified in `reactions/src/BeyondLCDM.cpp` - see `alphai_eft`, `dalphai_eft` and `ddalphai_eft` functions respectively. The default is $\alpha_i(a) = a \alpha_{i,0}$.
+
+In the C++ code the model is specified as the integer value of each model in the last argument of the functions , e.g. for the 1-loop real space power spectrum in f(R) gravity we would specify the following functional call 
 
 ```
 PLOOPn2(1, k, pars, extpars, err, 2)
 ```
-where the arguments are: 1 specifies a call to the 1-loop matter-matter calculation, k is the wave mode, pars hold base cosmological parameters, extpars[0] = fr0, err is the absolute error on the 1-loop integrals and 2 specifies f(R) gravity respectively. We forward to `reactions/src/examples` for more details.  
+
+where the arguments are: 
+
+* 1 specifies a call to the 1-loop matter-matter calculation. 
+*  k is the wave mode. 
+*  pars hold base cosmological parameters. 
+*  extpars[0] = $|f_{R0}|$. 
+*  err is the absolute error on the 1-loop integrals.
+*  2 specifies Hu-Sawicki f(R) gravity 
+
+See `reactions/src/examples` for more parameter and function details.  
 
 Note that all cases except 4,5,6 assume a LCDM background expansion. 
 
@@ -290,6 +313,8 @@ If you want to add in this model to the Pyreact wrapper, you will also need to a
 
 # Python parameters 
 
+** General parameters ** 
+
 **model** Selects which theoretical model is to be applied (see section: [Models of gravity and dark energy](https://github.com/nebblu/ACTio-ReACTio#adding-in-models)). 
 
 **mass_loop** is the number of mass bins to be sampled over the range  5<Log10[M]<20, M in solar masses. Default is 30. 
@@ -299,7 +324,7 @@ If you want to add in this model to the Pyreact wrapper, you will also need to a
 **h,n_s,omega_m,omega_b** are the base LCDM cosmological parameters assumed in producing the linear power spectrum or transfer function input.
 
 
-**For the compute_reaction function - basic halo model reaction function for fixed models ** 
+** Specific to the compute_reaction function : basic halo model reaction function for specific theories ** 
 
 **sigma_8** is the input power spectrum sigma8 value at z=0.
 
@@ -312,13 +337,11 @@ If you want to add in this model to the Pyreact wrapper, you will also need to a
 **fR0,Omega_rc,w,wa** values of f(R), DGP, Quintessence or CPL model parameters. 
 
 
-
-**For the compute_reaction_ext function - halo model reaction function for more general models ** 
+** Specific to the compute_reaction_ext function - halo model reaction function for more general theories ** 
 
 **extpars** array of theory parameters (see section: [Models of gravity and dark energy](https://github.com/nebblu/ACTio-ReACTio#adding-in-models)). 
 
-
-**For the compute_reaction_nu_ext function - for massive neutrino cosmologies ** 
+** Specific to the compute_reaction_nu_ext function - for massive neutrino cosmologies ** 
 
 **omega_nu** massive neutrino density fraction at z=0. 
 
@@ -333,12 +356,11 @@ If you want to add in this model to the Pyreact wrapper, you will also need to a
 
 # C++ parameters 
 
-**modcamb** tells ReACT whether or not to treat the input transfer function file as in option (1) - true value - or option (2) - false value. Default is false as in the original version of the code. 
+**modcamb** tells ReACT whether or not to treat the input transfer function or linear power spectrum file as specified at the target theory and redshift  - true value - or as specified for LCDM z=0 which the code will then rescale using internally computed growth - false value. Default is false as in the original version of the code. 
 
 **modg**: Tells ReACT to manually set $k_\star$ and $\mathcal{E}$ to LCDM values (1e-6 and 1. resp.). This is needed because of sensitivity of $\mathcal{E}$ to the ratio of 1-halo terms which may not be exactly equal at large scales for different cosmologies even when modified gravity isn't present. 
 
 **Note** the cosmoSIS module has not yet been extended to include massive neutrinos. 
-
 
 ## Citation
 
@@ -483,20 +505,21 @@ Respective bibtex entries:
 * Note if using the stand-alone version of ReACT, the reaction may have deviations away from unity of the order of ~0.1-0.3% for k<1e-3. Pyreact automatically sets it to unity at such large scales. 
 
 
-## What is new 
+## What is new ?
 
 We have implemented the following to v.2:
 
-* Added in EFTofDE + PPF model for model independent predictions. 
-* Cleaned up directories, added heavy commenting in source code and notebooks and re ordered some source code for clarity. 
+* Added in EFTofDE linear and background parametrisations for model independent predictions. 
+* Implemented two parametrisations of the nonlinear Poisson equation modification : a Parametrised Post Friedmannian approach and a phenomenological approach based on the error function. See reactions/examples .
+* Cleaned up directories. 
+* Added heavy commenting in source code and notebooks and re ordered some source code for clarity. 
 * Merged [Dark Scattering model](https://github.com/PedroCarrilho/ReACT/tree/react_with_interact_baryons). 
 * Split off beyond LCDM functions to BeyondLCDM.cpp in src directory for easily adding in new models. 
 * Upgraded all beyond LCDM functions to use an n-dimensional array for parameters allowing for arbitrary number of theory parameters to be used. 
 * Upgraded redshift space functions to use an n-dimensional array for rsd and bias parameters.
 * Optimised RSD multipole computation. 
 * Created python wrapper for RSD multipoles. 
-* Created new example python notebooks for rsd multipoles and EFTofDE calculations. 
+* Created new example python notebooks for rsd multipoles and parametrised-beyond LCDM calculations. 
 * New option in compute_react_ext and compute_react_nu_ext (compute_pseudo) that computes the non-linear pseudo spectrum using Takahashi et al Halofit's prediction internally
 * Added in a new function in SpecialFunctions.cpp (hubble_init) to initialise a spline of a Hubble function H(a) calculated using the bespokehub function in BeyondLCDM.cpp. This is useful if there is not an analytic form for the Hubble function.  
-* Implemented two parametrisations of the nonlinear Poisson equation modification : a Parametrised Post Friedmannian approach and a phenomenological approach based on the error function. See reactions/examples .
 * Added in Hu-Sawicki forms for $\alpha$ EFTofDE basis in BeyondLCDM.cpp. 
