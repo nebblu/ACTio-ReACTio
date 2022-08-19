@@ -52,7 +52,7 @@ initn2_pseudo
 initn3
 initn_rsd  */
 
-/* See 1606.02520, 1808.01120, 2005.12184  for more details */
+/* See 1606.02520, 1608.00522, 1808.01120, 2005.12184  for more details */
 
 // "model" selects MG or DE model:
 // 1: GR
@@ -61,11 +61,12 @@ initn_rsd  */
 // 4: quintessence
 // 5: CPL
 // 6: CPL with dark scattering
-// 7: EFTofDE with mu in k->infinity limit & PPF G_eff for non-linear scales [gamma2 = gamma3 = 0]
-// 8: EFTofDE with mu in k->infinity limit & linear G_eff for non-linear scales [gamma2 = gamma3 = 0]
-// 9: EFTofDE with mu in k->infinity limit & G_Newton for non-linear scales [gamma2 = gamma3 = 0]
-// 10: EFTofDE with full mu & PPF G_eff for non-linear scales [gamma2 = gamma3 = 0]
-// 11: EFTofDE with full mu & linear G_eff for non-linear scales [gamma2 = gamma3 = 0]
+// 7: EFTofDE with mu in k->infinity limit & PPF (1608.00522) G_eff for non-linear scales [assumes gamma2 = gamma3 = 0]
+// 8: EFTofDE with mu in k->infinity limit & linear G_eff for non-linear scales [assumes gamma2 = gamma3 = 0]
+// 9: EFTofDE with mu in k->infinity limit & G_Newton for non-linear scales [assumes gamma2 = gamma3 = 0]
+// 10: EFTofDE with full mu & PPF (1608.00522) G_eff for non-linear scales [assumes gamma2 = gamma3 = 0]
+// 11: EFTofDE with full mu & linear G_eff for non-linear scales [assumes gamma2 = gamma3 = 0]
+// 12: EFTofDE with full mu & Phenomenological G_eff for non-linear scales [assumes gamma2 = gamma3 = 0]
 
 // Throughout the values of pars, extpars and model are:
 
@@ -88,8 +89,13 @@ initn_rsd  */
 // 4: M^2/M_planck^2
 
 // for models 7 & 10:
-// 5+ : PPF parameters
+// 5+ : PPF parameters (see eq 5.3 of 1608.00522)
 
+// for models 12:
+// 5: par1 : size of screening scale
+// 6: mass dependence of screening scale
+// 7: y_environment dependence of screening scale
+// 8: Yukawa suppression scale mass dependence
 
                                         ////
                                     /////////////
@@ -392,6 +398,10 @@ double HAg(double a, double omega0, double extpars[], int model){
 			/* EFTofDE: unscreened approx and full k-dependence in linear modification */
 			return  HA( a, omega0);
 
+			case 12:
+			/* EFTofDE: Phenomenological non-linear model */
+			return  HA( a, omega0);
+
 			default:
 					warning("BeyondLCDM: invalid model choice, model = %d \n", model);
 					return 0;
@@ -455,6 +465,10 @@ double HA1g(double a, double omega0, double extpars[], int model){
 
 		case 11:
 		/* EFTofDE unscreened and full k-dependence in linear modification */
+		return  HA1( a, omega0);
+
+		case 12:
+		/* EFTofDE: Phenomenological non-linear model */
 		return  HA1( a, omega0);
 
 		default:
@@ -539,6 +553,10 @@ double myfricF(double a, double omega0, double extpars[], int model){
 		case 11:
 		/* EFTofDE: unscreened approx and full k-dependence in linear modification */
 					return 0.;
+
+		case 12:
+		/* EFTofDE: Phenomenological non-linear model */
+		return  0.;
 
 		default:
 					warning("BeyondLCDM: invalid model choice, model = %d \n", model);
@@ -777,6 +795,7 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 						}
 						return 2./alphaofa[4]  *  (myf[0]*var1 + myf[1] ) / (myf[2]*var1 + myf[3]);
 
+
 			case 11:
 					/* EFTofDE unscreened and full k-dependence in linear modification */
 						// 0: alpha_K(a)
@@ -869,6 +888,98 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 						return 2./alphaofa[4]  *  (myf[0]*var1 + myf[1]) / (myf[2]*var1 + myf[3]);
 
 
+				case 12:
+				/* EFTofDE Phenomenological non-linear model  */
+
+					// 0: alpha_K(a)
+					// 1: alpha_B(a)
+					// 2: alpha_M(a)
+					// 3: alpha_T(a)
+					// 4: M^2/M_planck^2
+					// 12: c(a) prefactor [needed to set it to 0 manually when assuming a LCDM background]
+					//
+					// // Initialise alpha_i (a) and their derivatives
+					for(int i=0; i<5; i++){
+						alphaofa[i] = alphai_eft(a,omega0,extpars[i],i+1);
+						dalphaofa[i] = dalphai_eft(a,omega0,extpars[i],i+1);
+						ddalphaofa[i] = ddalphai_eft(a,omega0,extpars[i],i+1);
+					}
+
+					// We take expressions from Chapter B of GtoPT.nb
+					// Hubble
+					hub = HAg(a,omega0,extpars,model)*h0;
+					// Hubble scale factor derivative
+					hubd = HA1g(a,omega0,extpars,model)*pow2(h0)/(a*hub);
+					// Hubble 2nd scale factor derivative
+					hubdd = HA3g(a,omega0,extpars,model)*h0;
+					// Background Ricci scalar scale factor derivative
+					R0d = riccibackgroundp(a,omega0,extpars,model);
+					// speed of gravitational waves
+					ct2 = 1. + alphaofa[3];
+
+					var1 = alphaofa[0] + 3./2.*pow2(alphaofa[1]); // alpha
+					var2 = 2./var1*( (1.-	alphaofa[1]/2.) * (alphaofa[1]/2.*ct2 + HA2g(a,omega0,extpars,model)
+																				 + alphaofa[2] - alphaofa[3])
+																				 + a*dalphaofa[1]/2.- HA2g2(a,omega0,extpars,model)); //cs^2
+
+					// QSA check for late times
+					qsa_test = k0/(HAg(a,omega0,extpars,model)*h0*a) -var2;
+					if (qsa_test<0 && a>aqsa && k0>kqsa) {
+						warning("BeyondLCDM: QSA violated at a: %e and k: %e \n", a,k0);
+					}
+
+
+					// Note we have factorised M^2/G_N out of the following expressions
+					// It then appears as 1/alphaofa[4] in the final result
+
+					// c(a) background function
+					ca = extpars[12]*(- 3.*pow2(h0)*omega0/(2.*pow3(a)*alphaofa[4])
+								- 1./2.*hub * (a*( ct2*(2.+alphaofa[2]) + a*dalphaofa[3])*hubd
+								+ hub*(ct2*((alphaofa[2]-1.)*alphaofa[2] + a*dalphaofa[2]) + 2.*a*alphaofa[2]*dalphaofa[3]
+								+ a*a*ddalphaofa[3])));
+
+
+					// A terms
+					myA[0] = 2.;
+					myA[1] = alphaofa[1]*hub;
+					myA[2] = 0.;
+					// B terms
+					myB[0] = - 1./ct2;
+					myB[1] = 1.;
+					myB[2] = (-	alphaofa[2] + alphaofa[3])*hub / ct2;
+					// C terms
+					myC[0] = -ct2 * myB[2];
+					myC[1] = myA[1]/2.;
+
+					myC[2] = ca + hub/2. * (-2.*alphaofa[3]*hub + pow2(alphaofa[2])*ct2*hub
+									 + a*hub*dalphaofa[1] + a*hub*dalphaofa[2] + a*hub*alphaofa[3]*dalphaofa[2]
+									 + 2.*a*alphaofa[3]*hubd + pow2(a)*dalphaofa[3]*hubd
+									 + alphaofa[1]*((1.+alphaofa[2])*hub + a*hubd)
+									 + alphaofa[2]*(hub*(1.-alphaofa[3] + 2.*a*dalphaofa[3]) + a*ct2*hubd)
+									 + pow2(a)*hub*ddalphaofa[3]);
+
+
+					myC[3] = -a*hub/4. *  (12.*ca*hubd + hub*(6.*pow2(alphaofa[2])*ct2*hub*hubd
+									+ 6.*alphaofa[1]*(2.*a*pow2(hubd) + hub*((4.+alphaofa[2])*hubd + a*hubdd))
+									+ alphaofa[2]*(ct2*(12.*a*pow2(hubd) - R0d) + 6.*hub*(2.*(2.*ct2 + a*dalphaofa[3])*hubd + a*ct2*hubdd))
+									+ a*(12.*(alphaofa[3] + a*dalphaofa[3])*pow2(hubd) - dalphaofa[3]*R0d
+									+ 6.*hub*(hubd*(dalphaofa[1] + ct2*dalphaofa[2] + 5.*dalphaofa[3] + a*ddalphaofa[3]) + a*dalphaofa[3]*hubdd))));
+
+
+					// f terms
+					myf[0] = myB[1]*myC[2] - myC[0]*myB[2];
+					myf[1] = myB[1]*myC[3];
+					myf[2] = myA[0]*(myB[2]*myC[1]-myB[0]*myC[2]) + myA[1]*(myB[0]*myC[0]-myB[1]*myC[1]) + myA[2]*(myB[1]*myC[2]-myB[2]*myC[0]);
+					myf[3] = myC[3]*(myA[2]*myB[1] - myA[0]*myB[0]);
+
+					var1 = pow2(k0/a);
+					tol = 1e-20;
+					if (fabs(myf[2]*var1 + myf[3])<tol) {
+						myf[3]*=0.001;
+					}
+
+					return 2./alphaofa[4]  *  (myf[0]*var1 + myf[1]) / (myf[2]*var1 + myf[3]);
+
 		default:
 				warning("BeyondLCDM: invalid model choice, model = %d \n", model);
 				return 0;
@@ -924,6 +1035,11 @@ double gamma2(double a, double omega0, double k0, double k1, double k2, double u
 		case 11:
 		/* EFTofDE - unscreened approximation with full k-dependence in linear modification */
 					return  0.;
+
+		case 12:
+		/* EFTofDE: Phenomenological non-linear model */
+					return  0.;
+
 		default:
 		warning("BeyondLCDM: invalid model choice, model = %d \n", model);
 				return 0;
@@ -984,12 +1100,16 @@ double gamma3(double a, double omega0, double k0, double k1, double k2, double k
 		/* EFTofDE - superscreened approximation  */
 						return  0. ;
 		case 10:
-		/* EFTofDE with PPF and full k-dependence in linear modification */
+		/* EFTofDE: full k dependency assuming LCDM background with Phenomenological approximation  */
 					return 0.;
 
 		case 11:
-		/* EFTofDE unscreened and full k-dependence in linear modification */
+		/* EFTofDE: full k dependency assuming LCDM background with unscreened approximation  */
 					return 0.;
+
+		case 12:
+		/* EFTofDE: full k dependency assuming LCDM background with Phenomenological approximation  */
+					return  0.;
 
 		default:
 		warning("BeyondLCDM: invalid model choice, model = %d \n", model);
@@ -1002,7 +1122,7 @@ double gamma3(double a, double omega0, double k0, double k1, double k2, double k
 
 double mymgF(double a, double yh, double yenv, double Rth, double omega0, double extpars[], double delta_initial, int model){
 	double h0 = 1./2997.92;
-	double dod, dod2, dRRth, fr0, var1, var2, var3, term1, term2;
+	double dod, dod2, dRRth, fr0, var1, var2, var3, term1, term2, term3;
 	double betadgp,xm3,xterm,delta,deltaenv,Mvir;
 //	double alphaofa[5],dalphaofa[5],lambda2; //EFTofDE
 	switch(model) {
@@ -1038,40 +1158,40 @@ double mymgF(double a, double yh, double yenv, double Rth, double omega0, double
 
 			case 4:
 			/* QUINTESSENCE */
-							return  0. ;
+						return  0. ;
 			case 5:
 			/* CPL */
-							return  0. ;
+						return  0. ;
 			case 6:
 			/* Dark Scattering with CPL  */
-							return  0. ;
+						return  0. ;
 
 			case 7:
 			/* EFTofDE - PPF */
-			// p1-p7 : extpars[3-9] , extpars[0-2] : alpha_{K0}, alpha_{B0}, alpha_{M0}
-					var1 = extpars[3]/(extpars[3]-1.)*extpars[5]; // a
-					Mvir = pow3(Rth/0.1)*5.*omega0; // virial mass x Gnewton - see definition in scol_init in HALO.cpp
+			// extpars[i]:
+			// 0: alpha_K(a)
+			// 1: alpha_B(a)
+			// 2: alpha_M(a)
+			// 3: alpha_T(a)
+			// 4: M^2/M_planck^2
+			// 5-11 : p1-p7
 
-					delta = (1.+delta_initial)/pow3(yh) -1. ; // non-linear over density of halo
-					deltaenv = (1.+delta_initial)/pow3(yenv) -1. ; // non-linear over density of environment
+					var1 = extpars[5]/(extpars[5]-1.)*extpars[7]; // a
+					Mvir = pow3(Rth/0.1)*5.*omega0/Gnewton; // virial mass x Gnewton - see definition in scol_init in HALO.cpp
 
-					var2 = pow(1./delta,1./3.); // yh with 1608.00522 definitions
-					var3 = pow(1./deltaenv,1./3.);  // yenv with 1608.00522 definitions
+					term1 = extpars[8]*pow(a,extpars[9]) * pow(2.*Gnewton*h0*Mvir/pow2(sofl),extpars[10])*pow(yenv/yh,extpars[11]); // y0
 
-					term1 = extpars[6]*pow(a,extpars[7])*pow(2.*h0*Mvir,extpars[8])*pow(var3/var2,extpars[9]); // y0
+					xm3 = pow(term1/yh,var1); // (y0/yh)^a
 
-					xm3 = pow(term1/var2,var1); // (y0/yh)^a
-
-
-					return extpars[3]*extpars[4]*(pow(1.+ xm3,1./extpars[3])-1.) / xm3 ;
+					return extpars[5]*extpars[6]*(pow(1.+ xm3, 1./extpars[5])-1.) / xm3 ;
 
 			case 8:
 			/* EFTofDE - unscreened approximation  */
-							return mu(a,0.001,omega0,extpars,model)-1.;
+					return mu(a,0.001,omega0,extpars,model)-1.;
 
 			case 9:
 			/* EFTofDE - superscreened approximation  */
-							return 0.;
+					return 0.;
 
 			case 10:
 			/* EFTofDE with PPF and full k-dependence in linear modification */
@@ -1084,24 +1204,35 @@ double mymgF(double a, double yh, double yenv, double Rth, double omega0, double
 			// 5-11 : p1-p7
 
 					var1 = extpars[5]/(extpars[5]-1.)*extpars[7]; // a
-					Mvir = pow3(Rth/0.1)*5.*omega0; // virial mass x Gnewton - see definition in scol_init in HALO.cpp
+					Mvir = pow3(Rth/0.1)*5.*omega0/Gnewton; // virial mass x Gnewton - see definition in scol_init in HALO.cpp
 
-					delta = (1.+delta_initial)/pow3(yh)-1.; // non-linear over density of halo
-					deltaenv = (1.+delta_initial)/pow3(yenv)-1.; // non-linear over density of environment
+					term1 = extpars[8]*pow(a,extpars[9]) * pow(2.*Gnewton*h0*Mvir/pow2(sofl),extpars[10])*pow(yenv/yh,extpars[11]); // y0
 
-					var2 = pow(1./delta,1./3.); // yh with 1608.00522 definitions
-					var3 = pow(1./deltaenv,1./3.);  // yenv with 1608.00522 definitions
-
-					term1 = extpars[8]*pow(a,extpars[9]) * pow(2.*h0*Mvir,extpars[10])*pow(var3/var2,extpars[11]); // y0
-
-					xm3 = pow(term1/var2,var1); // (y0/yh)^a
+					xm3 = pow(term1/yh,var1); // (y0/yh)^a
 
 			    return extpars[5]*extpars[6]*(pow(1.+ xm3, 1./extpars[5])-1.) / xm3 ;
 
-
 			case 11:
 			/* EFTofDE with full k-dependence and unscreened approximation  */
-							return mu(a,1.,omega0,extpars,model)-1.;
+					return mu(a,1.,omega0,extpars,model)-1.;
+
+
+			case 12:
+			/* EFTofDE: Phenomenological non-linear model */
+					var1 = extpars[5] - extpars[6]*log(Rth); // Screening scale and mass dependence : Erf [ yh (R_scr/R_th)^p2 ] with R_scr = 10^(p1/p2)
+					term1 = yh * a * pow(10,var1); // Argument for mass dependant error function
+
+					if (yenv<=1.) {
+					term2 = pow(yenv * a, extpars[7]);  // yenv dependence - power law
+					}
+					else{
+						term2 = 1.;
+					}
+
+					var2 = pow(10.,extpars[8])/ (yh * pow2(a) * Rth); // Fourier transform of Rth with some calibration
+					term3 = mu(a,var2,omega0,extpars,model)-1.; // Linear G_effective
+
+					return term3 * erf(term1*term2);
 
 		default:
 					warning("BeyondLCDM: invalid model choice, model = %d \n", model);
@@ -1140,24 +1271,28 @@ double  WEFF(double a, double omega0, double extpars[], int model){
 		 return -(1.+3.*(extpars[0]+(1.-a)*extpars[1]))*(h2-omega0/pow3(a));
 
 		 case 7:
-		 /* EFTofDE: PPF */
+		 /* EFTofDE: k->infinity limit with PPF */
 		 return 2.*(1.-omega0);
 
 		 case 8:
-		 /* EFTofDE: unscreened approximation */
+		 /* EFTofDE:  k->infinity limit with  unscreened approximation */
 		 return 2.*(1.-omega0);
 
 		 case 9:
-		 /* EFTofDE: superscreened approximation */
+		 /* EFTofDE:  k->infinity limit with superscreened approximation */
 		 return 2.*(1.-omega0);
 
 		 case 10:
-		 /* EFTofDE: PPF with full k dependency in mu - assumes LCDM */
+		 /* EFTofDE: full k dependency assuming LCDM background with PPF approximation */
 		 return 2.*(1.-omega0);
 
 		 case 11:
-		 /* EFTofDE: unscreened with full k dependency in mu - assumes LCDM */
+		 /* EFTofDE: full k dependency assuming LCDM background with unscreened approximation  */
 		 return 2.*(1.-omega0);
+
+		 case 12:
+ 		/* EFTofDE: full k dependency assuming LCDM background with Phenomenological approximation  */
+ 		 return  2.*(1.-omega0);
 
 		 default:
 				 warning("BeyondLCDM: invalid model choice, model = %d \n", model);
