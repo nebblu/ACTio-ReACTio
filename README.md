@@ -520,6 +520,6 @@ We have implemented the following to v.2:
 * Optimised RSD multipole computation. 
 * Created python wrapper for RSD multipoles. 
 * Created new example python notebooks for rsd multipoles and parametrised-beyond LCDM calculations. 
-* New option in compute_react_ext and compute_react_nu_ext (compute_pseudo) that computes the non-linear pseudo spectrum using Takahashi et al Halofit's prediction internally
+* New option in compute_react_ext and compute_react_nu_ext (compute_pseudo) that computes the non-linear pseudo spectrum using Takahashi et al Halofit's prediction internally.
 * Added in a new function in SpecialFunctions.cpp (hubble_init) to initialise a spline of a Hubble function H(a) calculated using the bespokehub function in BeyondLCDM.cpp. This is useful if there is not an analytic form for the Hubble function.  
 * Added in Hu-Sawicki forms for $\alpha$ EFTofDE basis in BeyondLCDM.cpp. 
