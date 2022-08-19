@@ -49,6 +49,7 @@
 #define TEN     RCONST(10.0)
 #define Gnewton RCONST(4.302e-09)
 #define coef    RCONST(8987404.41) // 1/H0^2
+#define sofl RCONST(299792) // speed of light im km/s
 
 
 // structures to store spherical collapse calculations
