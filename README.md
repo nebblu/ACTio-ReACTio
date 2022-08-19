@@ -25,7 +25,7 @@ The package is made up of 5 folders:
 * `reactions` : contains all the c++ source code for the calculations. Specifically, this is in `reactions/src`. 
 * `pyreact` : contains the wrapper functions calling the c++ code from python. 
 * `cosmosis` : contains the cosmosis module for ReACT. 
-* `notebooks` : example python notebooks for ReACT computations and a Mathematica file performing translations between covariant theories and modifications to the Poisson equation. 
+* `notebooks` : example python notebooks for ReACT computations plus two Mathematica notebooks performing translations between covariant theories and modifications to the perturbative Poisson equation  and comparisons of different parametrisations of the nonlinear Poisson equation.
 
 
 ReACT can perform the follwing calculations for general theories beyond LCDM
@@ -41,6 +41,8 @@ ReACT can perform the follwing calculations for general theories beyond LCDM
 * Real space bispectrum at 1-loop level** (1808.01120): `reactions/src/BSPT.cpp`.
 
 * Exact perturbation theory kernels up to 4th order** (1808.01120): `reactions/src/BSPTN.cpp`.
+
+* Beyond LCDM modifications to background, linear, 2nd, 3rd order Poisson equation and fully nonlinear Poisson equation: `reactions/src/BeyondLCDM.cpp`.
 
 ** for LCDM, nDGP and f(R) gravity only. 
 
@@ -70,7 +72,7 @@ A recent version of python should be installed. I have worked with Python 3.6.8 
 
 ## Installation 
 
-ReACT can be installed by following the proceeding instructions. If you experience any issues, please have a look at the [Issues tab of version 1](https://github.com/nebblu/ReACT/issues?q=is%3Aissue+is%3Aclosed). Leave an issue in this git if you experience any problems and we'll get back to you as soon as possible, or contact ben.bose@ed.ac.uk. 
+ReACT can be installed by following the proceeding instructions. If you experience any issues, please have a look at the [Issues tab of version 1](https://github.com/nebblu/ReACT/issues?q=is%3Aissue+is%3Aclosed). Leave an issue in this repository if you experience any problems and we'll get back to you as soon as possible, or directly contact ben.bose@ed.ac.uk. 
 
 We have also included a Docker file to run ReACT within a container. This is explained below. 
 
@@ -127,7 +129,7 @@ CPPFLAGS += -I/home/bose/sundials/instdir/include
 $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/bose/sundials/instdir/lib64:${LD_LIBRARY_PATH}
 ```
 
-5) install react
+5) Install react
 
 ```
 $ python3 setup.py develop --user
@@ -160,16 +162,16 @@ $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/bose/react_tutorial/ACTio-ReACTi
 
 We have also included a Docker file, `Dockerfile'. Docker allows you to run the code within what is called a container which is a dedicated environment built according to specifications given in the Docker file. To run ReACT in a Docker container you may follow these steps:
 
-* Install [docker](https://www.docker.com/) and open the app to get the docker daemon running
-* Create an empty folder on you laptop/machine
-* Copy the Dockerfile from this github-repo
-* Go to the folder with the Dockerfile you've created and run
+1. Install [docker](https://www.docker.com/) and open the app to get the docker daemon running
+2. Create an empty folder on you laptop/machine
+3. Copy the Dockerfile from this github-repo
+4. Go to the folder with the Dockerfile you've created and run
 
 ```
 docker build -t mybuild . 
 ```
 
-* Once this builds, you can jump into the container (which has ReACT installed) using the following command
+5. Once this builds, you can jump into the container (which has ReACT installed) using the following command
 
 ```
 docker run -v path-to-the-folder-with-the-Dockerfile:/home -i -t mybuild
@@ -177,12 +179,12 @@ docker run -v path-to-the-folder-with-the-Dockerfile:/home -i -t mybuild
 
 This will also automatically take all the local files in `path-to-the-folder-with-the-Dockerfile` (e.g. `/Users/bbose/Desktop/myfolder` on your machine) to the `/home` folder inside the container. Anything placed in the home folder from within the container will then automatically show up locally. This lets you transfer ReACT output produced within the container to the local system. 
 
-* Alternatively, if you would like to use jupyter notebooks, then you should assign a port to your container in order to allow the connection from a host browser
+Alternatively, if you would like to use jupyter notebooks, then you should assign a port to your container in order to allow the connection from a host browser
 ```
 docker run -v path-to-the-folder-with-the-Dockerfile:/home -it -p 8888:8888 mybuild
 ```
 
-* I've tested this works on the tests and example files within the `reactions/examples` and `reactions/tests` directories within the container. You can use the following command to run them
+I've tested this works on the tests and example files within the `reactions/examples` and `reactions/tests` directories within the container. You can use the following command to run them
 
 ```
 g++ -I/ACTio-ReACTio/reactions/include -L/ACTio-ReACTio/reactions/lib  spt.cpp -lgsl -lcopter
@@ -191,19 +193,19 @@ g++ -I/ACTio-ReACTio/reactions/include -L/ACTio-ReACTio/reactions/lib  spt.cpp -
 ./a.out
 ```
 
-* To run jupyter notebooks you can jump to the 'ACTio-ReACTio/notebooks'-folder and run the following command:
+To run jupyter notebooks you can jump to the 'ACTio-ReACTio/notebooks'-folder and run the following command:
 ```
 jupyter notebook --ip 0.0.0.0 --allow-root
 ```
 You can access the notebooks through your desktops browser on http://localhost:8888 , i.e. copy-paste the second automatically generated hyperlink.  
 
-* To exit the container simply use the exit command 
+To exit the container simply use the exit command 
 
 ```
 exit 
 ```
 
- * You can later come back to your image in the individual container by opening the Docker app -> going to Containers, where you will see a list of all your containers -> choose and run a container with the 'mybuild'-image you used before (e.g. charming_faraday: mybuild RUNNING PORT:8888) -> open the command line (CLI-option in the Docker app when you hover over a container). Alternatively, there is a Docker extension in VS-code where you can (re-)start your container and see the files there all at ones, which makes the navigation easier.
+You can later come back to your image in the individual container by opening the Docker app -> going to Containers, where you will see a list of all your containers -> choose and run a container with the 'mybuild'-image you used before (e.g. charming_faraday: mybuild RUNNING PORT:8888) -> open the command line (CLI-option in the Docker app when you hover over a container). Alternatively, there is a Docker extension in VS-code where you can (re-)start your container and see the files there all at ones, which makes the navigation easier.
 
 ## Running ReACT
 
@@ -211,7 +213,7 @@ exit
 The pyreact wrapper allows the C++ code (the native language of ReACT) to be called by Python code. Example jupyter notebooks that demonstrate the usage of ReACT can be found in the `notebooks` folder. Specifically we have included : 
 
 * pyreact_demo.ipynb : Demonstrates the basic halo model reaction [2005.12184](https://arxiv.org/abs/2005.12184).
-*  pyreact_demo-ext.ipynb : Demonstrates the implementation of the EFTofDE + PPF halo model reaction and compares with the DGP implementation. 
+* pyreact_demo-ext.ipynb : Demonstrates the implementation of the EFTofDE and parametrised halo model reaction and compares with the DGP implementation. 
 * pyreact_demo-neutrinos.ipynb : Demonstrates the implementation of the massive neutrinos halo model reaction [2105.12114](https://arxiv.org/abs/2105.12114).
 * pyreact_demo-rsd.ipynb : Demonstrates the implementation of the redshift space power spectrum multipoles [1606.02520](https://arxiv.org/abs/1606.02520).
 * pyreact_demo-bspt.ipynb : Demonstrates the implementation of the real space bispectrum [1808.01120](https://arxiv.org/abs/1808.01120).
@@ -220,7 +222,7 @@ The pyreact wrapper allows the C++ code (the native language of ReACT) to be cal
 ###  C++
 One can also run ReACT and MG-Copter in their native C++. Again, a number of example output C++ scripts have been included in `reactions/examples` as well as a number of cosmologies in `reactions/examples/transfers`. Specifically we have included : 
 
-* actio_reactio.cpp : Example code to output the reaction and halo spectra for EFTofDE & PPF parametrisations.
+* actio_reactio.cpp : Example code to output the reaction and halo spectra for EFTofDE & parametrised nonlinear modifications (see [this section](https://github.com/nebblu/ACTio-ReACTio#adding-in-models)).
 * reaction_mnu.cpp : Example code to output the reaction and halo spectra for beyond LCDM physics & massive neutrinos.
 * halo_ps.cpp : Example code to output the halo model powerspectrum.
 * spt_rsd.cpp : Example code to output the 1-loop powerspectrum in real and redshift space.
@@ -230,19 +232,22 @@ One can also run ReACT and MG-Copter in their native C++. Again, a number of exa
 
 We can compile these examples with a command similar to : 
 
-> gcc -I/Users/bbose/Desktop/ACTio-ReACTio/reactions/include -L/Users/bbose/Desktop/ACTio-ReACTio/reactions/lib -lcopter -lgsl -lstdc++ bs.cpp -o test
+```
+$ gcc -I/Users/bbose/Desktop/ACTio-ReACTio/reactions/include -L/Users/bbose/Desktop/ACTio-ReACTio/reactions/lib -lcopter -lgsl -lstdc++ bs.cpp -o test
+```
 
 Then just run 
 
-> ./test 
+```
+$ ./test 
+```
 
-All example files require the specification of a transfer function or linear power spectrum. The given examples take transfer function inputs. You can specify the modified transfer function in two possible ways: 
+All example files require the specification of a transfer function or linear power spectrum. The given examples take transfer function inputs. You can specify the transfer function in two possible ways: 
 
 1. Directly as produced using a Boltzmann solver (e.g. [MGCAMB](https://github.com/sfu-cosmo/MGCAMB)) as in reaction_mnu.cpp. **Note** that this file should be headerless. 
-2. Otherwise, you must create your own cosmology file as in `reactions/examples/transfers' within which you should specify the associated z=0 LCDM transfer function file with the following two column format: {k[h/Mpc], T(k)} with the transfer function normalised to 1 at small k. This is then assumed by the code to rescale the power spectrum to the target, beyond LCDM cosmology  using internally computed LCDM and MG/DE growth factors.  
+2. Otherwise, you must create your own cosmology file as in `reactions/examples/transfers' within which you should specify the associated z=0 LCDM transfer function file with the following two column format: {k[h/Mpc], T(k)} with the transfer function normalised to 1 at small k. This is then assumed by the code to rescale the power spectrum to the target, beyond LCDM cosmology  using internally computed LCDM and non-standard growth factors.  
 
-The internal flag **modcamb** tells ReACT whether or not to treat the input transfer function file as in option (1) - true value - or option (2) - false value. Default is false as in the original version of the code. 
-
+The internal flag **modcamb** tells ReACT whether or not to treat the input transfer function/power spectrum as specifying a z=0 LCDM cosmology (false) or specifying a transfer function/ power spectrum at the target z and in the target beyond LCDM theory (true) (as produced by EFTCAMB, MGCAMB etc). We must set modcamb = false for option 2. Option 1 can have modcamb assume both false or true values depending on whether or not the specified function is LCDM z=0 or not. 
 
 ## Adding in models
 
