@@ -91,7 +91,9 @@ static int f_modscol(realtype t, N_Vector y, N_Vector ydot, void *user_data)
     double myh = (y1 + ET)/ET;
     double myenv = (yenv + ET)/ET;
 
+    // G_effective
     Fvir = mymgF(ET*ET0, myh, myenv, Rth, OM, (data->theory), IC, (data->mymodel));
+
     // (H/H0)
     hubble = HAg(ET*ET0, OM, (data->theory), (data->mymodel));
     // (H/H0)^2
@@ -669,7 +671,7 @@ double SCOL::myscol(double myscolparams[], double acol, double omegacb, double o
        double ai = exp((*xxyyzz).xx[i]);
        double arat = ainit/ai;
 
-       // reparametrise to y and y' in the appendix A of  1812.05594
+       // reparametrise to y and y' in the appendix A of 1812.05594
 
        // Halo y
        double myy = ((*xxyyzz).yy[i] + 1./arat)*arat;
