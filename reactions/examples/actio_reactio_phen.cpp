@@ -32,7 +32,7 @@ vector<vector<double> > mytransl;
 vector<vector<double> > mypk;
 
 
-/* Example code to output the reaction and halo spectra for EFTofDE & PPF parametrisations */
+/* Example code to output the reaction and halo spectra for EFTofDE & Phenomenological parametrisations */
 
 int main(int argc, char* argv[]) {
 

@@ -33,6 +33,7 @@ vector<vector<double> > mypk;
 
 
 /* Example code to output the reaction and halo spectra for EFTofDE & PPF parametrisations */
+// We check the Hu-Sawicki f(R) PPF approach
 
 int main(int argc, char* argv[]) {
 
@@ -40,30 +41,54 @@ int main(int argc, char* argv[]) {
 // 1: GR  2: f(R) 3: DGP 4: quintessence 5: CPL, 6: Dark scattering with CPL
 // 7 -9 : EFTofDE k->infinity limit,  w PPF, unscreened, superscreened respectively
 // 10-12: EFTofDE w PPF, unscreened and Error function Phenomenological model respectively.
-int mymodel = 12;
+int mymodel = 10;
 
 // target redshift
 double myz = 0.;
-
+// neutrino mass
 double mnu = 0.00;  // mv = 0.0ev
+
+// Base cosmology associated with the transfer function
+double h  = 0.6737;
+double n_s = 0.96605; // spectral index
+double Omega_b  = 0.0491989; //  baryon fraction
+double Omega_c = 0.265373;
+double Omega_nu = mnu/93.14/pow2(h);
+double pscale = 0.05;
+double As = 2.09681e-9;
+
+double Omega_m = Omega_c + Omega_b + Omega_nu;
+
+// non-standard parameters
 
 // Alpha-basis : Set their scale factor dependence, 1st and 2nd derivatives in reactions/src/BeyondLCDM.cpp alphai_eft, dalphai_eft and ddalphai_eft
 // Default is linear scale factor dependence alpha_i = alphai0 a
-double alphak0 = 1.;
-double alphab0 = 0.5;
-double alpham0 = 0.;
+// For the Hu-Sawicki f(R) approach (assumed here), you should go into reactions/src/BeyondLCDM.cpp and use the Hu-Sawicki forms for alpha_i in alphai_eft, dalphai_eft and ddalphai_eft
+double fr0 = -1e-5;
+
+double alphak0 = 0.;
+double alphab0 = fr0;//0.;
+double alpham0 = fr0;//-alphab0;
 double alphat0 = 0.;
-double m2 = 0.;
+double m2 = fr0;
 double c0 = 0.; // scale c(a) (we asusme LCDM H(a))
 
-// Non-linear parametrisation
-double myp1 = 0.5; // Screening scale
-double myp2 = 0.5; // its mass dependence
-double myp3 = 1.0; // its Environment dependence
-double myp4 = 0.0; // Yukawa suppression scale
+// Non-linear PPF parametrisation for chameleon theory in screened regime : See eq. 5.6 of 1608.00522
+// Hu-Sawicki choices
+double alpha = 0.5;
+double omega=0;
+
+double myp1 = 4.25;
+double myp2 = 1./(3.+2.*omega);
+double myp3 = (4.-alpha)/(1.-alpha);
+double myp4 = pow(Omega_m,1./3.)*pow(pow(Omega_m+4.*(1.-Omega_m),1./(alpha-1.))*myp1*myp2/fabs(fr0),1./myp3);
+double myp5 = -1.;
+double myp6 = 2./(3.*myp3);
+double myp7 = 3./(alpha-4.);
+
 
 //output file name
-const char* output = "KGB_full_z0.dat";
+const char* output = "F5_EFT-PPF_z0.dat";
 
 
 // Modified gravity active? This prompts the calculation of k_star and \mathcal{E}.
@@ -109,19 +134,6 @@ array ki(*Nkt);
 // integration error
 real epsrel = 1e-3;
 
-// Base cosmology associated with the transfer function
-double h  = 0.6737;
-double n_s = 0.96605; // spectral index
-double Omega_b  = 0.0491989; //  baryon fraction
-double Omega_c = 0.265373;
-
-double Omega_nu = mnu/93.14/pow2(h);
-double pscale = 0.05;
-double As = 2.09681e-9;
-
-
-double Omega_m = Omega_c + Omega_b + Omega_nu;
-
 double massb = 50.; // number of mass bins between 5<Log10[M]<18
 
 // store params for passing into React functions
@@ -140,11 +152,14 @@ double extpars[maxpars];
     extpars[3] = alphat0;
     extpars[4] = m2;
     extpars[12] = c0;
-    // non-linear
-    extpars[5] = myp1; // Screening scale
-    extpars[6] = myp2; // Mass dependence
-    extpars[7] = myp3; // Environment dependence
-    extpars[8] = myp4; // Yukawa suppression scale
+    // non-linear PPF parameters
+    extpars[5] = myp1;
+    extpars[6] = myp2;
+    extpars[7] = myp3;
+    extpars[8] = myp4;
+    extpars[9] = myp5;
+    extpars[10] = myp6;
+    extpars[11] = myp7;
 
     // Load cosmology classes
     Cosmology Cm(h, n_s, Omega_m, Omega_b, As, pscale, ki, Tm);

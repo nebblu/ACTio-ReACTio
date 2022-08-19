@@ -123,6 +123,11 @@ double riccibackground(double a, double omega0, double extpars[], int model){
 		/* EFTofDE unscreened and full k-dependence in linear modification */
 		return  3. * pow2(h0) * (omega0 + 4. * a3 * (1. - omega0)) / a3;
 
+		case 12:
+		/* EFTofDE unscreened and full k-dependence in linear modification */
+		return  3. * pow2(h0) * (omega0 + 4. * a3 * (1. - omega0)) / a3;
+
+
 		default:
 				warning("BeyondLCDM: invalid model choice, model = %d \n", model);
 				return 0;
@@ -140,6 +145,10 @@ double riccibackgroundp(double a, double omega0, double extpars[], int model){
 			return  -9.*pow2(h0)*omega0/a4;
 
 			case 11:
+			/* EFTofDE unscreened and full k-dependence in linear modification */
+			return  -9.*pow2(h0)*omega0/a4;
+
+			case 12:
 			/* EFTofDE unscreened and full k-dependence in linear modification */
 			return  -9.*pow2(h0)*omega0/a4;
 
@@ -485,10 +494,16 @@ double HA3g(double a, double omega0, double extpars[], int model){
 	switch(model) {
 		case 10:
 		/* EFTofDE with PPF and full k-dependence in linear modification */
-		return myhubbledd(a);
+		hub = HA(a,omega0); // H / H0
+		return 3.*omega0*(-12.*(omega0-1.)/(4.*pow2(hub)) + 5.)/(4.*pow(a,5)*hub) ;
 
 		case 11:
 		/* EFTofDE unscreened and full k-dependence in linear modification */
+		hub = HA(a,omega0); // H / H0
+	  return 3.*omega0*(-12.*(omega0-1.)/(4.*pow2(hub)) + 5.)/(4.*pow(a,5)*hub) ;
+
+		case 12:
+		/* EFTofDE Phenomenological model and full k-dependence in linear modification */
 		hub = HA(a,omega0); // H / H0
 	  return 3.*omega0*(-12.*(omega0-1.)/(4.*pow2(hub)) + 5.)/(4.*pow(a,5)*hub) ;
 
@@ -1122,8 +1137,8 @@ double gamma3(double a, double omega0, double k0, double k1, double k2, double k
 
 double mymgF(double a, double yh, double yenv, double Rth, double omega0, double extpars[], double delta_initial, int model){
 	double h0 = 1./2997.92;
-	double dod, dod2, dRRth, fr0, var1, var2, var3, term1, term2, term3;
-	double betadgp,xm3,xterm,delta,deltaenv,Mvir;
+	double dod, dod2, dRRth, fr0, var1, var2, term1, term2, term3;
+	double betadgp,xm3,xterm,delta,Mvir;
 //	double alphaofa[5],dalphaofa[5],lambda2; //EFTofDE
 	switch(model) {
 	  case 1:
