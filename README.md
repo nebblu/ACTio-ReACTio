@@ -17,7 +17,7 @@
 10. [What's new?](https://github.com/nebblu/ACTio-ReACTio#what-is-new)
 
 
-## Introduction
+## 1. Introduction
 
 ReACT is a halo model and standard perturbation theory code based on the software packages [Copter](http://mwhite.berkeley.edu/Copter/) (0905.0479) and MG-Copter (1606.02520). It allows the efficient computation of many large scale structure observables for a wide class of gravity and dark energy models. 
 
@@ -48,7 +48,7 @@ ReACT can perform the follwing calculations for general theories beyond LCDM
 ** for LCDM, nDGP and f(R) gravity only. 
 
 
-## Requirements
+## 2. Requirements
 
 ### C++ Compiler and automake
 ReACT is written in C++, so you'll need a modern C++ compiler.
@@ -71,7 +71,7 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/bose/sundials/install_dir/lib64:${
 ### Python
 A recent version of python should be installed. I have worked with Python 3.6.8 without issue. 
 
-## Installation 
+## 3. Installation 
 
 ReACT can be installed by following the proceeding instructions. If you experience any issues, please have a look at the [Issues tab of version 1](https://github.com/nebblu/ReACT/issues?q=is%3Aissue+is%3Aclosed). Leave an issue in this repository if you experience any problems and we'll get back to you as soon as possible, or directly contact ben.bose@ed.ac.uk. 
 
@@ -208,7 +208,7 @@ exit
 
 You can later come back to your image in the individual container by opening the Docker app -> going to Containers, where you will see a list of all your containers -> choose and run a container with the 'mybuild'-image you used before (e.g. charming_faraday: mybuild RUNNING PORT:8888) -> open the command line (CLI-option in the Docker app when you hover over a container). Alternatively, there is a Docker extension in VS-code where you can (re-)start your container and see the files there all at ones, which makes the navigation easier.
 
-## Running ReACT
+## 4. Running ReACT
 
 ### Python
 The pyreact wrapper allows the C++ code (the native language of ReACT) to be called by Python code. Example jupyter notebooks that demonstrate the usage of ReACT can be found in the `notebooks` folder. Specifically we have included : 
@@ -251,7 +251,7 @@ All example files require the specification of a transfer function or linear pow
 
 The internal flag **modcamb** tells ReACT whether or not to treat the input transfer function/power spectrum as specifying a z=0 LCDM cosmology (false) or specifying a transfer function/ power spectrum at the target z and in the target beyond LCDM theory (true) (as produced by EFTCAMB, MGCAMB etc). We must set modcamb = false for option 2. Option 1 can have modcamb assume both false or true values depending on whether or not the specified function is LCDM z=0 or not. 
 
-## Available Models
+## 5. Available Models
 
 In Pyreact we currently have the following models and model parameters 
 
@@ -300,7 +300,7 @@ See `reactions/src/examples` for more parameter and function details.
 
 Note that all cases except 4,5,6 assume a LCDM background expansion. 
 
-## Adding in new models
+## 6. Adding in new models
 
 One can add in new models by going to the source code, `reactions/src/BeyondLCDM.cpp` and adding in a new `case n:` in the relevant functions. The array extpars stores the theory parameters. The default size of this array is 20 and can be increased by changing the maxpars parameter in `reactions/src/BeyondLCDM.h`. 
 
@@ -324,15 +324,15 @@ The functions one should consider when adding in a new models are as follows:
 * `alphai_eft` : scale factor dependence of parameter : $\alpha_i(a)$
 * `dalphai_eft` : scale factor derivative :  $\frac{d \alpha_i(a)}{da}$
 * `ddalphai_eft` : 2nd scale factor derivative : $\frac{d^2 \alpha_i(a)}{da^2} $
-* `HA3g` : normalised 2nd scale factor derivative of Hubble : $ \frac{d^2 H(a)}{da^2} \frac{1}{H_0} $
+* `HA3g` : normalised 2nd scale factor derivative of Hubble : $\frac{d^2 H(a)}{da^2} \frac{1}{H_0}$
 
 
 ### C) Functions to edit for custom background expansion: 
 **Note** to use these functions in your new model, you should initialise a spline with H(a) - run hubble_init : see SpecialFunctions.cpp
 
-* `bespokehub` : Normalised Hubble expansion: H(a)/H0 (this can involve a solution to some ODE)
+* `bespokehub` : Normalised Hubble expansion: $\frac{H}{H_0}$ (this can involve a solution to some ODE)
 * `bespokehubd` : $aH \frac{dH}{da} \frac{1}{H_0^2}$
-* `bespokehubdd` : $ \frac{d^2 H(a)}{da^2} \frac{1}{H_0} $
+* `bespokehubdd` : $\frac{d^2 H(a)}{da^2} \frac{1}{H_0}$
 
 Once specified, you can use the following splines (initialised with hubble_init in SpecialFunctions class) in HAg and HA1g (and HA3g if EFTofDE is being considered)
 * `myhubble` : $\frac{H}{H_0}$
@@ -348,11 +348,11 @@ make && make install
 
 If you want to add in this model to the Pyreact wrapper, you will also need to add in the nth model in `pyreact/react.py` to the appropriate function you want to call in python. 
 
-## Parameters
+## 7. Parameters
 
 # Python parameters 
 
-** General parameters ** 
+**General parameters** 
 
 **model** Selects which theoretical model is to be applied (see section: [Models of gravity and dark energy](https://github.com/nebblu/ACTio-ReACTio#adding-in-models)). 
 
@@ -401,7 +401,7 @@ If you want to add in this model to the Pyreact wrapper, you will also need to a
 
 **Note** the cosmoSIS module has not yet been extended to include massive neutrinos. 
 
-## Citation
+## 8. Citation
 
 When using ReACT in a publication, please acknowledge the code by citing the relevant papers from the following:
 
@@ -529,7 +529,7 @@ Respective bibtex entries:
 }
 ```
 
-## Notes 
+## 9. Notes 
 
 ### Parameter ranges (Updated: 22/03/21)
 * To optimise root finding within the spherical collapse portion of the code, the maximum redshift that one can solve the reaction for currently is z=2.5. 
@@ -544,7 +544,7 @@ Respective bibtex entries:
 * Note if using the stand-alone version of ReACT, the reaction may have deviations away from unity of the order of ~0.1-0.3% for k<1e-3. Pyreact automatically sets it to unity at such large scales. 
 
 
-## What is new ?
+## 10. What is new ?
 
 We have implemented the following to v.2:
 
