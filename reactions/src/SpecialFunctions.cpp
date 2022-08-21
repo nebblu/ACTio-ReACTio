@@ -990,8 +990,6 @@ void IOW::initn_rsd(double pars[], double extpars[], double k[], double x[], dou
 
 
 
-
-
 /* Parameters passed to linear system of Euler and continuity equations in LCDM/wCDM/CPL*/
 // extpars array holds beyond LCDM parameters
 // omega0 = Omega_{m,0}
