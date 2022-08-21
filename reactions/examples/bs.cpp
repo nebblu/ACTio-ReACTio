@@ -31,7 +31,7 @@ int main() {
 
 
   // Which gravity or dark energy model?
-  // 1: GR  2: f(R) 3: DGP 4: quintessence 5: CPL
+  // 1: GR  2: f(R) 3: DGP
   int mymodel = 3;
 
   // Keep it z=0 to keep Copter's Growth @ 1
@@ -90,7 +90,7 @@ bspt.mypspline(pars,true);
 /* Output section */
 
 //output file name
-const char* output = "check.dat";
+const char* output = "DGP_orc0p25_z0p54.dat";
 
 /* Open output file */
 FILE* fp = fopen(output, "w");

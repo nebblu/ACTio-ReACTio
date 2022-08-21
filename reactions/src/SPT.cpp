@@ -1967,7 +1967,7 @@ real SPT::sigmav_init(double pars[], double extpars[], int model) const{
 /////// REDSHIFT SPACE MODIFIED GRAVITY SPECTRUM ////////
 // a {0,..,3}  : 0=Kaiser, 1 = TNS q-bias [1507.01592], 2 = TNS lag bias (MG) - incomplete!
 //  3 = 1-loop SPT (MG) [see Eq.23 of 1006.0699 for example]
-// TODO: 4 = EFTofLSS with and without resummation 
+// TODO: 4 = EFTofLSS with and without resummation
 // b {1,2,3} :  1 = monopole, 2 = quadrupole, 3 = hexdecapole
 // bias[] :  0 = linear bias, 1,2 = qbias param or lagrangian bias params (b_2, N)
 // pars: 0 =  scale factor, 1= omega_m(z=0)

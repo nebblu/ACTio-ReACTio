@@ -32,26 +32,40 @@ int main(int argc, char* argv[]) {
     // 1: GR  2: f(R) 3: DGP 4: quintessence 5: CPL
     int mymodel = 3;
 
+    // chosen redshift
+       double myz = 1.;
+    // chosen omega_matter (total)
+       double omega0 = 0.281;
+    // MG parameter (for f(R) this is |fr0| and for nDGP this is Omega_rc)
+       double mgpar = 0.25;
+
+
+    //output file name
+    const char* output = "dgp_eds_vs_full.dat";
+
+    // Number of k-modes you wish to output between kmin and kmax
+      int Nk = 50;
+      real kmin = 0.01;
+      real kmax = 0.5;
+
+      // error in 1-loop integrals
+      double err = 1e-2;
+
+
+    // cosmo file for P_L(k)
+    const char* cstr = "transfers/dgp";
+
     // Keep it z=0 to keep Copter's Growth @ 1
     real z = 0;
     // Relative error in magnitude integrations
     real epsrel = 1e-3;
 
-    // cosmo file for P_L(k)
-    const char* cstr = "transfers/dgp";
 
     // Initialise all classes
     Cosmology C(cstr);
     LinearPS P_l(C, z);
     SPT spt(C, P_l, epsrel);
     IOW iow;
-
-// chosen redshift
-   double myz = 1.;
-// chosen omega_matter (total)
-   double omega0 = 0.281;
-// MG parameter (for f(R) this is |fr0| and for nDGP this is Omega_rc)
-   double mgpar = 0.25;
 
   // base parameter values
   double pars[7];
@@ -66,23 +80,12 @@ int main(int argc, char* argv[]) {
 // normalise the growth + calculate all growth factors
   iow.inite(pars,extpars,mymodel);
 
-// error in 1-loop integrals
-double err = 1e-2;
-
 /* Output section */
-
-//output file name
-const char* output = "dgp_eds_vs_full.dat";
 
  /* Open output file */
  FILE* fp = fopen(output, "w");
 
 real p1,p2,p3,p4,p5,p6,p7,p8,p9;
-
-// Number of k-modes you wish to output between kmin and kmax
-  int Nk = 50;
-  real kmin = 0.01;
-  real kmax = 0.5;
 
 for(int i =0; i <Nk;  i ++) {
 

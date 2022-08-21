@@ -33,6 +33,7 @@ vector<vector<double> > mypk;
 
 
 /* Example code to output the reaction and halo spectra for EFTofDE & PPF parametrisations */
+
 // We check the Hu-Sawicki f(R) PPF approach
 
 int main(int argc, char* argv[]) {
@@ -40,7 +41,7 @@ int main(int argc, char* argv[]) {
 // Which gravity or dark energy model?
 // 1: GR  2: f(R) 3: DGP 4: quintessence 5: CPL, 6: Dark scattering with CPL
 // 7 -9 : EFTofDE k->infinity limit,  w PPF, unscreened, superscreened respectively
-// 10-12: EFTofDE w PPF, unscreened and Error function Phenomenological model respectively.
+// 10-12: EFTofDE with PPF, unscreened and Error function Phenomenological model respectively.
 int mymodel = 10;
 
 // target redshift
@@ -48,7 +49,7 @@ double myz = 0.;
 // neutrino mass
 double mnu = 0.00;  // mv = 0.0ev
 
-// Base cosmology associated with the transfer function
+// Base cosmology associated with the transfer function loaded below
 double h  = 0.6737;
 double n_s = 0.96605; // spectral index
 double Omega_b  = 0.0491989; //  baryon fraction
@@ -58,6 +59,7 @@ double pscale = 0.05;
 double As = 2.09681e-9;
 
 double Omega_m = Omega_c + Omega_b + Omega_nu;
+
 
 // non-standard parameters
 
@@ -90,17 +92,22 @@ double myp7 = 3./(alpha-4.);
 //output file name
 const char* output = "F5_EFT-PPF_z0.dat";
 
+// number of bins between kmin and kmax
+int Nk = 300;
+double kmin = 0.01;
+double kmax = 5.;
 
-// Modified gravity active? This prompts the calculation of k_star and \mathcal{E}.
+// perform 1-loop corrections? This prompts the calculation of k_star and \mathcal{E}.
 bool modg = false;
 
 // Is the transfer being fed to ReACT of the target cosmology?
-//If false, the transfer should be LCDM at z=0 and ReACT will rescale P_L using internally computed modified growth - see README.
-// If true, the transfer function should be that of the real cosmology (with MG or/and massive neutrinos)
-// Note that ReACT does not calculate growth factors for massive neutrino cosmologies and so the real transfer function should be supplied.
+// If false, the transfer should be LCDM at z=0 and ReACT will rescale P_L using internally computed modified growth - see README.
+// If true, the transfer function should be that of the target cosmology at the target redshift (with MG or/and massive neutrinos)
+// Note that ReACT does not calculate growth factors for massive neutrino cosmologies and so the target transfer function should be supplied.
 bool mgcamb = false;
 
 // Load modified transfer function at with all species at some redshift
+// This is a LCDM z=0 transfer with the cosmology specified below
 ifstream fin("transfers/EFT/transfer_out0.dat");
 
 // Load in the transfer data
@@ -189,10 +196,6 @@ halo.phinit_pseudo(pars,mgcamb);
 FILE* fp = fopen(output, "w");
 
 real p1,p2,p3,p4,p5,p6;
-
-int Nk = 300;
-double kmin = 0.01;
-double kmax = 5.;
 
  for(int i =0; i <Nk;  i ++) {
 

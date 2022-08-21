@@ -34,18 +34,42 @@ using std::istringstream;
 int main(int argc, char* argv[]) {
 
   // Which gravity or dark energy model?
-  // 1: GR  2: f(R) 3: DGP 4: quintessence 5: CPL
+  // 1: GR  2: Hu-Sawicki f(R) 3: DGP 4: quintessence 5: CPL, 6: Dark scattering with CPL
+  // 7 -9 : EFTofDE k->infinity limit,  w PPF, unscreened, superscreened respectively
+  // 10-12: EFTofDE with PPF, unscreened and Error function Phenomenological model respectively.
   int mymodel = 2;
 
-  // Modified gravity active?
-  bool modg = true;
-  // Is the transfer being fed to ReACT of the target cosmology?
-  // If false, the transfer should be LCDM at z=0.
-  bool mgcamb = false;
+  // chosen redshift
+     double myz = 0.;
+  // chosen omega_matter (total)
+    double omegam0 = 0.3072;
+  // chosen omega_nu (total)
+    double omeganu0 = 0.;
 
+  // Value of f_{R0}
+    double fr0 = 1e-5;
+
+  //output file name
+  const char* output = "halo_ps.dat";
+
+  // number of bins between kmin and kmax
+  int Nk =100;
+  double kmin = 0.01;
+  double kmax = 10.;
+
+
+  // perform 1-loop corrections? This prompts the calculation of k_star and \mathcal{E}.
+  bool modg = true;
+
+  // Is the transfer being fed to ReACT of the target cosmology?
+  // If false, the transfer should be LCDM at z=0 and ReACT will rescale P_L using internally computed modified growth - see README.
+  // If true, the transfer function should be that of the target cosmology at the target redshift (with MG or/and massive neutrinos)
+  // Note that ReACT does not calculate growth factors for massive neutrino cosmologies and so the target transfer function should be supplied.
+  bool mgcamb = false;
 
    // cosmo file for P_L(k)
    const char* cstr = "transfers/Matteo_fr";
+
    // Keep it z=0 to keep Copter's Growth @ 1
    real z = 0;
    // Relative error in magnitude integrations
@@ -57,16 +81,10 @@ int main(int argc, char* argv[]) {
    SPT spt(C, P_l, epsrel);
    IOW iow;
 
-   // chosen redshift
-      double myz = 0.;
-   // chosen omega_matter (total)
-     double omegam0 = 0.3072;
-   // chosen omega_nu (total)
-     double omeganu0 = 0.;
 
    // extended model parameters
    double extpars[maxpars]; // Currently maxed out at 20 extra params
-   extpars[0] = 1e-5; // fr0 for f(R)
+   extpars[0] = fr0; // fr0 for f(R)
 
    // Base parameters
     double pars[7];
@@ -81,17 +99,11 @@ halo.initialise(pars,extpars,mgcamb,modg,mymodel);
 
 /* Output section */
 
-//output file name
-const char* output = "halo_ps.dat";
-
 /* Open output file */
 FILE* fp = fopen(output, "w");
 
 real p1,p2,p3,p4,p5,p6;
 
-int Nk =10;
-double kmin = 0.001;
-double kmax = 10.;
 
  for(int i =0; i < Nk;  i ++) {
 

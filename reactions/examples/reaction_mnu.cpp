@@ -36,8 +36,10 @@ vector<vector<double> > mypk;
 
 int main(int argc, char* argv[]) {
 
-// Which gravity or dark energy model?
-// 1: GR  2: f(R) 3: DGP 4: quintessence 5: CPL
+  // Which gravity or dark energy model?
+  // 1: GR  2: f(R) 3: DGP 4: quintessence 5: CPL, 6: Dark scattering with CPL
+  // 7 -9 : EFTofDE k->infinity limit,  w PPF, unscreened, superscreened respectively
+  // 10-12: EFTofDE with PPF, unscreened and Error function Phenomenological model respectively.
 int mymodel = 5;
 
 // target redshift
@@ -46,13 +48,37 @@ double myz = 1.;
 //double Omega_nu = 0.00;  // neutrino fraction mv = 0.0ev
 double Omega_nu = 0.0053;  // neutrino fraction mv = 0.24
 
-// Modified gravity active? This prompts the calculation of k_star and \mathcal{E}.
+
+/*Specify params*/
+
+/* Bahamas simulation cosmology */
+double h  = 0.7; // hubble constant
+double n_s = 0.972; // spectral index
+double Omega_m = 0.2793; // total matter fraction
+double Omega_b  = 0.0463; //  baryon fraction
+
+double pscale = 0.002;
+double As = 2.45e-09; // initial amplitude of fluctuations
+
+// CPL parameters
+double w0 = -0.9;
+double wa = 0.1;
+
+//output file name
+const char* output = "reaction_nu.dat";
+
+int Nk = 100;
+double kmin = 0.01;
+double kmax = 100.;
+
+
+// perform 1-loop corrections? This prompts the calculation of k_star and \mathcal{E}.
 bool modg = false;
 
 // Is the transfer being fed to ReACT of the target cosmology?
-//If false, the transfer should be LCDM at z=0 and ReACT will rescale P_L using internally computed modified growth - see README.
-// If true, the transfer function should be that of the real cosmology (with MG or/and massive neutrinos)
-// Note that ReACT does not calculate growth factors for massive neutrino cosmologies and so the real transfer function should be supplied.
+// If false, the transfer should be LCDM at z=0 and ReACT will rescale P_L using internally computed modified growth - see README.
+// If true, the transfer function should be that of the target cosmology at the target redshift (with MG or/and massive neutrinos)
+// Note that ReACT does not calculate growth factors for massive neutrino cosmologies and so the target transfer function should be supplied.
 bool mgcamb = true;
 
 // Load transfer function at z from MGCAMB with all species at some redshift for target cosmology
@@ -104,22 +130,6 @@ array kil(*Nktl);
 
 // integration error
 real epsrel = 1e-3;
-
-
-/*Specify params*/
-
-/* Dustgrain */
-double h  = 0.7; // hubble constant
-double n_s = 0.972; // spectral index
-double Omega_m = 0.2793; // total matter fraction
-double Omega_b  = 0.0463; //  baryon fraction
-
-double pscale = 0.002;
-double As = 2.45e-09; // initial amplitude of fluctuations
-
-// CPL parameters
-double w0 = -0.9;
-double wa = 0.1;
 
 // number of mass bins between 5<Log10[M]<20
 double massb = 50.;
@@ -181,17 +191,12 @@ halo.phinit_pseudo(pars,mgcamb);
 
 /* Output section */
 
-//output file name
-const char* output = "reaction_nu.dat";
-
 /* Open output file */
 FILE* fp = fopen(output, "w");
 
 real p1,p2,p3,p4,p5,p6;
 
-int Nk = 10;
-double kmin = 1e-4;
-double kmax = 100.;
+
 
  for(int i =0; i <Nk;  i ++) {
 

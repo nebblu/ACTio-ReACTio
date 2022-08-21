@@ -97,6 +97,41 @@ initn_rsd  */
 // 7: y_environment dependence of screening scale
 // 8: Yukawa suppression scale mass dependence
 
+
+/* A) Functions to edit for new models in Reaction computation: */
+
+// HAg : Normalised Hubble expansion H/H_0
+// HA1g : Normalised scale factor derivative of Hubble  aH dH/da / H0^2
+// myfricF : Euler equation friction term (only present in Dark Scattering)
+// mu : linear modification to the Poisson equation
+// gamma2 : 2nd order modification to the Poisson equation
+// gamma3 : 3rd order modification to the Poisson equation
+
+// mymgF : nonlinear modification to the Poisson equation [Needed only for spherical collapse SCOL.cpp, not for 1-loop calculations ]
+// WEFF : Effective dark energy fluid contribution to virial theorem [Needed only for spherical collapse SCOL.cpp, not for 1-loop calculations ]
+
+
+/* B) Functions to edit for EFTofDE parametrisations needed for mu (cases 10-12): */
+
+// riccibackgroundp : scale factor derivative of background Ricci scalar in FRLW
+// alphai_eft : scale factor dependence of parameter : alpha_i(a)
+// dalphai_eft : scale factor derivative :  d alpha_i(a)/ da
+// ddalphai_eft : 2nd scale factor derivative : d^2 alpha_i(a)/ da^2
+// HA3g : normalised 2nd scale factor derivative of Hubble :  d^2 H(a) / da^2  /H0
+
+
+/* C) Functions to edit for custom background expansion: */
+/* Note: to use these functions in your new model, you should initialise a spline with H(a) - run hubble_init : see SpecialFunctions.cpp
+
+// bespokehub : Normalised Hubble expansion: H(a)/H0 (this can involve a solution to some ODE)
+// bespokehubd : aH dH/da / H0^2
+// bespokehubdd : d^2 H(a) / da^2  /H0
+
+// Once specified, you can use the following splines (initialised with hubble_init in SpecialFunctions class) in HAg and HA1g (and HA3g if EFTofDE is being considered)
+// myhubble : H/H0
+// myhubbled : aH dH/da / H0^2
+// myhubbledd : d^2 H(a) / da^2  /H0
+
                                         ////
                                     /////////////
                             //////////////////////////////
@@ -419,6 +454,7 @@ double HAg(double a, double omega0, double extpars[], int model){
 
 /* Normalised time derivative - specify form or use */
 
+
 //  (dH/dt / H0^2) = aH dH/da / H0^2
 double HA1g(double a, double omega0, double extpars[], int model){
 	double A, omegaf, omegaL;
@@ -527,6 +563,7 @@ double HA2g2(double a, double omega0, double extpars[], int model){
 }
 
 
+
 // Friction term appearing in the Euler equation from dark matter - dark energy interactions (see: Eq. 8 of 2111.13598)
 double myfricF(double a, double omega0, double extpars[], int model){
 	double deexponent,omegaf, omegaL;
@@ -588,6 +625,7 @@ double myfricF(double a, double omega0, double extpars[], int model){
 //p1,p2,p3 are theory parameters
 //k1,k2,k3 are the mode magnitudes
 //u1 cosine of the angle between k2 and k3; u2 between k1 and k2; u3 between k1 and k3
+
 
 // Linear modification mu
 double mu(double a, double k0, double omega0, double extpars[], int model){
@@ -1131,7 +1169,6 @@ double gamma3(double a, double omega0, double k0, double k1, double k2, double k
 				return 0;
 }
 }
-
 
 /* Modified non-linear Poisson equation function (F) for spherical collapse (see for example A.1 of appendix of 1812.05594) */
 
