@@ -9,11 +9,12 @@
 2. [Requirements](https://github.com/nebblu/ACTio-ReACTio#requirements)
 3. [Installation](https://github.com/nebblu/ACTio-ReACTio#installation)
 4. [Running ReACT](https://github.com/nebblu/ACTio-ReACTio#running-react)
-5. [Models of gravity and dark energy](https://github.com/nebblu/ACTio-ReACTio#adding-in-models)
-6. [Parameter description](https://github.com/nebblu/ACTio-ReACTio#parameters)
-7. [Citation](https://github.com/nebblu/ACTio-ReACTio#citation)
-8. [Notes](https://github.com/nebblu/ACTio-ReACTio#notes)
-9. [What's new?](https://github.com/nebblu/ACTio-ReACTio#what-is-new)
+5. [Models of gravity and dark energy](https://github.com/nebblu/ACTio-ReACTio#available-models)
+6. [Adding in new models](https://github.com/nebblu/ACTio-ReACTio#adding-in-new-models)
+7. [Parameter description](https://github.com/nebblu/ACTio-ReACTio#parameters)
+8. [Citation](https://github.com/nebblu/ACTio-ReACTio#citation)
+9. [Notes](https://github.com/nebblu/ACTio-ReACTio#notes)
+10. [What's new?](https://github.com/nebblu/ACTio-ReACTio#what-is-new)
 
 
 ## Introduction
@@ -250,7 +251,7 @@ All example files require the specification of a transfer function or linear pow
 
 The internal flag **modcamb** tells ReACT whether or not to treat the input transfer function/power spectrum as specifying a z=0 LCDM cosmology (false) or specifying a transfer function/ power spectrum at the target z and in the target beyond LCDM theory (true) (as produced by EFTCAMB, MGCAMB etc). We must set modcamb = false for option 2. Option 1 can have modcamb assume both false or true values depending on whether or not the specified function is LCDM z=0 or not. 
 
-## Adding in models
+## Available Models
 
 In Pyreact we currently have the following models and model parameters 
 
@@ -299,15 +300,53 @@ See `reactions/src/examples` for more parameter and function details.
 
 Note that all cases except 4,5,6 assume a LCDM background expansion. 
 
-One can add in new models by simply going to the source code, `reactions/src/BeyondLCDM.cpp` and adding in a new `case n:` in all the functions with the required modified background and Poisson equation functions. The array extpars stores the theory parameters. The default size of this array is 20 and can be increased by changing the maxpars parameter in `reactions/src/BeyondLCDM.h`. 
+## Adding in new models
 
-Once you have added in the required background, linear, 1-loop and non-linear modifications you just need to re-compile the source code by going to the `reactions` directory and running 
+One can add in new models by going to the source code, `reactions/src/BeyondLCDM.cpp` and adding in a new `case n:` in the relevant functions. The array extpars stores the theory parameters. The default size of this array is 20 and can be increased by changing the maxpars parameter in `reactions/src/BeyondLCDM.h`. 
+
+The functions one should consider when adding in a new models are as follows: 
+
+### A) Functions to edit for new general models 
+
+* `HAg` : Normalised Hubble expansion $\frac{H}{H_0}$
+* `HA1g` : Normalised scale factor derivative of Hubble  $aH \frac{dH}{da} \frac{1}{H_0^2}$
+* `myfricF` : Euler equation friction term (only present in Dark Scattering)
+* `mu` : linear modification to the Poisson equation
+* `gamma2` : 2nd order modification to the Poisson equation
+* `gamma3` : 3rd order modification to the Poisson equation
+* `mymgF` : nonlinear modification to the Poisson equation [Needed only for spherical collapse SCOL.cpp, not for 1-loop calculations]
+* `WEFF` : Effective dark energy fluid contribution to virial theorem [Needed only for spherical collapse SCOL.cpp, not for 1-loop calculations]
+
+
+### B) Functions to edit for EFTofDE parametrisations needed for mu (cases 10-12):
+
+* `riccibackgroundp` : scale factor derivative of background Ricci scalar in FRLW
+* `alphai_eft` : scale factor dependence of parameter : $\alpha_i(a)$
+* `dalphai_eft` : scale factor derivative :  $\frac{d \alpha_i(a)}{da}$
+* `ddalphai_eft` : 2nd scale factor derivative : $\frac{d^2 \alpha_i(a)}{da^2} $
+* `HA3g` : normalised 2nd scale factor derivative of Hubble : $ \frac{d^2 H(a)}{da^2} \frac{1}{H_0} $
+
+
+### C) Functions to edit for custom background expansion: 
+**Note** to use these functions in your new model, you should initialise a spline with H(a) - run hubble_init : see SpecialFunctions.cpp
+
+* `bespokehub` : Normalised Hubble expansion: H(a)/H0 (this can involve a solution to some ODE)
+* `bespokehubd` : $aH \frac{dH}{da} \frac{1}{H_0^2}$
+* `bespokehubdd` : $ \frac{d^2 H(a)}{da^2} \frac{1}{H_0} $
+
+Once specified, you can use the following splines (initialised with hubble_init in SpecialFunctions class) in HAg and HA1g (and HA3g if EFTofDE is being considered)
+* `myhubble` : $\frac{H}{H_0}$
+* `myhubbled` : $aH \frac{dH}{da} \frac{1}{H_0^2}$
+* `myhubbledd` : $\frac{d^2 H(a)}{da^2}\frac{1}{H_0}$
+
+
+Once you have added in the required functions you need to re-compile the source code by going to the `reactions` directory and running 
 
 ```
 make && make install
 ```
 
-If you want to add in this model to the Pyreact wrapper, you will also need to add in the nth model in `pyreact/react.py`.  
+If you want to add in this model to the Pyreact wrapper, you will also need to add in the nth model in `pyreact/react.py` to the appropriate function you want to call in python. 
 
 ## Parameters
 
