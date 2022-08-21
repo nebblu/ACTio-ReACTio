@@ -99,21 +99,19 @@ $ pip install -e .
 
 **In all the following change the paths accordingly**
 
-1) Make sure the following are installed: python, sundials, g++, gsl. The versions I've tested with are:
+1. Make sure the following are installed: python, sundials, g++, gsl. The versions I've tested with are:
 
-Python 3.6.8
+* Python 3.6.8
+* g++ (GCC) 8.5.0
+* sundials-4.1.0
 
-g++ (GCC) 8.5.0
-
-sundials-4.1.0
-
-2) Clone ACTio-ReACTio:
+2. Clone ACTio-ReACTio:
 
 ```
 $ git clone https://github.com/nebblu/ACTio-ReACTio.git
 ```
 
-3) Add in sundials directory to pyreact/Makefile :
+3. Add in sundials directory to pyreact/Makefile :
 
 **Example:** 
 
@@ -124,19 +122,19 @@ LDFLAGS += -lgsl -lgslcblas -lsundials_cvode -lsundials_nvecserial -L/home/bose/
 CPPFLAGS += -I/home/bose/sundials/instdir/include
 ```
 
-4) Export sundials library to LD_LIBRARY_PATH:
+4. Export sundials library to LD_LIBRARY_PATH:
 
 ```
 $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/bose/sundials/instdir/lib64:${LD_LIBRARY_PATH}
 ```
 
-5) Install react
+5. Install react
 
 ```
 $ python3 setup.py develop --user
 ```
 
-6) Check that everything is working. Go to the reactions/examples/ directory and try to run one of the example files. For example:
+6. Check that everything is working. Go to the reactions/examples/ directory and try to run one of the example files. For example:
 
 ```
 $ g++ -I/home/bose/react_tutorial/ACTio-ReACTio/reactions/include -L/home/bose/react_tutorial/ACTio-ReACTio/reactions/lib -lcopter -lgsl -lstdc++ halo_ps.cpp -o test
