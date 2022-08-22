@@ -121,7 +121,7 @@ initn_rsd  */
 
 
 /* C) Functions to edit for custom background expansion: */
-/* Note: to use these functions in your new model, you should initialise a spline with H(a) - run hubble_init : see SpecialFunctions.cpp
+/* Note: to use these functions in your new model, you should initialise a spline with H(a) - run hubble_init : see SpecialFunctions.cpp */
 
 // bespokehub : Normalised Hubble expansion: H(a)/H0 (this can involve a solution to some ODE)
 // bespokehubd : aH dH/da / H0^2
