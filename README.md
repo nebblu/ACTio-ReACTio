@@ -5,16 +5,16 @@
 
 ## Table of contents: 
 
-1. [Introduction](https://github.com/nebblu/ACTio-ReACTio#introduction)
-2. [Requirements](https://github.com/nebblu/ACTio-ReACTio#requirements)
-3. [Installation](https://github.com/nebblu/ACTio-ReACTio#installation)
-4. [Running ReACT](https://github.com/nebblu/ACTio-ReACTio#running-react)
-5. [Models of gravity and dark energy](https://github.com/nebblu/ACTio-ReACTio#available-models)
-6. [Adding in new models](https://github.com/nebblu/ACTio-ReACTio#adding-in-new-models)
-7. [Parameter description](https://github.com/nebblu/ACTio-ReACTio#parameters)
-8. [Citation](https://github.com/nebblu/ACTio-ReACTio#citation)
-9. [Notes](https://github.com/nebblu/ACTio-ReACTio#notes)
-10. [What's new?](https://github.com/nebblu/ACTio-ReACTio#what-is-new)
+1. [Introduction](https://github.com/nebblu/ACTio-ReACTio#1-introduction)
+2. [Requirements](https://github.com/nebblu/ACTio-ReACTio#2-requirements)
+3. [Installation](https://github.com/nebblu/ACTio-ReACTio#3-installation)
+4. [Running ReACT](https://github.com/nebblu/ACTio-ReACTio#4-running-react)
+5. [Models of gravity and dark energy](https://github.com/nebblu/ACTio-ReACTio#5-available-models)
+6. [Adding in new models](https://github.com/nebblu/ACTio-ReACTio#6-adding-in-new-models)
+7. [Parameter description](https://github.com/nebblu/ACTio-ReACTio#7-parameters)
+8. [Citation](https://github.com/nebblu/ACTio-ReACTio#8-citation)
+9. [Notes](https://github.com/nebblu/ACTio-ReACTio#9-notes)
+10. [What's new?](https://github.com/nebblu/ACTio-ReACTio#10-what-is-new)
 
 
 ## 1. Introduction
