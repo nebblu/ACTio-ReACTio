@@ -222,8 +222,8 @@ The pyreact wrapper allows the C++ code (the native language of ReACT) to be cal
 ###  C++
 One can also run ReACT and MG-Copter in their native C++. Again, a number of example output C++ scripts have been included in `reactions/examples` as well as a number of cosmologies in `reactions/examples/transfers`. Specifically we have included : 
 
-* actio_reactio_phen.cpp : Example code to output the reaction and halo spectra for EFTofDE linear & phenomenological nonlinear modifications (see [this section](https://github.com/nebblu/ACTio-ReACTio#6-adding-in-new-models)).
-* actio_reactio_ppf.cpp : Example code to output the reaction and halo spectra for EFTofDE linear & PPF parametrised nonlinear modifications (see [this section](https://github.com/nebblu/ACTio-ReACTio#adding-in-new-models)).
+* actio_reactio_phen.cpp : Example code to output the reaction and halo spectra for EFTofDE linear & phenomenological nonlinear modifications (see [this section](https://github.com/nebblu/ACTio-ReACTio#5-available-models)).
+* actio_reactio_ppf.cpp : Example code to output the reaction and halo spectra for EFTofDE linear & PPF parametrised nonlinear modifications (see [this section](https://github.com/nebblu/ACTio-ReACTio#5-available-models)).
 * reaction_mnu.cpp : Example code to output the reaction and halo spectra for beyond LCDM physics & massive neutrinos.
 * halo_ps.cpp : Example code to output the halo model powerspectrum.
 * spt_rsd.cpp : Example code to output the 1-loop powerspectrum in real and redshift space.
