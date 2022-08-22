@@ -222,8 +222,8 @@ The pyreact wrapper allows the C++ code (the native language of ReACT) to be cal
 ###  C++
 One can also run ReACT and MG-Copter in their native C++. Again, a number of example output C++ scripts have been included in `reactions/examples` as well as a number of cosmologies in `reactions/examples/transfers`. Specifically we have included : 
 
-* actio_reactio_phen.cpp : Example code to output the reaction and halo spectra for EFTofDE linear & phenomenological nonlinear modifications (see [this section](https://github.com/nebblu/ACTio-ReACTio#adding-in-models)).
-* actio_reactio_ppf.cpp : Example code to output the reaction and halo spectra for EFTofDE linear & PPF parametrised nonlinear modifications (see [this section](https://github.com/nebblu/ACTio-ReACTio#adding-in-models)).
+* actio_reactio_phen.cpp : Example code to output the reaction and halo spectra for EFTofDE linear & phenomenological nonlinear modifications (see [this section](https://github.com/nebblu/ACTio-ReACTio#6-adding-in-new-models)).
+* actio_reactio_ppf.cpp : Example code to output the reaction and halo spectra for EFTofDE linear & PPF parametrised nonlinear modifications (see [this section](https://github.com/nebblu/ACTio-ReACTio#adding-in-new-models)).
 * reaction_mnu.cpp : Example code to output the reaction and halo spectra for beyond LCDM physics & massive neutrinos.
 * halo_ps.cpp : Example code to output the halo model powerspectrum.
 * spt_rsd.cpp : Example code to output the 1-loop powerspectrum in real and redshift space.
@@ -353,7 +353,7 @@ If you want to add in this model to the Pyreact wrapper, you will also need to a
 
 **General parameters** 
 
-**model** Selects which theoretical model is to be applied (see section: [Models of gravity and dark energy](https://github.com/nebblu/ACTio-ReACTio#adding-in-models)). 
+**model** Selects which theoretical model is to be applied (see section: [Models of gravity and dark energy](https://github.com/nebblu/ACTio-ReACTio#5-available-models)). 
 
 **mass_loop** is the number of mass bins to be sampled over the range  5<Log10[M]<20, M in solar masses. Default is 30. 
 
@@ -377,7 +377,7 @@ If you want to add in this model to the Pyreact wrapper, you will also need to a
 
 ** Specific to the compute_reaction_ext function - halo model reaction function for more general theories ** 
 
-**extpars** array of theory parameters (see section: [Models of gravity and dark energy](https://github.com/nebblu/ACTio-ReACTio#adding-in-models)). 
+**extpars** array of theory parameters (see section: [Models of gravity and dark energy](https://github.com/nebblu/ACTio-ReACTio#5-available-models)). 
 
 ** Specific to the compute_reaction_nu_ext function - for massive neutrino cosmologies ** 
 
