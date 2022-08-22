@@ -213,6 +213,7 @@ The pyreact wrapper allows the C++ code (the native language of ReACT) to be cal
 
 * pyreact_demo.ipynb : Demonstrates the basic halo model reaction [2005.12184](https://arxiv.org/abs/2005.12184).
 * pyreact_demo-eft.ipynb : Demonstrates the implementation of the EFTofDE with a screened and unscreened case. 
+* pyreact_demo-fofr.ipynb : Demonstrates the implementation of various parametrisations for beyond LCDM physics against the exact solution in Hu-Sawicki f(R).
 * pyreact_demo-neutrinos.ipynb : Demonstrates the implementation of the massive neutrinos halo model reaction [2105.12114](https://arxiv.org/abs/2105.12114).
 * pyreact_demo-rsd.ipynb : Demonstrates the implementation of the redshift space power spectrum multipoles [1606.02520](https://arxiv.org/abs/1606.02520).
 * pyreact_demo-bspt.ipynb : Demonstrates the implementation of the real space bispectrum [1808.01120](https://arxiv.org/abs/1808.01120).
