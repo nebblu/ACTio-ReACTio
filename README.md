@@ -268,7 +268,7 @@ These models assume the [effective field theory of dark energy](https://arxiv.or
 
 * **extpars[0-4]** = $\alpha_{K0} , \alpha_{B0} , \alpha_{M0} , \alpha_{T0} , M_0$ , where the `0` indicates the value today and $a M_0=\log(M^2/m_P^2)$ where $m_P^2$ is the Planck mass. 
 
-Models assuming $k \rightarrow \infty$, limit in linear modification: 
+Models assuming the small scale (large k) limit in linear modification (see for example Eq.26 of [this reference](https://arxiv.org/abs/1606.05339))
 
 7. eftppf :  EFTofDE with a [post parametrised friedmannian (PPF)](https://arxiv.org/abs/1608.00522) $G_{eff,non-linear}$ in spherical collapse equations. **extpars[5-11]** = $p_1,...,p_7$. 
 8. eftus :  EFTofDE without screening, i.e. $G_{eff, non-linear}$ = $G_{eff,linear}$.  
@@ -358,43 +358,43 @@ If you want to add in this model to the Pyreact wrapper, you will also need to a
 
 **General parameters** 
 
-**model** Selects which theoretical model is to be applied (see section: [Models of gravity and dark energy](https://github.com/nebblu/ACTio-ReACTio#5-available-models)). 
+* **model** Selects which theoretical model is to be applied (see section: [Models of gravity and dark energy](https://github.com/nebblu/ACTio-ReACTio#5-available-models)). 
 
-**mass_loop** is the number of mass bins to be sampled over the range  5<Log10[M]<20, M in solar masses. Default is 30. 
+* **mass_loop** is the number of mass bins to be sampled over the range  5<Log10[M]<20, M in solar masses. Default is 30. 
 
-**is_transfer** Is the input Pk a transfer function or power spectrum? Default is linear power spectrum (false value). 
+* **is_transfer** Is the input Pk a transfer function or power spectrum? Default is linear power spectrum (false value). 
 
-**h,n_s,omega_m,omega_b** are the base LCDM cosmological parameters assumed in producing the linear power spectrum or transfer function input.
+* **h,n_s,omega_m,omega_b** are the base LCDM cosmological parameters assumed in producing the linear power spectrum or transfer function input.
 
 
 **Specific to the compute_reaction function : basic halo model reaction function for specific theories** 
 
-**sigma_8** is the input power spectrum sigma8 value at z=0.
+* **sigma_8** is the input power spectrum sigma8 value at z=0.
 
-**z** array of output redshifts in ascending order (note that z<2.5 to ensure code stability).
+* **z** array of output redshifts in ascending order (note that z<2.5 to ensure code stability).
 
-**k** array of wave mode outputs in ascending order. 
+* **k** array of wave mode outputs in ascending order. 
 
-**Pk** Linear z=0 LCDM power spectrum array. 
+* **Pk** Linear z=0 LCDM power spectrum array. 
 
-**fR0,Omega_rc,w,wa** values of f(R), DGP, Quintessence or CPL model parameters. 
+* **fR0,Omega_rc,w,wa** values of f(R), DGP, Quintessence or CPL model parameters. 
 
 
 **Specific to the compute_reaction_ext function - halo model reaction function for more general theories** 
 
-**extpars** array of theory parameters (see section: [Models of gravity and dark energy](https://github.com/nebblu/ACTio-ReACTio#5-available-models)). 
+* **extpars** array of theory parameters (see section: [Models of gravity and dark energy](https://github.com/nebblu/ACTio-ReACTio#5-available-models)). 
 
-** Specific to the compute_reaction_nu_ext function - for massive neutrino cosmologies ** 
+**Specific to the compute_reaction_nu_ext function - for massive neutrino cosmologies** 
 
-**omega_nu** massive neutrino density fraction at z=0. 
+* **omega_nu** massive neutrino density fraction at z=0. 
 
-**As** is the primordial spectrum amplitude. Needed to rescale the various input transfer functions
+* **As** is the primordial spectrum amplitude. Needed to rescale the various input transfer functions
 
-**pscale** is the pivot scalar.
+* **pscale** is the pivot scalar.
 
-**Tm,Tcb** are transfer function arrays of z x k for the total matter and total CDM+baryons in the target cosmology. 
+* **Tm,Tcb** are transfer function arrays of z x k for the total matter and total CDM+baryons in the target cosmology. 
 
-**Tcblcdm** is the LCDM CDM+baryon transfer function array of z x k.
+* **Tcblcdm** is the LCDM CDM+baryon transfer function array of z x k.
 
 
 # C++ parameters 
