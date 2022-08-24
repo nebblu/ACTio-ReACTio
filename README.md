@@ -350,6 +350,12 @@ Once you have added in the required functions you need to re-compile the source 
 make && make install
 ```
 
+or for a full re-installation go to the top directory and run
+
+```
+python setup.py clean && python setup.py develop
+```
+
 If you want to add in this model to the Pyreact wrapper, you will also need to add in the nth model in `pyreact/react.py` to the appropriate function you want to call in python. 
 
 ## 7. Parameters
