@@ -630,7 +630,7 @@ double myfricF(double a, double omega0, double extpars[], int model){
 // Linear modification mu
 double mu(double a, double k0, double omega0, double extpars[], int model){
 	double h0 = 1./2997.92458;
-	double var1, var2, alphaofa[5],dalphaofa[5],ddalphaofa[5];
+	double var1, var2, var3, alphaofa[5],dalphaofa[5],ddalphaofa[5];
 	double myA[3],myB[3],myC[4],myf[4];
 	double hub, hubd, hubdd; // hubble and its derivatives
 
@@ -639,7 +639,7 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 	double ca; // background function
 	double R0d; // background Ricci scale factor derivative
 	double betaxi;
-	double tol; // tolerance to avoid singularity in cases 10,11
+	double tol = 1e-15; // tolerance to avoid singularity in cases 7-12
 	double qsa_test; // condition given in Eq.39 of 1712.00444 for QSA to hold
 	double aqsa = 0.01; // scale factor at which we want condition to hold
 	double kqsa = 0.01; // scale at which we want condition to hold
@@ -683,9 +683,20 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 						ct2 = 1. + alphaofa[3];
 
 					  var1 = alphaofa[0] + 3./2.*pow2(alphaofa[1]); // alpha
+
+						// protect against divergences when var1=0
+						if (fabs(var1) <tol) {
+							var1 = tol;
+						}
+
 						var2 = 2./var1*( (1.-	alphaofa[1]/2.) * (alphaofa[1]/2.*ct2 + HA2g(a,omega0,extpars,model)
 																					 + alphaofa[2] - alphaofa[3])
 																					 + a*dalphaofa[1]/2.- HA2g2(a,omega0,extpars,model)); //cs^2
+
+						 // protect against divergences when var2=0
+ 						if (fabs(var2) <tol) {
+ 							var2 = tol;
+ 						}
 
 						 // QSA check for late times
  						qsa_test = k0/(HAg(a,omega0,extpars,model)*h0*a) -var2;
@@ -714,9 +725,20 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 						ct2 = 1. + alphaofa[3];
 
 						var1 = alphaofa[0] + 3./2.*pow2(alphaofa[1]); // alpha
+
+						// protect against divergences when var1=0
+						if (fabs(var1) <tol) {
+							var1 = tol;
+						}
+
 						var2 = 2./var1*( (1.-	alphaofa[1]/2.) * (alphaofa[1]/2.*ct2 + HA2g(a,omega0,extpars,model)
 																					 + alphaofa[2] - alphaofa[3])
 																					 + a*dalphaofa[1]/2.- HA2g2(a,omega0,extpars,model)); //cs^2
+
+						 // protect against divergences when var2=0
+ 						if (fabs(var2) <tol) {
+ 							var2 = tol;
+ 						}
 
 						 // QSA check for late times
  						qsa_test = k0/(HAg(a,omega0,extpars,model)*h0*a) -var2;
@@ -745,9 +767,20 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 						ct2 = 1. + alphaofa[3];
 
 						var1 = alphaofa[0] + 3./2.*pow2(alphaofa[1]); // alpha
+
+						// protect against divergences when var1=0
+						if (fabs(var1) <tol) {
+							var1 = tol;
+						}
+
 						var2 = 2./var1*( (1.-	alphaofa[1]/2.) * (alphaofa[1]/2.*ct2 + HA2g(a,omega0,extpars,model)
 																					 + alphaofa[2] - alphaofa[3])
 																					 + a*dalphaofa[1]/2.- HA2g2(a,omega0,extpars,model)); //cs^2
+
+						 // protect against divergences when var2=0
+ 						if (fabs(var2) <tol) {
+ 							var2 = tol;
+ 						}
 
 						 // QSA check for late times
  						qsa_test = k0/(HAg(a,omega0,extpars,model)*h0*a) -var2;
@@ -788,6 +821,12 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 						ct2 = 1. + alphaofa[3];
 
 						var1 = alphaofa[0] + 3./2.*pow2(alphaofa[1]); // alpha
+
+						// protect against divergences when var1=0
+						if (fabs(var1) <tol) {
+							var1 = tol;
+						}
+
 						var2 = 2./var1*( (1.-	alphaofa[1]/2.) * (alphaofa[1]/2.*ct2 + HA2g(a,omega0,extpars,model)
 																					 + alphaofa[2] - alphaofa[3])
 																					 + a*dalphaofa[1]/2.- HA2g2(a,omega0,extpars,model)); //cs^2
@@ -840,13 +879,13 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 						myf[2] = myA[0]*(myB[2]*myC[1]-myB[0]*myC[2]) + myA[1]*(myB[0]*myC[0]-myB[1]*myC[1]) + myA[2]*(myB[1]*myC[2]-myB[2]*myC[0]);
 						myf[3] = myC[3]*(myA[2]*myB[1] - myA[0]*myB[0]);
 
-						var1 = pow2(k0/a);
+						var3 = pow2(k0/a);
 						// avoid singularity by shifting denominator by small amount
 						tol = 1e-20;
-						if (fabs(myf[2]*var1 + myf[3])<tol) {
+						if (fabs(myf[2]*var3 + myf[3])<tol) {
 							myf[3]*=0.001;
 						}
-						return 2./alphaofa[4]  *  (myf[0]*var1 + myf[1] ) / (myf[2]*var1 + myf[3]);
+						return 2./alphaofa[4]  *  (myf[0]*var3 + myf[1] ) / (myf[2]*var3 + myf[3]);
 
 
 			case 11:
@@ -878,9 +917,20 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 						ct2 = 1. + alphaofa[3];
 
 						var1 = alphaofa[0] + 3./2.*pow2(alphaofa[1]); // alpha
+
+						// protect against divergences when var1=0
+						if (fabs(var1) <tol) {
+							var1 = tol;
+						}
+
 						var2 = 2./var1*( (1.-	alphaofa[1]/2.) * (alphaofa[1]/2.*ct2 + HA2g(a,omega0,extpars,model)
 																					 + alphaofa[2] - alphaofa[3])
 																					 + a*dalphaofa[1]/2.- HA2g2(a,omega0,extpars,model)); //cs^2
+
+						 // protect against divergences when var2=0
+ 						if (fabs(var2) <tol) {
+ 							var2 = tol;
+ 						}
 
 						// QSA check for late times
 						qsa_test = k0/(HAg(a,omega0,extpars,model)*h0*a) -var2;
@@ -932,13 +982,13 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 						myf[2] = myA[0]*(myB[2]*myC[1]-myB[0]*myC[2]) + myA[1]*(myB[0]*myC[0]-myB[1]*myC[1]) + myA[2]*(myB[1]*myC[2]-myB[2]*myC[0]);
 						myf[3] = myC[3]*(myA[2]*myB[1] - myA[0]*myB[0]);
 
-						var1 = pow2(k0/a);
+						var3 = pow2(k0/a);
 						tol = 1e-20;
-						if (fabs(myf[2]*var1 + myf[3])<tol) {
+						if (fabs(myf[2]*var3 + myf[3])<tol) {
 							myf[3]*=0.001;
 						}
 
-						return 2./alphaofa[4]  *  (myf[0]*var1 + myf[1]) / (myf[2]*var1 + myf[3]);
+						return 2./alphaofa[4]  *  (myf[0]*var3 + myf[1]) / (myf[2]*var3 + myf[3]);
 
 
 				case 12:
@@ -971,9 +1021,20 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 					ct2 = 1. + alphaofa[3];
 
 					var1 = alphaofa[0] + 3./2.*pow2(alphaofa[1]); // alpha
+
+					// protect against divergences when var1=0
+					if (fabs(var1) <tol) {
+						var1 = tol;
+					}
+
 					var2 = 2./var1*( (1.-	alphaofa[1]/2.) * (alphaofa[1]/2.*ct2 + HA2g(a,omega0,extpars,model)
 																				 + alphaofa[2] - alphaofa[3])
 																				 + a*dalphaofa[1]/2.- HA2g2(a,omega0,extpars,model)); //cs^2
+
+				 // protect against divergences when var2=0
+					if (fabs(var2) <tol) {
+						var2 = tol;
+					}
 
 					// QSA check for late times
 					qsa_test = k0/(HAg(a,omega0,extpars,model)*h0*a) -var2;
@@ -1025,13 +1086,13 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 					myf[2] = myA[0]*(myB[2]*myC[1]-myB[0]*myC[2]) + myA[1]*(myB[0]*myC[0]-myB[1]*myC[1]) + myA[2]*(myB[1]*myC[2]-myB[2]*myC[0]);
 					myf[3] = myC[3]*(myA[2]*myB[1] - myA[0]*myB[0]);
 
-					var1 = pow2(k0/a);
+					var3 = pow2(k0/a);
 					tol = 1e-20;
-					if (fabs(myf[2]*var1 + myf[3])<tol) {
+					if (fabs(myf[2]*var3 + myf[3])<tol) {
 						myf[3]*=0.001;
 					}
 
-					return 2./alphaofa[4]  *  (myf[0]*var1 + myf[1]) / (myf[2]*var1 + myf[3]);
+					return 2./alphaofa[4]  *  (myf[0]*var3 + myf[1]) / (myf[2]*var3 + myf[3]);
 
 		default:
 				warning("BeyondLCDM: invalid model choice, model = %d \n", model);
