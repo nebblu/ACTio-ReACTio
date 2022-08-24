@@ -260,13 +260,15 @@ In Pyreact we currently have the following models and model parameters
 2. f(r) : [Hu-Sawicki f(R)](https://arxiv.org/abs/0705.1158). **extpars[0]** = $f_{R0}$. 
 3. dgp : normal branch of [DGP gravity](https://arxiv.org/abs/hep-th/0005016). **extpars[0]** = $\Omega_{rc}$. 
 4. quintessence : Quintessence. **extpars[0]** = $w_0$.
-5. cpl : [CPL evolving dark energy](https://arxiv.org/abs/gr-qc/0009008) $w = w_0 + (1-a)w_a$ . **extpars[0-1]**=  $\{w_0,w_a\}$.
+5. cpl : [CPL evolving dark energy](https://arxiv.org/abs/gr-qc/0009008) $w = w_0 + (1-a)w_a$ . **extpars[0-1]**=  $w_0,w_a$.
 6. ds : [Dark Scattering with CPL background](https://arxiv.org/abs/1605.05623). **extpars[0-2]** = $w_0,w_a,\xi*h$.
 
 ### Parametrised theory (all assume no 2nd and 3rd order modifications to the Poisson equation )
-These models assume the [effective field theory of dark energy](https://arxiv.org/abs/1907.03150v2) (EFTofDE) at the background and linear level. We have **extpars[0-4]**  = $\alpha_{K0},\alpha_{B0},\alpha_{M0},\alpha_{T0},M^2/m_P^2$, where the `0` indicates the value today and $m_P^2$ is the Planck mass. 
+These models assume the [effective field theory of dark energy](https://arxiv.org/abs/1907.03150v2) (EFTofDE) at the background and linear level. We have
 
-Models assuming $k\rightarrow \infty$ limit in linear modification.. 
+* **extpars[0-4]** = $\alpha_{K0} , \alpha_{B0} , \alpha_{M0} , \alpha_{T0} , M_0$ , where the `0` indicates the value today and $a M_0=\log(M^2/m_P^2)$ where $m_P^2$ is the Planck mass. 
+
+Models assuming $k \rightarrow \infty$, limit in linear modification: 
 
 7. eftppf :  EFTofDE with a [post parametrised friedmannian (PPF)](https://arxiv.org/abs/1608.00522) $G_{eff,non-linear}$ in spherical collapse equations. **extpars[5-11]** = $p_1,...,p_7$. 
 8. eftus :  EFTofDE without screening, i.e. $G_{eff, non-linear}$ = $G_{eff,linear}$.  
@@ -278,7 +280,10 @@ Full k-dependence in linear modification:
 11. fulleftus : same as case 8
 12. fullefterf : EFTofDE with a phenomenological $G_{eff,non-linear}$ in spherical collapse equations. **extpars[5-8]** = $p_1,...,p_4$. See [this paper]() for details.
 
-**Note** For EFTofDE models (7-12), the scale factor dependence, 1st and 2nd scale factor derivatives of the alpha functions must be specified in `reactions/src/BeyondLCDM.cpp` - see `alphai_eft`, `dalphai_eft` and `ddalphai_eft` functions respectively. The default is $\alpha_i(a) = a \alpha_{i,0}$.
+**Note** For EFTofDE models (7-12), the scale factor dependence, 1st and 2nd scale factor derivatives of the alpha functions must be specified in `reactions/src/BeyondLCDM.cpp` - see `alphai_eft`, `dalphai_eft` and `ddalphai_eft` functions respectively. The default time dependencies are
+
+* $\alpha_i(a)=a\alpha_{i,0}$
+* $M^2/m^2_P=e^{M_0*a}$ 
 
 In the C++ code the model is specified as the integer value of each model in the last argument of the functions , e.g. for the 1-loop real space power spectrum in f(R) gravity we would specify the following functional call 
 
@@ -362,7 +367,7 @@ If you want to add in this model to the Pyreact wrapper, you will also need to a
 **h,n_s,omega_m,omega_b** are the base LCDM cosmological parameters assumed in producing the linear power spectrum or transfer function input.
 
 
-** Specific to the compute_reaction function : basic halo model reaction function for specific theories ** 
+**Specific to the compute_reaction function : basic halo model reaction function for specific theories** 
 
 **sigma_8** is the input power spectrum sigma8 value at z=0.
 
@@ -375,7 +380,7 @@ If you want to add in this model to the Pyreact wrapper, you will also need to a
 **fR0,Omega_rc,w,wa** values of f(R), DGP, Quintessence or CPL model parameters. 
 
 
-** Specific to the compute_reaction_ext function - halo model reaction function for more general theories ** 
+**Specific to the compute_reaction_ext function - halo model reaction function for more general theories** 
 
 **extpars** array of theory parameters (see section: [Models of gravity and dark energy](https://github.com/nebblu/ACTio-ReACTio#5-available-models)). 
 
