@@ -452,7 +452,7 @@ double HAg(double a, double omega0, double extpars[], int model){
 }
 }
 
-/* Normalised time derivative - specify form or use */
+/* Normalised time derivative  */
 
 
 //  (dH/dt / H0^2) = aH dH/da / H0^2
@@ -522,7 +522,7 @@ double HA1g(double a, double omega0, double extpars[], int model){
 }
 }
 
-/* Normalised time derivative - specify form or use */
+/* Normalised 2nd time derivative  */
 
 //d^2 H(a) / da^2  /H0
 double HA3g(double a, double omega0, double extpars[], int model){
@@ -550,7 +550,7 @@ double HA3g(double a, double omega0, double extpars[], int model){
 }
 
 
-// some useful functions of Hubble for SpecialFunctions.cpp
+// some useful functions of Hubble 
 
 //HA2g = -dH/dt/H^2 = -a dH/da / H
 double HA2g(double a, double omega0, double extpars[], int model){
