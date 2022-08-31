@@ -153,7 +153,7 @@ extern "C" {
         IOW iow;
 
         /* array set up for 1-loop spt splining over z and reaction splining over k */
-        int loop_nk = 60; // number of bins between kvals[0] and kvals[Nk-1]
+        int loop_nk = 150; // number of bins between kvals[0] and kvals[Nk-1]
         double ploopr[*N_z],ploopp[*N_z],react_tab[loop_nk],k2val[loop_nk];
         /* declare splines */
         Spline mysr,mysp,myreact;
@@ -365,7 +365,7 @@ extern "C" {
     IOW iow;
 
     /* array set up for 1-loop spt splining over z and reaction splining over k */
-    int loop_nk = 60; // number of bins between kvals[0] and kvals[Nk-1]
+    int loop_nk = 150; // number of bins between kvals[0] and kvals[Nk-1]
     double ploopr[*N_z],ploopp[*N_z],react_tab[loop_nk],k2val[loop_nk],pseudo_tab[loop_nk];
     /* declare splines */
     Spline mysr,mysp,myreact,mypseudo;
@@ -755,7 +755,7 @@ int compute_reaction_nu_ext(int* N_pk_m, double* torpk_m,
 
 
     /* PART 3: main loop to initialise reaction */
-    int loop_nk = 60;
+    int loop_nk = 150;
     double react_tab[loop_nk],k2val[loop_nk],pseudo_tab[loop_nk];
 
     for(int j = 0; j<*N_z; j++) {
