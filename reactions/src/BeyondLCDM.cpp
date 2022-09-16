@@ -61,10 +61,10 @@ initn_rsd  */
 // 4: quintessence
 // 5: CPL
 // 6: CPL with dark scattering
-// 7: EFTofDE with mu in k->infinity limit & PPF (1608.00522) G_eff for non-linear scales [assumes gamma2 = gamma3 = 0]
+// 7: EFTofDE with mu in k->infinity limit & nPPF (1608.00522) G_eff for non-linear scales [assumes gamma2 = gamma3 = 0]
 // 8: EFTofDE with mu in k->infinity limit & linear G_eff for non-linear scales [assumes gamma2 = gamma3 = 0]
 // 9: EFTofDE with mu in k->infinity limit & G_Newton for non-linear scales [assumes gamma2 = gamma3 = 0]
-// 10: EFTofDE with full mu & PPF (1608.00522) G_eff for non-linear scales [assumes gamma2 = gamma3 = 0]
+// 10: EFTofDE with full mu & nPPF (1608.00522) G_eff for non-linear scales [assumes gamma2 = gamma3 = 0]
 // 11: EFTofDE with full mu & linear G_eff for non-linear scales [assumes gamma2 = gamma3 = 0]
 // 12: EFTofDE with full mu & Phenomenological G_eff for non-linear scales [assumes gamma2 = gamma3 = 0]
 
@@ -89,7 +89,7 @@ initn_rsd  */
 // 4: M^2/M_planck^2
 
 // for models 7 & 10:
-// 5+ : PPF parameters (see eq 5.3 of 1608.00522)
+// 5+ : nPPF parameters (see eq 5.3 of 1608.00522)
 
 // for models 12:
 // 5: par1 : size of screening scale
@@ -151,7 +151,7 @@ double riccibackground(double a, double omega0, double extpars[], int model){
 	// solutions currently assume LCDM
 	switch(model) {
 		case 10:
-		/* EFTofDE with PPF and full k-dependence in linear modification */
+		/* EFTofDE with nPPF and full k-dependence in linear modification */
 		return  3. * pow2(h0) * (omega0 + 4. * a3 * (1. - omega0)) / a3;
 
 		case 11:
@@ -176,7 +176,7 @@ double riccibackgroundp(double a, double omega0, double extpars[], int model){
 		double a4 = pow(a,4);
 		switch(model) {
 			case 10:
-			/* EFTofDE with PPF and full k-dependence in linear modification */
+			/* EFTofDE with nPPF and full k-dependence in linear modification */
 			return  -9.*pow2(h0)*omega0/a4;
 
 			case 11:
@@ -327,7 +327,7 @@ double bespokehub(double a, double omega0, double extpars[], int model){
 	/* Insert solver */
 	switch(model) {
 		case 10:
-		/* EFTofDE with PPF and full k-dependence in linear modification */
+		/* EFTofDE with nPPF and full k-dependence in linear modification */
 		//can change to some solution for H in terms of extra parameters
 			return HA(a,omega0);
 
@@ -348,7 +348,7 @@ double bespokehubd(double a, double omega0, double extpars[], int model){
 	/* Insert solver */
 	switch(model) {
 		case 10:
-		/* EFTofDE with PPF and full k-dependence in linear modification */
+		/* EFTofDE with nPPF and full k-dependence in linear modification */
 		//can change to some solution for H in terms of extra parameters
 			return HA1(a,omega0);
 
@@ -369,7 +369,7 @@ double bespokehubdd(double a, double omega0, double extpars[], int model){
 	double hub;
 	switch(model) {
 		case 10:
-		/* EFTofDE with PPF and full k-dependence in linear modification */
+		/* EFTofDE with nPPF and full k-dependence in linear modification */
 		   hub = HA(a,omega0); // H / H0
 			return 3.*omega0*(-12.*(omega0-1.)/(4.*pow2(hub)) + 5.)/(4.*pow(a,5)*hub) ;
 
@@ -423,7 +423,7 @@ double HAg(double a, double omega0, double extpars[], int model){
 			return  sqrt(omega0/pow(a,3)+omegaL);
 
 			case 7:
-			/* EFTofDE: PPF - set to LCDM background for now  */
+			/* EFTofDE: nPPF - set to LCDM background for now  */
 			return HA( a, omega0);
 
 			case 8:
@@ -435,7 +435,7 @@ double HAg(double a, double omega0, double extpars[], int model){
 			return  HA( a, omega0);
 
 			case 10:
-			/* EFTofDE with PPF and full k-dependence in linear modification */
+			/* EFTofDE with nPPF and full k-dependence in linear modification */
 			return HA( a, omega0); //myhubble(a);
 
 			case 11:
@@ -493,7 +493,7 @@ double HA1g(double a, double omega0, double extpars[], int model){
 	  return -3.*omega0/(2.*pow(a,3)) + (A+3.*a*extpars[1])*omegaL/2.;
 
 		case 7:
-		/* EFTofDE: PPF - set to LCDM background for now  */
+		/* EFTofDE: nPPF - set to LCDM background for now  */
 		return HA1( a, omega0);
 
 		case 8:
@@ -505,7 +505,7 @@ double HA1g(double a, double omega0, double extpars[], int model){
 		return HA1( a, omega0);
 
 		case 10:
-		/* EFTofDE with PPF and full k-dependence in linear modification */
+		/* EFTofDE with nPPF and full k-dependence in linear modification */
 		return HA1( a, omega0);//myhubbled(a);
 
 		case 11:
@@ -529,7 +529,7 @@ double HA3g(double a, double omega0, double extpars[], int model){
 	double hub;
 	switch(model) {
 		case 10:
-		/* EFTofDE with PPF and full k-dependence in linear modification */
+		/* EFTofDE with nPPF and full k-dependence in linear modification */
 		hub = HA(a,omega0); // H / H0
 		return 3.*omega0*(-12.*(omega0-1.)/(4.*pow2(hub)) + 5.)/(4.*pow(a,5)*hub) ;
 
@@ -550,7 +550,7 @@ double HA3g(double a, double omega0, double extpars[], int model){
 }
 
 
-// some useful functions of Hubble 
+// some useful functions of Hubble
 
 //HA2g = -dH/dt/H^2 = -a dH/da / H
 double HA2g(double a, double omega0, double extpars[], int model){
@@ -591,7 +591,7 @@ double myfricF(double a, double omega0, double extpars[], int model){
 						return  (1.+ (extpars[0]+(1.-a)*extpars[1])) * omegaL * extpars[2] * 0.0974655;
 						// = (1+w(a)) * Omega_L * p3 * 3 H / (8 \pi G) * unit conversion (p3 = xi * h ) : Omega_L = Omega_L,0 * H_0^2 / H^2 * evolution
 		case 7:
-		/* EFTofDE: PPF */
+		/* EFTofDE: nPPF */
 					return 0.;
 		case 8:
 		/* EFTofDE: unscreened approx */
@@ -600,7 +600,7 @@ double myfricF(double a, double omega0, double extpars[], int model){
 		/* EFTofDE: superscreened approx */
 					return 0.;
 		case 10:
-		/* EFTofDE with PPF and full k-dependence in linear modification */
+		/* EFTofDE with nPPF and full k-dependence in linear modification */
 					return 0.;
 		case 11:
 		/* EFTofDE: unscreened approx and full k-dependence in linear modification */
@@ -666,7 +666,7 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 						return  1. ;
 
 		/* k->infinity limit of EFTofDE. See Eq. 26 of 1606.05339*/
-		// 7-9: PPF, unscreened, superscreened assuming LCDM background and k->infinity limit
+		// 7-9: nPPF, unscreened, superscreened assuming LCDM background and k->infinity limit
 		case 7:
 						// 0: alpha_K(a)
 						// 1: alpha_B(a)
@@ -793,7 +793,7 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 						return (1. + alphaofa[3] + betaxi) / (alphaofa[4]);
 
 		case 10:
-					/* EFTofDE with PPF and full k-dependence in linear modification */
+					/* EFTofDE with nPPF and full k-dependence in linear modification */
 						// 0: alpha_K(a)
 						// 1: alpha_B(a)
 						// 2: alpha_M(a)
@@ -1135,7 +1135,7 @@ double gamma2(double a, double omega0, double k0, double k1, double k2, double u
 		/* Dark Scattering with CPL  */
 						return  0.;
 		case 7:
-		/* EFTofDE PPF*/
+		/* EFTofDE nPPF*/
 						return  0.;
 		case 8:
 		/* EFTofDE - unscreened  approximation  */
@@ -1144,7 +1144,7 @@ double gamma2(double a, double omega0, double k0, double k1, double k2, double u
 		/* EFTofDE - superscreened approximation  */
 						return  0.;
 		case 10:
-		/* EFTofDE with PPF and full k-dependence in linear modification */
+		/* EFTofDE with nPPF and full k-dependence in linear modification */
 					return 0.;
 		case 11:
 		/* EFTofDE - unscreened approximation with full k-dependence in linear modification */
@@ -1205,7 +1205,7 @@ double gamma3(double a, double omega0, double k0, double k1, double k2, double k
 		/* Dark Scattering with CPL  */
 						return  0. ;
 		case 7:
-		/* EFTofDE PPF  */
+		/* EFTofDE nPPF  */
 						return  0. ;
 		case 8:
 		/* EFTofDE - unscreened  approximation  */
@@ -1280,14 +1280,14 @@ double mymgF(double a, double yh, double yenv, double Rth, double omega0, double
 						return  0. ;
 
 			case 7:
-			/* EFTofDE - PPF */
+			/* EFTofDE - nPPF */
 			// extpars[i]:
 			// 0: alpha_K(a)
 			// 1: alpha_B(a)
 			// 2: alpha_M(a)
 			// 3: alpha_T(a)
 			// 4: M^2/M_planck^2
-			// 5-11 : p1-p7
+			// 5-12 : p1-p8
 
 					var1 = extpars[5]/(extpars[5]-1.)*extpars[7]; // a
 					Mvir = pow3(Rth/0.1)*5.*omega0/Gnewton; // virial mass x Gnewton - see definition in scol_init in HALO.cpp
@@ -1296,7 +1296,12 @@ double mymgF(double a, double yh, double yenv, double Rth, double omega0, double
 
 					xm3 = pow(term1/yh,var1); // (y0/yh)^a
 
-					return extpars[5]*extpars[6]*(pow(1.+ xm3, 1./extpars[5])-1.) / xm3 ;
+					// Linear modification
+					var2 = pow(10.,extpars[12])/ (yh * pow2(a) * Rth); // Fourier transform of Rth with some calibration
+					term3 = mu(a,var2,omega0,extpars,model)-1.; // Linear G_effective
+
+
+					return extpars[5]*extpars[6]*(pow(1.+ xm3, 1./extpars[5])-1.) / xm3 * term3 ;
 
 			case 8:
 			/* EFTofDE - unscreened approximation  */
@@ -1307,14 +1312,14 @@ double mymgF(double a, double yh, double yenv, double Rth, double omega0, double
 					return 0.;
 
 			case 10:
-			/* EFTofDE with PPF and full k-dependence in linear modification */
+			/* EFTofDE with nPPF and full k-dependence in linear modification */
 			// extpars[i]:
 			// 0: alpha_K(a)
 			// 1: alpha_B(a)
 			// 2: alpha_M(a)
 			// 3: alpha_T(a)
 			// 4: M^2/M_planck^2
-			// 5-11 : p1-p7
+			// 5-12 : p1-p8
 
 					var1 = extpars[5]/(extpars[5]-1.)*extpars[7]; // a
 					Mvir = pow3(Rth/0.1)*5.*omega0/Gnewton; // virial mass x Gnewton - see definition in scol_init in HALO.cpp
@@ -1323,7 +1328,11 @@ double mymgF(double a, double yh, double yenv, double Rth, double omega0, double
 
 					xm3 = pow(term1/yh,var1); // (y0/yh)^a
 
-			    return extpars[5]*extpars[6]*(pow(1.+ xm3, 1./extpars[5])-1.) / xm3 ;
+					// Linear modification
+					var2 = pow(10.,extpars[12])/ (yh * pow2(a) * Rth); // Fourier transform of Rth with some calibration
+					term3 = mu(a,var2,omega0,extpars,model)-1.; // Linear G_effective
+
+			    return extpars[5]*extpars[6]*(pow(1.+ xm3, 1./extpars[5])-1.) / xm3 * term3;
 
 			case 11:
 			/* EFTofDE with full k-dependence and unscreened approximation  */
@@ -1384,7 +1393,7 @@ double  WEFF(double a, double omega0, double extpars[], int model){
 		 return -(1.+3.*(extpars[0]+(1.-a)*extpars[1]))*(h2-omega0/pow3(a));
 
 		 case 7:
-		 /* EFTofDE: k->infinity limit with PPF */
+		 /* EFTofDE: k->infinity limit with nPPF */
 		 return 2.*(1.-omega0);
 
 		 case 8:
@@ -1396,7 +1405,7 @@ double  WEFF(double a, double omega0, double extpars[], int model){
 		 return 2.*(1.-omega0);
 
 		 case 10:
-		 /* EFTofDE: full k dependency assuming LCDM background with PPF approximation */
+		 /* EFTofDE: full k dependency assuming LCDM background with nPPF approximation */
 		 return 2.*(1.-omega0);
 
 		 case 11:
