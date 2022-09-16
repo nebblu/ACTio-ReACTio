@@ -270,7 +270,7 @@ These models assume the [effective field theory of dark energy](https://arxiv.or
 
 Models assuming the small scale (large k) limit in linear modification (see for example Eq.26 of [this reference](https://arxiv.org/abs/1606.05339))
 
-7. eftppf :  EFTofDE with a [post parametrised friedmannian (PPF)](https://arxiv.org/abs/1608.00522) $G_{eff,non-linear}$ in spherical collapse equations. **extpars[5-11]** = $p_1,...,p_7$. 
+7. eftppf :  EFTofDE with a [post parametrised friedmannian (PPF)](https://arxiv.org/abs/1608.00522) $G_{eff,non-linear}$ in spherical collapse equations. **extpars[5-12]** = $p_1,...,p_8$. 
 8. eftus :  EFTofDE without screening, i.e. $G_{eff, non-linear}$ = $G_{eff,linear}$.  
 9. eftss : EFTofDE with superscreening , i.e. $G_{eff, non-linear}$ = $G_{N}$.  
 
