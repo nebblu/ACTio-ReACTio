@@ -799,7 +799,7 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 						// 2: alpha_M(a)
 						// 3: alpha_T(a)
 						// 4: M^2/M_planck^2
-						// 12: c(a) prefactor [needed to set it to 0 manually when assuming a LCDM background]
+						// 19: c(a) prefactor [needed to set it to 0 manually when assuming a LCDM background]
 
 						// Initialise alpha_i (a) and their derivatives
 						for(int i=0; i<5; i++){
@@ -841,7 +841,7 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 						// It then appears as 1/alphaofa[4] in the final result
 
 						// c(a)  background function
-						ca = 	extpars[12]*(- 3.*pow2(h0)*omega0/(2.*pow3(a)*alphaofa[4])
+						ca = 	extpars[19]*(- 3.*pow2(h0)*omega0/(2.*pow3(a)*alphaofa[4])
 									- 1./2.*hub * (a*(ct2*(2.+alphaofa[2]) + a*dalphaofa[3])*hubd
 					  			+ hub*(ct2*((alphaofa[2]-1.)*alphaofa[2] + a*dalphaofa[2]) + 2.*a*alphaofa[2]*dalphaofa[3]
 									+ a*a*ddalphaofa[3])));
@@ -895,7 +895,7 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 						// 2: alpha_M(a)
 						// 3: alpha_T(a)
 						// 4: M^2/M_planck^2
-						// 12: c(a) prefactor [needed to set it to 0 manually when assuming a LCDM background]
+						// 19: c(a) prefactor [needed to set it to 0 manually when assuming a LCDM background]
 
 						// Initialise alpha_i (a) and their derivatives
 						for(int i=0; i<5; i++){
@@ -943,7 +943,7 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 						// It then appears as 1/alphaofa[4] in the final result
 
 						// c(a) background function
-						ca = extpars[12]*(- 3.*pow2(h0)*omega0/(2.*pow3(a)*alphaofa[4])
+						ca = extpars[19]*(- 3.*pow2(h0)*omega0/(2.*pow3(a)*alphaofa[4])
 									- 1./2.*hub * (a*( ct2*(2.+alphaofa[2]) + a*dalphaofa[3])*hubd
 					  			+ hub*(ct2*((alphaofa[2]-1.)*alphaofa[2] + a*dalphaofa[2]) + 2.*a*alphaofa[2]*dalphaofa[3]
 									+ a*a*ddalphaofa[3])));
@@ -999,7 +999,7 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 					// 2: alpha_M(a)
 					// 3: alpha_T(a)
 					// 4: M^2/M_planck^2
-					// 12: c(a) prefactor [needed to set it to 0 manually when assuming a LCDM background]
+					// 19: c(a) prefactor [needed to set it to 0 manually when assuming a LCDM background]
 					//
 					// // Initialise alpha_i (a) and their derivatives
 					for(int i=0; i<5; i++){
@@ -1047,7 +1047,7 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 					// It then appears as 1/alphaofa[4] in the final result
 
 					// c(a) background function
-					ca = extpars[12]*(- 3.*pow2(h0)*omega0/(2.*pow3(a)*alphaofa[4])
+					ca = extpars[19]*(- 3.*pow2(h0)*omega0/(2.*pow3(a)*alphaofa[4])
 								- 1./2.*hub * (a*( ct2*(2.+alphaofa[2]) + a*dalphaofa[3])*hubd
 								+ hub*(ct2*((alphaofa[2]-1.)*alphaofa[2] + a*dalphaofa[2]) + 2.*a*alphaofa[2]*dalphaofa[3]
 								+ a*a*ddalphaofa[3])));
@@ -1287,8 +1287,7 @@ double mymgF(double a, double yh, double yenv, double Rth, double omega0, double
 			// 2: alpha_M(a)
 			// 3: alpha_T(a)
 			// 4: M^2/M_planck^2
-			// 5-11 : p1-p7
-			// 13: p8
+			// 5-12 : p1-p8
 
 					var1 = extpars[5]/(extpars[5]-1.)*extpars[7]; // a
 					Mvir = pow3(Rth/0.1)*5.*omega0/Gnewton; // virial mass x Gnewton - see definition in scol_init in HALO.cpp
@@ -1298,7 +1297,7 @@ double mymgF(double a, double yh, double yenv, double Rth, double omega0, double
 					xm3 = pow(term1/yh,var1); // (y0/yh)^a
 
 					// Linear modification
-					var2 = pow(10.,extpars[13])/ (yh * pow2(a) * Rth); // Fourier transform of Rth with some calibration
+					var2 = pow(10.,extpars[12])/ (yh * pow2(a) * Rth); // Fourier transform of Rth with some calibration
 					term3 = mu(a,var2,omega0,extpars,model)-1.; // Linear G_effective
 
 
@@ -1320,8 +1319,7 @@ double mymgF(double a, double yh, double yenv, double Rth, double omega0, double
 			// 2: alpha_M(a)
 			// 3: alpha_T(a)
 			// 4: M^2/M_planck^2
-			// 5-11 : p1-p7
-			// 13: p8
+			// 5-12 : p1-p8
 
 					var1 = extpars[5]/(extpars[5]-1.)*extpars[7]; // a
 					Mvir = pow3(Rth/0.1)*5.*omega0/Gnewton; // virial mass x Gnewton - see definition in scol_init in HALO.cpp
@@ -1331,7 +1329,7 @@ double mymgF(double a, double yh, double yenv, double Rth, double omega0, double
 					xm3 = pow(term1/yh,var1); // (y0/yh)^a
 
 					// Linear modification
-					var2 = pow(10.,extpars[13])/ (yh * pow2(a) * Rth); // Fourier transform of Rth with some calibration
+					var2 = pow(10.,extpars[12])/ (yh * pow2(a) * Rth); // Fourier transform of Rth with some calibration
 					term3 = mu(a,var2,omega0,extpars,model)-1.; // Linear G_effective
 
 			    return extpars[5]*extpars[6]*(pow(1.+ xm3, 1./extpars[5])-1.) / xm3 * term3;

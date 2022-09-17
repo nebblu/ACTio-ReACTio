@@ -87,6 +87,7 @@ double myp4 = pow(Omega_m,1./3.)*pow(pow(Omega_m+4.*(1.-Omega_m),1./(alpha-1.))*
 double myp5 = -1.;
 double myp6 = 2./(3.*myp3);
 double myp7 = 3./(alpha-4.);
+double myp8 = 5.;
 
 
 //output file name
@@ -158,7 +159,7 @@ double extpars[maxpars];
     extpars[2] = alpham0;
     extpars[3] = alphat0;
     extpars[4] = m2;
-    extpars[12] = c0;
+    extpars[19] = c0;
     // non-linear PPF parameters
     extpars[5] = myp1;
     extpars[6] = myp2;
@@ -167,6 +168,7 @@ double extpars[maxpars];
     extpars[9] = myp5;
     extpars[10] = myp6;
     extpars[11] = myp7;
+    extpars[12] = myp8;
 
     // Load cosmology classes
     Cosmology Cm(h, n_s, Omega_m, Omega_b, As, pscale, ki, Tm);
