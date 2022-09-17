@@ -280,7 +280,7 @@ Full k-dependence in linear modification:
 11. fulleftus : same as case 8
 12. fullefterf : EFTofDE with a phenomenological $G_{eff,non-linear}$ in spherical collapse equations. **extpars[5-8]** = $p_1,...,p_4$. See [this paper]() for details.
 
-**Note** for models 10-12 we use an additional parameter extpars[19] which multiplies c(a). We use this to set $c(a) = 0$ manually if needed. See [this paper]() for more details.
+**Note** for models 10-12 we use an additional parameter extpars[19] which multiplies the EFTofDE background function c(a). We use this to set $c(a) = 0$ manually if needed. See [this paper]() for more details.
 
 **Note** For EFTofDE models (7-12), the scale factor dependence, 1st and 2nd scale factor derivatives of the alpha functions must be specified in `reactions/src/BeyondLCDM.cpp` - see `alphai_eft`, `dalphai_eft` and `ddalphai_eft` functions respectively. The default time dependencies are
 
