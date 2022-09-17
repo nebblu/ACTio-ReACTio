@@ -363,7 +363,7 @@ If you want to add in this model to the Pyreact wrapper, you will also need to a
 
 ## 7. Parameters
 
-# Python parameters 
+### Python parameters 
 
 **General parameters** 
 
@@ -406,7 +406,7 @@ If you want to add in this model to the Pyreact wrapper, you will also need to a
 * **Tcblcdm** is the LCDM CDM+baryon transfer function array of z x k.
 
 
-# C++ parameters 
+### C++ parameters 
 
 **modcamb** tells ReACT whether or not to treat the input transfer function or linear power spectrum file as specified at the target theory and redshift  - true value - or as specified for LCDM z=0 which the code will then rescale using internally computed growth - false value. Default is false as in the original version of the code. 
 
