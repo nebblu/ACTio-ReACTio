@@ -144,7 +144,7 @@ double extpars[maxpars];
     extpars[2] = alpham0;
     extpars[3] = alphat0;
     extpars[4] = m2;
-    extpars[12] = c0;
+    extpars[19] = c0;
     // non-linear
     extpars[5] = myp1;
     extpars[6] = myp2;
