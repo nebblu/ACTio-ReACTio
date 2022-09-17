@@ -261,17 +261,17 @@ inline double alphai_eft(double a, double omega0, double alpha0, int model){
 		case 1:
 				return alpha0*a; // alpha_K(a)
 		case 2:
-			//	return alpha0*a; // alpha_B(a)
-				 return -alpha_m_hs(a,omega0,alpha0); // Hu-Sawicki form
+				return alpha0*a; // alpha_B(a)
+			//	 return -alpha_m_hs(a,omega0,alpha0); // Hu-Sawicki form
 		case 3:
-			//	return alpha0*a; // alpha_M(a)
-				 return alpha_m_hs(a,omega0,alpha0); // Hu-Sawicki form
+				return alpha0*a; // alpha_M(a)
+			//	 return alpha_m_hs(a,omega0,alpha0); // Hu-Sawicki form
 		case 4:
 				return alpha0*a; // alpha_T(a)
 		case 5:
-			//	  return exp(alpha0*a); // M2(a)/m_planck = e^{Integrate[alpha_M / a]}  [We define alpha_M = a (dM^2/da) / M^2]
+				  return exp(alpha0*a); // M2(a)/m_planck = e^{Integrate[alpha_M / a]}  [We define alpha_M = a (dM^2/da) / M^2]
 		//		return Integrate(bind(M2integral, alpha0, omega0, std::placeholders::_1), AMIN , a, 1e-3); // M2(a)/m_planck generic integral of alpha_M/a
-				return (1.+fofR_hs(a,omega0,alpha0)); // Hu-Sawicki form
+		//		return (1.+fofR_hs(a,omega0,alpha0)); // Hu-Sawicki form
 		default:
 				warning("BeyondLCDM: invalid model choice, model = %d \n", model);
 				return 0;
@@ -285,11 +285,11 @@ inline double dalphai_eft(double a, double omega0, double alpha0, int model){
 		case 1:
 				return alpha0; // alpha_K'(a)
 		case 2:
-			//	return alpha0; // alpha_B'(a)
-				return -alpha_md_hs(a,omega0,alpha0);  // Hu-Sawicki form
+				return alpha0; // alpha_B'(a)
+			//	return -alpha_md_hs(a,omega0,alpha0);  // Hu-Sawicki form
 		case 3:
-			//	return alpha0; // alpha_M'(a)
-				return alpha_md_hs(a,omega0,alpha0); // Hu-Sawicki form
+				return alpha0; // alpha_M'(a)
+			//	return alpha_md_hs(a,omega0,alpha0); // Hu-Sawicki form
 		case 4:
 				return alpha0; // alpha_T'(a)
 		case 5:
