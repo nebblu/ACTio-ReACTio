@@ -313,7 +313,7 @@ One can add in new models by going to the source code, `reactions/src/BeyondLCDM
 
 The functions one should consider when adding in a new models are as follows: 
 
-### A) Functions to edit for new general models 
+### A) Functions to edit for new models 
 
 * `HAg` : Normalised Hubble expansion $\frac{H}{H_0}$
 * `HA1g` : Normalised scale factor derivative of Hubble  $aH \frac{dH}{da} \frac{1}{H_0^2}$
@@ -325,7 +325,7 @@ The functions one should consider when adding in a new models are as follows:
 * `WEFF` : Effective dark energy fluid contribution to virial theorem [Needed only for spherical collapse SCOL.cpp, not for 1-loop calculations]
 
 
-### B) Functions to edit for EFTofDE parametrisations needed for mu (cases 10-12):
+### B) Functions to edit for EFTofDE parametrisations (cases 7-12):
 
 * `riccibackgroundp` : scale factor derivative of background Ricci scalar in FRLW
 * `alphai_eft` : scale factor dependence of parameter : $\alpha_i(a)$
