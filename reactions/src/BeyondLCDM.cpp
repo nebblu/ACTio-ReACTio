@@ -1360,7 +1360,7 @@ double mymgF(double a, double yh, double yenv, double Rth, double omega0, double
 			// 5-12 : p1-p8
 
 					var1 = extpars[5]/(extpars[5]-1.)*extpars[7]; // a
-					Mvir = pow3(Rth/0.1)*5.*omega0/Gnewton; // virial mass x Gnewton - see definition in scol_init in vir.cpp
+					Mvir = pow3(Rth/0.1)*5.*omega0/Gnewton; // virial mass x Gnewton - see definition in scol_init in HALO.cpp
 
 					term1 = extpars[8]*pow(a,extpars[9]) * pow(2.*Gnewton*h0*Mvir/pow2(sofl),extpars[10])*pow(yenv/yh,extpars[11]); // y0
 
