@@ -91,7 +91,7 @@ initn_rsd  */
 // for models 7 & 10:
 // 5+ : nPPF parameters (see eq 5.3 of 1608.00522)
 
-// for models 12:
+// for model 12:
 // 5: par1 : size of screening scale
 // 6: mass dependence of screening scale
 // 7: y_environment dependence of screening scale
@@ -446,6 +446,13 @@ double HAg(double a, double omega0, double extpars[], int model){
 			/* EFTofDE: Phenomenological non-linear model */
 			return  HA( a, omega0);
 
+			case 13:
+			/* Minimal model independent : CPL + Gamma + Erf */
+			A = -3.*(1.+extpars[0]+extpars[1]);
+			omegaf = pow(a,A)*exp(3.*(-1.+a)*extpars[1]);
+			omegaL= (1.-omega0)*omegaf;
+			return  sqrt(omega0/pow(a,3)+omegaL);
+
 			default:
 					warning("BeyondLCDM: invalid model choice, model = %d \n", model);
 					return 0;
@@ -515,6 +522,13 @@ double HA1g(double a, double omega0, double extpars[], int model){
 		case 12:
 		/* EFTofDE: Phenomenological non-linear model */
 		return  HA1( a, omega0);
+
+		case 13:
+		/* Minimal model independent : CPL + Gamma + Erf */
+		A = -3.*(1.+extpars[0]+extpars[1]);
+		omegaf = pow(a,A)*exp(3*(-1.+a)*extpars[1]);
+		omegaL= (1.-omega0)*omegaf;
+		return -3.*omega0/(2.*pow(a,3)) + (A+3.*a*extpars[1])*omegaL/2.;
 
 		default:
 				warning("BeyondLCDM: invalid model choice, model = %d \n", model);
@@ -610,6 +624,10 @@ double myfricF(double a, double omega0, double extpars[], int model){
 		/* EFTofDE: Phenomenological non-linear model */
 		return  0.;
 
+		case 13:
+		/* Minimal model independent : CPL + Gamma + Erf */
+		return  0.;
+
 		default:
 					warning("BeyondLCDM: invalid model choice, model = %d \n", model);
 				  return 0;
@@ -634,7 +652,7 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 	double myA[3],myB[3],myC[4],myf[4];
 	double hub, hubd, hubdd; // hubble and its derivatives
 
-	// parameters for cases 7-11:
+	// parameters for cases 7-12:
 	double ct2; // speed of grav waves
 	double ca; // background function
 	double R0d; // background Ricci scale factor derivative
@@ -1094,6 +1112,18 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 
 					return 2./alphaofa[4]  *  (myf[0]*var3 + myf[1]) / (myf[2]*var3 + myf[3]);
 
+
+				case 13:
+					/* Minimal model independent : CPL + Gamma + Erf */
+					// see eq.47 of PhysRevD.98.044051
+					hub = HAg(a,omega0,extpars,model); // H/H0
+					hubd = HA1g(a,omega0,extpars,model)/pow2(hub); // a H' / H
+					var1 = omega0/pow3(a) / pow2(hub); // Omega_m
+					var2 = pow(var1,extpars[2]); // Omega_m ^gamma
+					var3 = -3. - 2. * hubd; // a Omega_m ' / Omega_m
+
+					return 2./3. * var2/var1 * (var2 + 2. + hubd + extpars[2]*var3);
+
 		default:
 				warning("BeyondLCDM: invalid model choice, model = %d \n", model);
 				return 0;
@@ -1153,6 +1183,10 @@ double gamma2(double a, double omega0, double k0, double k1, double k2, double u
 		case 12:
 		/* EFTofDE: Phenomenological non-linear model */
 					return  0.;
+
+		case 13:
+		/* Minimal model independent : CPL + Gamma + Erf */
+					return 0.;
 
 		default:
 		warning("BeyondLCDM: invalid model choice, model = %d \n", model);
@@ -1224,6 +1258,10 @@ double gamma3(double a, double omega0, double k0, double k1, double k2, double k
 		case 12:
 		/* EFTofDE: full k dependency assuming LCDM background with Phenomenological approximation  */
 					return  0.;
+
+		case 13:
+		/* Minimal model independent : CPL + Gamma + Erf */
+					return 0.;
 
 		default:
 		warning("BeyondLCDM: invalid model choice, model = %d \n", model);
@@ -1356,6 +1394,23 @@ double mymgF(double a, double yh, double yenv, double Rth, double omega0, double
 
 					return term3 * erf(term1*term2);
 
+			case 13:
+			/* Minimal model independent : CPL + Gamma + Erf */
+					var1 = extpars[3] - extpars[4]*log(Rth); // Screening scale and mass dependence : Erf [ yh (R_scr/R_th)^p2 ] with R_scr = 10^(p1/p2)
+					term1 = yh * a * pow(10,var1); // Argument for mass dependant error function
+
+					if (yenv<=1.) {
+					term2 = pow(yenv * a, extpars[5]);  // yenv dependence - power law
+					}
+					else{
+						term2 = 1.;
+					}
+
+					var2 = pow(10.,extpars[6])/ (yh * pow2(a) * Rth); // Fourier transform of Rth with some calibration
+					term3 = mu(a,var2,omega0,extpars,model)-1.; // Linear G_effective
+
+					return term3 * erf(term1*term2);
+
 		default:
 					warning("BeyondLCDM: invalid model choice, model = %d \n", model);
 				  return 0;
@@ -1415,6 +1470,11 @@ double  WEFF(double a, double omega0, double extpars[], int model){
 		 case 12:
  		/* EFTofDE: full k dependency assuming LCDM background with Phenomenological approximation  */
  		 return  2.*(1.-omega0);
+
+		 case 13:
+		 /* Minimal model independent : CPL + Gamma + Erf */
+ 		 h2 = pow2(HAg(a,omega0,extpars,model));
+ 		 return -(1.+3.*(extpars[0]+(1.-a)*extpars[1]))*(h2-omega0/pow3(a));
 
 		 default:
 				 warning("BeyondLCDM: invalid model choice, model = %d \n", model);
