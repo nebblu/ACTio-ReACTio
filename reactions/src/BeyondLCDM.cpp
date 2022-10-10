@@ -709,7 +709,7 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 
 						var2 = 2./var1*( (1.-	alphaofa[1]/2.) * (alphaofa[1]/2.*ct2 + HA2g(a,omega0,extpars,model)
 																					 + alphaofa[2] - alphaofa[3])
-																					 + a*dalphaofa[1]/2.- HA2g2(a,omega0,extpars,model)); //cs^2
+																					 + a*dalphaofa[1]/2.- HA2g2(a,omega0,extpars,model)/alphaofa[4]); //cs^2
 
 						 // protect against divergences when var2=0
  						if (fabs(var2) <tol) {
@@ -751,7 +751,7 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 
 						var2 = 2./var1*( (1.-	alphaofa[1]/2.) * (alphaofa[1]/2.*ct2 + HA2g(a,omega0,extpars,model)
 																					 + alphaofa[2] - alphaofa[3])
-																					 + a*dalphaofa[1]/2.- HA2g2(a,omega0,extpars,model)); //cs^2
+																					 + a*dalphaofa[1]/2.- HA2g2(a,omega0,extpars,model)/alphaofa[4]); //cs^2
 
 						 // protect against divergences when var2=0
  						if (fabs(var2) <tol) {
@@ -793,7 +793,7 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 
 						var2 = 2./var1*( (1.-	alphaofa[1]/2.) * (alphaofa[1]/2.*ct2 + HA2g(a,omega0,extpars,model)
 																					 + alphaofa[2] - alphaofa[3])
-																					 + a*dalphaofa[1]/2.- HA2g2(a,omega0,extpars,model)); //cs^2
+																					 + a*dalphaofa[1]/2.- HA2g2(a,omega0,extpars,model)/alphaofa[4]); //cs^2
 
 						 // protect against divergences when var2=0
  						if (fabs(var2) <tol) {
@@ -847,7 +847,7 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 
 						var2 = 2./var1*( (1.-	alphaofa[1]/2.) * (alphaofa[1]/2.*ct2 + HA2g(a,omega0,extpars,model)
 																					 + alphaofa[2] - alphaofa[3])
-																					 + a*dalphaofa[1]/2.- HA2g2(a,omega0,extpars,model)); //cs^2
+																					 + a*dalphaofa[1]/2.- HA2g2(a,omega0,extpars,model)/alphaofa[4]); //cs^2
 
 						// QSA check for late times
 						qsa_test = k0/(HAg(a,omega0,extpars,model)*h0*a) -var2;
@@ -943,7 +943,7 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 
 						var2 = 2./var1*( (1.-	alphaofa[1]/2.) * (alphaofa[1]/2.*ct2 + HA2g(a,omega0,extpars,model)
 																					 + alphaofa[2] - alphaofa[3])
-																					 + a*dalphaofa[1]/2.- HA2g2(a,omega0,extpars,model)); //cs^2
+																					 + a*dalphaofa[1]/2.- HA2g2(a,omega0,extpars,model)/alphaofa[4]); //cs^2
 
 						 // protect against divergences when var2=0
  						if (fabs(var2) <tol) {
@@ -1047,7 +1047,7 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 
 					var2 = 2./var1*( (1.-	alphaofa[1]/2.) * (alphaofa[1]/2.*ct2 + HA2g(a,omega0,extpars,model)
 																				 + alphaofa[2] - alphaofa[3])
-																				 + a*dalphaofa[1]/2.- HA2g2(a,omega0,extpars,model)); //cs^2
+																				 + a*dalphaofa[1]/2.- HA2g2(a,omega0,extpars,model)/alphaofa[4]); //cs^2
 
 				 // protect against divergences when var2=0
 					if (fabs(var2) <tol) {
