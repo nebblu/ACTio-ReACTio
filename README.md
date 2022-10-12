@@ -23,7 +23,7 @@ ReACT is a halo model and standard perturbation theory code based on the softwar
 
 The package is made up of 5 folders: 
 
-* `reactions` : contains all the c++ source code for the calculations. Specifically, this is in `reactions/src`. 
+* `reactions` : contains all the c++ source code for the calculations. Specifically, these can be found in `reactions/src`. 
 * `pyreact` : contains the wrapper functions calling the c++ code from python. 
 * `cosmosis` : contains the cosmosis module for ReACT. 
 * `notebooks` : example python notebooks for ReACT computations plus two Mathematica notebooks performing translations between covariant theories and modifications to the perturbative Poisson equation  and comparisons of different parametrisations of the nonlinear Poisson equation.
@@ -212,8 +212,8 @@ You can later come back to your image in the individual container by opening the
 The pyreact wrapper allows the C++ code (the native language of ReACT) to be called by Python code. Example jupyter notebooks that demonstrate the usage of ReACT can be found in the `notebooks` folder. Specifically we have included : 
 
 * pyreact_demo.ipynb : Demonstrates the basic halo model reaction [2005.12184](https://arxiv.org/abs/2005.12184).
-* pyreact_demo-eft.ipynb : Demonstrates the implementation of the EFTofDE with a screened and unscreened case. 
-* pyreact_demo-fofr.ipynb : Demonstrates the implementation of various parametrisations for beyond LCDM physics against the exact solution in Hu-Sawicki f(R).
+* pyreact_demo-eft.ipynb : Demonstrates the implementation of the EFTofDE with a screened and unscreened case [2210.01094](https://arxiv.org/abs/2210.01094). 
+* pyreact_demo-fofr.ipynb : Demonstrates the implementation of various parametrisations for beyond LCDM physics against the exact solution in Hu-Sawicki f(R) [2210.01094](https://arxiv.org/abs/2210.01094).
 * pyreact_demo-neutrinos.ipynb : Demonstrates the implementation of the massive neutrinos halo model reaction [2105.12114](https://arxiv.org/abs/2105.12114).
 * pyreact_demo-rsd.ipynb : Demonstrates the implementation of the redshift space power spectrum multipoles [1606.02520](https://arxiv.org/abs/1606.02520).
 * pyreact_demo-bspt.ipynb : Demonstrates the implementation of the real space bispectrum [1808.01120](https://arxiv.org/abs/1808.01120).
@@ -278,9 +278,9 @@ Full k-dependence in linear modification:
 
 10. fulleftppf : same as case 7. 
 11. fulleftus : same as case 8
-12. fullefterf : EFTofDE with a phenomenological $G_{eff,non-linear}$ in spherical collapse equations. **extpars[5-8]** = $p_1,...,p_4$. See [this paper]() for details.
+12. fullefterf : EFTofDE with a phenomenological $G_{eff,non-linear}$ in spherical collapse equations. **extpars[5-8]** = $p_1,...,p_4$. See [this paper](https://arxiv.org/abs/2210.01094) for details.
 
-**Note** for models 10-12 we use an additional parameter extpars[19] which multiplies the EFTofDE background function c(a). We use this to set $c(a) = 0$ manually if needed. See [this paper]() for more details.
+**Note** for models 10-12 we use an additional parameter extpars[19] which multiplies the EFTofDE background function c(a). We use this to set $c(a) = 0$ manually if needed. See [this paper](https://arxiv.org/abs/2210.01094) for more details.
 
 **Note** For EFTofDE models (7-12), the scale factor dependence, 1st and 2nd scale factor derivatives of the alpha functions must be specified in `reactions/src/BeyondLCDM.cpp` - see `alphai_eft`, `dalphai_eft` and `ddalphai_eft` functions respectively. The default time dependencies are
 
@@ -429,6 +429,8 @@ When using ReACT in a publication, please acknowledge the code by citing the rel
 [arXiv:2111.13598](https://arxiv.org/abs/2111.13598)  : "On the road to per cent accuracy VI: the non-linear power spectrum for interacting dark energy with baryonic feedback and massive neutrinos
 "
 
+[arXiv:2210.01094](https://arxiv.org/abs/2210.01094) : "Fast and accurate predictions of the nonlinear matter power spectrum for general models of Dark Energy and Modified Gravity"
+
 [arXiv:1606.02520](https://arxiv.org/abs/1606.02520) : "A Perturbative Approach to the Redshift Space Power Spectrum: Beyond the Standard Model"
 
 [arXiv:1808.01120](https://arxiv.org/abs/1808.01120) : "The one-loop matter bispectrum as a probe of gravity and dark energy"
@@ -507,6 +509,18 @@ Respective bibtex entries:
     volume = "512",
     number = "3",
     pages = "3691--3702",
+    year = "2022"
+}
+```
+
+```
+@article{Bose:2022vwi,
+    author = "Bose, B. and Tsedrik, M. and Kennedy, J. and Lombriser, L. and Pourtsidou, A. and Taylor, A.",
+    title = "{Fast and accurate predictions of the nonlinear matter power spectrum for general models of Dark Energy and Modified Gravity}",
+    eprint = "2210.01094",
+    archivePrefix = "arXiv",
+    primaryClass = "astro-ph.CO",
+    month = "10",
     year = "2022"
 }
 ```
