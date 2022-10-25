@@ -170,6 +170,8 @@ class ReACT:
             reaction_model = 11
         elif model.lower() == "fullefterf":
             reaction_model = 12
+        elif model.lower() == "minimal":
+            reaction_model = 13
         else:
             raise ValueError(f"model '{model}' not supported.")
 
@@ -265,6 +267,8 @@ class ReACT:
             reaction_model = 11
         elif model.lower() == "fullefterf":
             reaction_model = 12
+        elif model.lower() == "minimal":
+            reaction_model = 13
         else:
             raise ValueError(f"model '{model}' not supported.")
 
@@ -371,6 +375,8 @@ class ReACT:
             reaction_model = 11
         elif model.lower() == "fullefterf":
             reaction_model = 12
+        elif model.lower() == "minimal":
+            reaction_model = 13
         else:
             raise ValueError(f"model '{model}' not supported.")
 
