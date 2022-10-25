@@ -287,6 +287,8 @@ Full k-dependence in linear modification:
 * $\alpha_i(a)=a\alpha_{i,0}$
 * $M^2/m^2_P=e^{M_0*a}$ 
 
+13. modelind : CPL for background (**extpars[0-1] = {w0,wa}**), growth index for linear perturbations (**extpars[2] = $\gamma$**), phenomenological $G_{eff,non-linear}$ in spherical collapse (**extpars[3-6]** = $p_1,...,p_4$). 
+
 In the C++ code the model is specified as the integer value of each model in the last argument of the functions , e.g. for the 1-loop real space power spectrum in f(R) gravity we would specify the following functional call 
 
 ```
