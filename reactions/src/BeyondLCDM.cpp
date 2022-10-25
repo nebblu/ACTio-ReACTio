@@ -67,6 +67,7 @@ initn_rsd  */
 // 10: EFTofDE with full mu & nPPF (1608.00522) G_eff for non-linear scales [assumes gamma2 = gamma3 = 0]
 // 11: EFTofDE with full mu & linear G_eff for non-linear scales [assumes gamma2 = gamma3 = 0]
 // 12: EFTofDE with full mu & Phenomenological G_eff for non-linear scales [assumes gamma2 = gamma3 = 0]
+// 13: Model independent parametrisation: CPL {w0,wa} for background, growth index gamma for linear perturbations, Phenomenological G_eff for nonlinear scales
 
 // Throughout the values of pars, extpars and model are:
 
