@@ -1965,7 +1965,7 @@ real SPT::sigmav_init(double pars[], double extpars[], int model) const{
   }
 
 /////// REDSHIFT SPACE MODIFIED GRAVITY SPECTRUM ////////
-// a {0,..,3}  : 0=Kaiser, 1 = TNS q-bias [1507.01592], 2 = TNS lag bias (MG) - incomplete!
+// a {0,..,3}  : 0=Kaiser with FoG Lorentzian form damping (set rsdpars[0]=0 for pure Kaiser), 1 = TNS q-bias [1507.01592], 2 = TNS lag bias (MG) - incomplete!
 //  3 = 1-loop SPT (MG) [see Eq.23 of 1006.0699 for example]
 // TODO: 4 = EFTofLSS with and without resummation
 // b {1,2,3} :  1 = monopole, 2 = quadrupole, 3 = hexdecapole
@@ -1986,7 +1986,7 @@ switch (rsd_model) {
   case 0:
       bl = bias[0];
       iow.initn_lin(pars,extpars,k,model);
-      linear = pow2(F1_nk*bl/dnorm_spt)*(factL(k, rsdpars[0], 1., 1., 0, b, 7)*P_L(k) - 2.*(G1_nk/F1_nk/bl)*factL(k, pars[0], 1., 1., 1, b, 7)*P_L(k) + pow2(G1_nk/F1_nk/bl)*factL(k, pars[0], 1., 1., 2, b, 7)* P_L(k));
+      linear = pow2(F1_nk*bl/dnorm_spt)*(factL(k, rsdpars[0], 1., 1., 0, b, 7)*P_L(k) - 2.*(G1_nk/F1_nk/bl)*factL(k, rsdpars[0], 1., 1., 1, b, 7)*P_L(k) + pow2(G1_nk/F1_nk/bl)*factL(k, rsdpars[0], 1., 1., 2, b, 7)* P_L(k));
     return linear;
 
   case 1:
