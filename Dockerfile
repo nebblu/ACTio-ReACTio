@@ -64,7 +64,8 @@ RUN pip install scipy numpy matplotlib camb==1.3.5
 
 RUN apt-get -y install cmake && \
     mkdir sundials && cd sundials && \
-    git clone -b release-4.1.0 https://github.com/LLNL/sundials.git && \
+   ## git clone -b release-4.1.0 https://github.com/LLNL/sundials.git && \
+    git clone -b v4.1.0 https://github.com/LLNL/sundials.git && \
     mkdir instdir && \
     mkdir builddir && \
     cd builddir && \
