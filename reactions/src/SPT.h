@@ -201,9 +201,13 @@ public:
   // a = 1 : Monopole
   // a = 2 : Quadrupole
   // a = 3 : Hexdecapole
-	real AB(real k, real bl, real sigmav, int a) const;
+	real AB_lcdm(real k, real bl, real sigmav, int a) const;
+  real AB_dgp(real k, real bl, real sigmav, int a) const;
+
   // for 2d spectra
-  real AB_mu(real k, real bl, real u, int a) const;
+  real AB_mu_lcdm(real k, real bl, real u, int a) const;
+  real AB_mu_dgp(real k, real bl, real u, int a) const;
+
 
 
 private:
