@@ -522,6 +522,7 @@ Respective bibtex entries:
     eprint = "2210.01094",
     archivePrefix = "arXiv",
     primaryClass = "astro-ph.CO",
+    doi = "10.1093/mnras/stac3783",
     month = "10",
     year = "2022"
 }
