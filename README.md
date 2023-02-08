@@ -261,7 +261,7 @@ In Pyreact we currently have the following models and model parameters
 3. dgp : normal branch of [DGP gravity](https://arxiv.org/abs/hep-th/0005016). **extpars[0]** = $\Omega_{rc}$. 
 4. quintessence : Quintessence. **extpars[0]** = $w_0$.
 5. cpl : [CPL evolving dark energy](https://arxiv.org/abs/gr-qc/0009008) $w = w_0 + (1-a)w_a$ . **extpars[0-1]**=  $w_0,w_a$.
-6. ds : [Dark Scattering with CPL background](https://arxiv.org/abs/1605.05623). **extpars[0-2]** = $w_0,w_a,\xi*h$.
+6. ds : [Dark Scattering with CPL background](https://arxiv.org/abs/1605.05623). **extpars[0-2]** = $w_0,w_a,\xi*h$. Note the factor of h included in $\xi$!
 
 ### Parametrised theory (all assume no 2nd and 3rd order modifications to the Poisson equation )
 These models assume the [effective field theory of dark energy](https://arxiv.org/abs/1907.03150v2) (EFTofDE) at the background and linear level. We have
@@ -560,6 +560,13 @@ Respective bibtex entries:
 ```
 
 ## 9. Notes 
+
+### Relation between $\xi$ in CLASS and ReACT 
+The parameter $\xi_{class}$ in the [Dark Scattering version of CLASS](https://github.com/PedroCarrilho/class_public/tree/IDE_DS) and the value of $\xi_{react}$ in ReACT can be related by the following formula: 
+
+$$  \xi_{react} = h   \xi_{class}  \frac{\Omega_{cdm}}{\Omega_m} / (1. + 0.194407  h  (1. - \Omega_m) * (1. + w_0) \xi_{class} (1.-\frac{\Omega_{cdm}}{\Omega_m})) $$
+
+The relation accounts for the fact that the CLASS code only couples Dark Energy to CDM while ReACT couples to CDM + baryons. Note we have also included the factor of h needed to relate ReACT's $\xi$ to the one used in [the original paper](https://arxiv.org/abs/1412.1080).
 
 ### Parameter ranges (Updated: 22/03/21)
 * To optimise root finding within the spherical collapse portion of the code, the maximum redshift that one can solve the reaction for currently is z=2.5. 
