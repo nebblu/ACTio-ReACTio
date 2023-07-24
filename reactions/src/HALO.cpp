@@ -213,8 +213,14 @@ for(int i = 0; i< loop_N; i++){
    sigar[i] = sqrt(Integrate<ExpSub>(bind(sigma_integrand, cref(P_l), Rth, std::placeholders::_1), 1e-4, 50., 1e-5,1e-5));
  }
  else{
+   if (model!=9) {
    sigar[i] = sqrt(Integrate<ExpSub>(bind(sigma_integrand_modcamb, cref(P_cbl), Rth, std::placeholders::_1), 1e-4, 50., 1e-5,1e-5));
- }
+    }
+    // if unscreened, we should use the cb spectrum of the modified gravity model
+    else{
+  sigar[i] = sqrt(Integrate<ExpSub>(bind(sigma_integrand_modcamb, cref(P_cb), Rth, std::placeholders::_1), 1e-4, 50., 1e-5,1e-5));
+    }
+   }
 
 
 
