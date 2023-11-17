@@ -946,8 +946,10 @@ void SPT::ploop_init(double ploopr[], double ploopp[], double redshifts[], int n
 		kargs[0] =1e-4;
 	    }
 	  temp_ps[zi][i] = pow2(k2val[k2i])*2.*P_L(kv[1])*(P_L(kargs[0])*p22[zi] + 3.*P_L(k0)*p13[zi]);
-          temp_psp[zi][i] = pow2(k2val[k2i])*2.*P_L(kv[1])*(P_L(kargs[0])*p22p[zi] + 3.*P_L(k0)*p13p[zi]);
-	 }
+         // temp_psp[zi][i] = pow2(k2val[k2i])*2.*P_L(kv[1])*(P_L(kargs[0])*p22p[zi] + 3.*P_L(k0)*p13p[zi]); // pure GR loop 
+	 temp_psp[zi][i] = pow2(k2val[k2i])*2.*pow2(mykernelarray[zi][14]/mykernelarray[zi][18])*P_L(kv[1])*(pow2(mykernelarray[zi][12]/mykernelarray[zi][16])*P_L(kargs[0])*p22p[zi] + 3.*pow2(mykernelarray[zi][0]/mykernelarray[zi][6])*P_L(k0)*p13p[zi]); // P_L is MG but 22 and 13 kernels are modified 
+
+	  }
 
   // save angular integral per redshift
         for(int zii = 0; zii<noz; zii++){
