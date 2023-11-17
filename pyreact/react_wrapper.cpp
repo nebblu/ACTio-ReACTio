@@ -604,10 +604,6 @@ int compute_reaction_nu_ext(int* N_pk_m, double* torpk_m,
       react_error("Values of As and pivot scale are not compatible -  set 1e-3<pscale<0.1  and 1.5e-9<As<2.5e-9");
     }
 
-    if (!*is_transfer) {
-      react_error("You must supply the input transfer functions if using a modified linear input");
-    }
-
     // Special function class
     IOW iow;
     // initialise power spectrum normalisation before running
