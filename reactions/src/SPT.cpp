@@ -2113,7 +2113,7 @@ switch (rsd_model) {
     u0x[3]=factL(k, rsdpars[0], 1., 1., 4, b, 7);
     u0x[4]=factL(k, rsdpars[0], 1., 1., 0, b, 7);
     nonlinear = Integrate<2>(bind(ptns_qb,cref(P_L), u0x, pars, extpars, model, bk, k, std::placeholders::_1,std::placeholders::_2), c, d, err);
-    linear = pow2(F1_nk*bias[0]/dnorm_spt)*(u0x[4]*P_L(k) - 2.*(G1_nk/F1_nk/bias[0])*u0x[0]*P_L(k) + pow2(G1_nk/F1_nk/bias[0])*u0x[1]*P_L(k));
+    linear = pow2(F1_nk*bk/dnorm_spt)*(u0x[4]*P_L(k) - 2.*(G1_nk/F1_nk/bk)*u0x[0]*P_L(k) + pow2(G1_nk/F1_nk/bk)*u0x[1]*P_L(k));
 
     return linear + nonlinear;
 
