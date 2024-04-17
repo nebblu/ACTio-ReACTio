@@ -57,7 +57,7 @@ double wa = 0.;
 // linear
 double gamma = 0.5;
 
-// Non-linea
+// Non-linear
 double myp1 = 0.5; // Screening scale
 double myp2 = 0.5; // its mass dependence
 double myp3 = 0.5; // its environment dependence
@@ -163,7 +163,7 @@ double extpars[maxpars];
 
     IOW iow;
 
-    // Load halo class witth all linear P(k)
+    // Load halo class with all linear P(k)
     HALO halo(Cm, P_l, P_cb, P_nu, P_cbl, epsrel);
 
 
