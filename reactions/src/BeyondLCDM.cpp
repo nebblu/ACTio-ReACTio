@@ -68,6 +68,8 @@ initn_rsd  */
 // 11: EFTofDE with full mu & linear G_eff for non-linear scales [assumes gamma2 = gamma3 = 0]
 // 12: EFTofDE with full mu & Phenomenological G_eff for non-linear scales [assumes gamma2 = gamma3 = 0]
 // 13: Model independent parametrisation: CPL {w0,wa} for background, growth index gamma for linear perturbations, Phenomenological G_eff for nonlinear scales
+// 14: Cubic Galileon
+// 15: QCDM
 
 // Throughout the values of pars, extpars and model are:
 
@@ -97,6 +99,25 @@ initn_rsd  */
 // 6: mass dependence of screening scale
 // 7: y_environment dependence of screening scale
 // 8: Yukawa suppression scale mass dependence
+
+// for model 13:
+// Background CPL:
+// 0: w0
+// 1: wa
+
+// linear perturbations, growth index :
+// 2: gamma
+
+// nonlinear, error function parametrisation:
+// 3: size of screening scale
+// 4: mass dependence of screening scale
+// 5: y_environment dependence of screening scale
+// 6: Yukawa suppression scale mass dependence
+
+
+// for model 14-15 CG and QCDM:
+// 0 : s
+// 1 : q
 
 
 /* A) Functions to edit for new models in Reaction computation: */
@@ -325,6 +346,8 @@ inline double ddalphai_eft(double a, double omega0, double alpha0, int model){
 // e.g. if we need to solve some equation for H(a):
 // we will create a splined function using hub_init instead of solving the equation at each call
 double bespokehub(double a, double omega0, double extpars[], int model){
+	double counter, limit1, limit2, flimit1, flimit2, dmean, soluction, fsoluction, bolean;
+	double omegaL, Aphi;
 	/* Insert solver */
 	switch(model) {
 		case 10:
@@ -336,6 +359,70 @@ double bespokehub(double a, double omega0, double extpars[], int model){
 		/* EFTofDE unscreened and full k-dependence in linear modification */
 		//can change to some solution for H in terms of extra parameters
 			return HA(a,omega0);
+
+		case 14:
+		/* Generalised Cubic Galileon background solver */
+			  omegaL = 1.-omega0;
+				// Give range for solution
+				limit1=0.;
+				limit2=pow(10,9);
+
+				// Set extreme values
+				flimit1=omegaL+omega0/pow3(a)*pow(limit1,extpars[0])-pow(limit1,2.+extpars[0]);
+				flimit2=omegaL+omega0/pow3(a)*pow(limit2,extpars[0])-pow(limit2,2.+extpars[0]);
+
+				dmean=(limit2-limit1)/2.;
+				soluction=limit2-dmean;
+				fsoluction=1.;
+				counter=0;
+				while (sqrt(fsoluction*fsoluction)>1e-5 && counter < 1e5) {
+					fsoluction=omegaL+omega0/pow3(a)*pow(soluction,extpars[0])-pow(soluction,2.+extpars[0]);
+					bolean=fsoluction*flimit1;
+						 if (bolean > 0.){
+									 limit1=soluction;
+									 flimit1=fsoluction;
+							 }
+							 if (bolean < 0.){
+									 limit2=soluction;
+									 flimit2=fsoluction;
+							 }
+							 dmean=(limit2-limit1)/2.;
+							 soluction=limit1+dmean;
+							 counter=counter+1.;
+					}
+					return soluction;
+
+
+			case 15:
+			/* QCDM */
+			omegaL = 1.-omega0;
+				limit1=0;
+				if (limit1<0){
+					limit1=0;
+				}
+				limit2=pow(10,9);
+				flimit1=omegaL+omega0/pow3(a)*pow(limit1,extpars[0])-pow(limit1,2.+extpars[0]);
+				flimit2=omegaL+omega0/pow3(a)*pow(limit2,extpars[0])-pow(limit2,2.+extpars[0]);
+				dmean=(limit2-limit1)/2.;
+				soluction=limit2-dmean;
+				fsoluction=1;
+				counter=0;
+				while (sqrt(fsoluction*fsoluction)>1e-5 && counter < 1e5) {
+					fsoluction=omegaL+omega0/pow3(a)*pow(soluction,extpars[0])-pow(soluction,2.+extpars[0]);
+					bolean=fsoluction*flimit1;
+						 if (bolean > 0.){
+									 limit1=soluction;
+									 flimit1=fsoluction;
+							 }
+							 if (bolean < 0.){
+									 limit2=soluction;
+									 flimit2=fsoluction;
+							 }
+							 dmean=(limit2-limit1)/2;
+							 soluction=limit1+dmean;
+							 counter=counter+1;
+					}
+					return soluction;
 
 		default:
 				warning("BeyondLCDM: invalid model choice, model = %d \n", model);
@@ -358,6 +445,14 @@ double bespokehubd(double a, double omega0, double extpars[], int model){
 		//can change to some solution for H in terms of extra parameters
 		 return HA1(a,omega0);
 
+	 case 14:
+		/* CG  */
+			return 0; // we use analytic form - see below
+
+		case 15:
+		/* QCDM  */
+			return 0; // we use analytic form - see below
+
 		default:
 				warning("BeyondLCDM: invalid model choice, model = %d \n", model);
 				return 0;
@@ -378,6 +473,12 @@ double bespokehubdd(double a, double omega0, double extpars[], int model){
 		/* EFTofDE unscreened and full k-dependence in linear modification */
 			hub = HA(a,omega0); // H / H0
 	 		return 3.*omega0*(-12.*(omega0-1.)/(4.*pow2(hub)) + 5.)/(4.*pow(a,5)*hub) ;
+
+		case 14:
+	 		return 0; // we use analytic form - see below
+
+		case 15:
+		 	return 0; // we use analytic form - see below
 
 		default:
 				warning("BeyondLCDM: invalid model choice, model = %d \n", model);
@@ -454,6 +555,16 @@ double HAg(double a, double omega0, double extpars[], int model){
 			omegaL= (1.-omega0)*omegaf;
 			return  sqrt(omega0/pow(a,3)+omegaL);
 
+
+			case 14:
+			/* CG */
+			return myhubble(a);
+
+			case 15:
+			/* QCDM */
+			return myhubble(a);
+
+
 			default:
 					warning("BeyondLCDM: invalid model choice, model = %d \n", model);
 					return 0;
@@ -465,7 +576,7 @@ double HAg(double a, double omega0, double extpars[], int model){
 
 //  (dH/dt / H0^2) = aH dH/da / H0^2
 double HA1g(double a, double omega0, double extpars[], int model){
-	double A, omegaf, omegaL;
+	double A, omegaf, omegaL,h2, myhub, Aphi, a2, a4, var1, Orad;
 	switch(model) {
 		case 1:
 		/* LCDM */
@@ -530,6 +641,18 @@ double HA1g(double a, double omega0, double extpars[], int model){
 		omegaf = pow(a,A)*exp(3*(-1.+a)*extpars[1]);
 		omegaL= (1.-omega0)*omegaf;
 		return -3.*omega0/(2.*pow(a,3)) + (A+3.*a*extpars[1])*omegaL/2.;
+
+		case 14:
+		/* CG */
+		h2 = pow2(HAg(a,omega0,extpars,model));
+		return -h2*(omega0/pow(a,3)*(-3.-extpars[0])+(extpars[0]+2.)*h2)/(extpars[0]*omega0/pow(a,3)-(extpars[0]+2.)*h2)-h2;
+
+		case 15:
+		/* QCDM */
+		h2 = pow2(HAg(a,omega0,extpars,model));
+		return -h2*(omega0/pow(a,3)*(-3.-extpars[0])+(extpars[0]+2.)*h2)/(extpars[0]*omega0/pow(a,3)-(extpars[0]+2.)*h2)-h2;
+
+
 
 		default:
 				warning("BeyondLCDM: invalid model choice, model = %d \n", model);
@@ -627,6 +750,14 @@ double myfricF(double a, double omega0, double extpars[], int model){
 
 		case 13:
 		/* Minimal model independent : CPL + Gamma + Erf */
+		return  0.;
+
+		case 14:
+		/* CG */
+		return  0.;
+
+		case 15:
+		/* QCDM */
 		return  0.;
 
 		default:
@@ -1125,6 +1256,31 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 
 					return 2./3. * var2/var1 * (var2 + 2. + hubd + extpars[2]*var3);
 
+
+				case 14:
+				/* CG */
+					// Hubble and its derivative
+					hub = HAg(a,omega0,extpars,model);
+					////HA2g = -dH/dt/H^2 = -a dH/da / H
+					hubd = HA2g(a,omega0,extpars,model);
+
+					//alphaB
+					alphaofa[0] = -(1.-omega0)*pow(1./hub,2.+extpars[0])*extpars[1]*extpars[0];
+					// d/dt alphaB
+					dalphaofa[0] = -alphaofa[0]*(2.+extpars[0])*h0*HA1g(a,omega0,extpars,model)/hub;
+
+					// alphacs2
+					var1 = 2.*hubd-3.*omega0/(pow3(a)*pow2(hub));
+					var2 = -2.*alphaofa[0] + 2.*hubd*alphaofa[0] -2.*pow2(alphaofa[0])-2.*dalphaofa[0]/(h0*hub);
+					var3 = var1 + var2;
+
+				 return (1.+2.*pow2(alphaofa[0])/var3);
+
+			 case 15:
+	 		/* QCDM */
+	 			 return  1. ;
+
+
 		default:
 				warning("BeyondLCDM: invalid model choice, model = %d \n", model);
 				return 0;
@@ -1135,7 +1291,8 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 // Gamma 2
 double gamma2(double a, double omega0, double k0, double k1, double k2, double u1, double extpars[], int model){
 	double h0 = 1./2997.92458;
-	double var1,var2,var3,var4,var5,var6;
+	double var1,var2,var3,var4,var5,var6,hub,hubd;
+	double alphaofa[5],dalphaofa[5];
 	switch(model) {
 		case 1:
 		/* GR */
@@ -1189,6 +1346,29 @@ double gamma2(double a, double omega0, double k0, double k1, double k2, double u
 		/* Minimal model independent : CPL + Gamma + Erf */
 					return 0.;
 
+		case 14:
+			/* CG */
+			// Hubble and its derivative
+			hub = HAg(a,omega0,extpars,model);
+			hubd = HA2g(a,omega0,extpars,model);
+
+			//alphaB
+			alphaofa[0] = -(1.-omega0)*pow(1./hub,2.+extpars[0])*extpars[1]*extpars[0];
+
+			// d/dt alphaB
+			dalphaofa[0] = -alphaofa[0]*(2.+extpars[0])*h0*HA1g(a,omega0,extpars,model)/hub;
+			// alphacs2
+			var1 = 2.*hubd-3.*omega0/(pow3(a)*pow2(hub));
+			var2 = -2.*alphaofa[0] + 2.*hubd*alphaofa[0] -2.*pow2(alphaofa[0])-2.*dalphaofa[0]/(h0*hub);
+			var3 = var1 + var2;
+
+			return  -18.*pow4(alphaofa[0])/(pow4(hub)*pow3(var3))*pow2(omega0/pow3(a))*ker1(u1);
+
+		 case 15:
+			/* QCDM */
+			return  0. ;
+
+
 		default:
 		warning("BeyondLCDM: invalid model choice, model = %d \n", model);
 				return 0;
@@ -1198,7 +1378,8 @@ double gamma2(double a, double omega0, double k0, double k1, double k2, double u
 // Partially symmetric gamma3 (in last 2 arguments)
 double gamma3(double a, double omega0, double k0, double k1, double k2, double k3, double u1,double u2, double u3, double extpars[], int model){
 	double h0 = 1./2997.92458;
-	double var1,var2,var3,var4,var5,var6,var7,var8,var9,var10,var11,k23 ;
+	double var1,var2,var3,var4,var5,var6,var7,var8,var9,var10,var11,k23,hub,hubd;
+	double alphaofa[5],dalphaofa[5];
 
 	switch(model) {
 	  case 1:
@@ -1264,6 +1445,28 @@ double gamma3(double a, double omega0, double k0, double k1, double k2, double k
 		/* Minimal model independent : CPL + Gamma + Erf */
 					return 0.;
 
+		case 14:
+			/* CG */
+			// Hubble and its derivative
+			hub = HAg(a,omega0,extpars,model);
+			hubd = HA2g(a,omega0,extpars,model);
+
+			//alphaB
+			alphaofa[0] = -(1.-omega0)*pow(1./hub,2.+extpars[0])*extpars[1]*extpars[0];
+			// d/dt alphaB
+			dalphaofa[0] = -alphaofa[0]*(2.+extpars[0])*h0*HA1g(a,omega0,extpars,model)/hub;
+			// alphacs2
+			var1 = 2.*hubd-3.*omega0/(pow3(a)*pow2(hub));
+			var2 = -2.*alphaofa[0] + 2.*hubd*alphaofa[0] -2.*pow2(alphaofa[0])-2.*dalphaofa[0]/(h0*hub);
+			var3 = var1 + var2;
+
+			return  72.*pow(alphaofa[0],6)/(pow(hub,6)*pow(var3,5))*pow3(omega0/pow3(a))*ker1(u1)*ker1((k2*u2+k3*u3)/sqrt(k2*k2+2.*k2*k3*u1+k3*k3));
+
+	 case 15:
+		/* QCDM */
+		return  0. ;
+
+
 		default:
 		warning("BeyondLCDM: invalid model choice, model = %d \n", model);
 				return 0;
@@ -1274,9 +1477,9 @@ double gamma3(double a, double omega0, double k0, double k1, double k2, double k
 
 double mymgF(double a, double yh, double yenv, double Rth, double omega0, double extpars[], double delta_initial, int model){
 	double h0 = 1./2997.92;
-	double dod, dod2, dRRth, fr0, var1, var2, term1, term2, term3;
+	double dod, dod2, dRRth, fr0, var1, var2, var3, term1, term2, term3,hub,hubd;
 	double betadgp,xm3,xterm,delta,Mvir;
-//	double alphaofa[5],dalphaofa[5],lambda2; //EFTofDE
+	double alphaofa[5],dalphaofa[5],lambda2; //EFTofDE
 	switch(model) {
 	  case 1:
 		/* LCDM */
@@ -1412,6 +1615,37 @@ double mymgF(double a, double yh, double yenv, double Rth, double omega0, double
 
 					return term3 * erf(term1*term2);
 
+			case 14:
+			/* CG */
+
+				// Hubble and its derivative
+				hub = HAg(a,omega0,extpars,model);
+				// HA2g = -dH/dt/H^2 = -a dH/da / H
+				hubd = HA2g(a,omega0,extpars,model);
+
+				//alphaB
+				alphaofa[0] = -(1.-omega0)*pow(1/hub,2.+extpars[0])*extpars[1]*extpars[0];
+				// d/dt alphaB
+				dalphaofa[0] = -alphaofa[0]*(2.+extpars[0])*h0*HA1g(a,omega0,extpars,model)/hub;
+
+				// alphacs2
+				var1 = 2.*hubd-3.*omega0/(pow3(a)*pow2(hub));
+				var2 = -2.*alphaofa[0] + 2.*hubd*alphaofa[0] -2.*pow2(alphaofa[0])-2.*dalphaofa[0]/(h0*hub);
+				var3 = var1 + var2;
+
+
+				delta = (1.+delta_initial)/pow3(yh) - 1.;
+				xterm = -2.*alphaofa[0]/(hub*var3);
+				xm3 = 4.*omega0 * pow2(xterm)/pow3(a) * delta ;
+
+				return	2.*(2.*pow2(alphaofa[0])/var3)*(sqrt(1. + xm3)-1.)/xm3;
+
+
+		 case 15:
+			/* QCDM */
+			 return  0. ;
+
+
 		default:
 					warning("BeyondLCDM: invalid model choice, model = %d \n", model);
 				  return 0;
@@ -1420,7 +1654,7 @@ double mymgF(double a, double yh, double yenv, double Rth, double omega0, double
 
 // Dark energy contribution to virial theorem - see Eq.A9 of 1812.05594
 double  WEFF(double a, double omega0, double extpars[], int model){
-	double h2;
+	double h2,hubd,var1,var2,var3;
 	switch(model) {
 	 	 case 1:
 		/* LCDM */
@@ -1476,6 +1710,25 @@ double  WEFF(double a, double omega0, double extpars[], int model){
 		 /* Minimal model independent : CPL + Gamma + Erf */
  		 h2 = pow2(HAg(a,omega0,extpars,model));
  		 return -(1.+3.*(extpars[0]+(1.-a)*extpars[1]))*(h2-omega0/pow3(a));
+
+		 case 14:
+		 /* CG */
+		 // Hubble and its derivative
+		 // HA2g = -dH/dt/H^2 = -a dH/da / H
+		 h2 = pow2(HAg(a,omega0,extpars,model));
+		 hubd = HA2g(a,omega0,extpars,model);
+
+		return (2.+hubd*extpars[0])*(h2-omega0/pow3(a));
+
+
+		 case 15:
+		 /* QCDM */
+		 // Hubble and its derivative
+		 h2 = pow2(HAg(a,omega0,extpars,model));
+		 hubd = HA2g(a,omega0,extpars,model);
+
+		return (2.+hubd*extpars[0])*(h2-omega0/pow3(a));
+
 
 		 default:
 				 warning("BeyondLCDM: invalid model choice, model = %d \n", model);
