@@ -387,6 +387,15 @@ extern "C" {
 
     bool modcamb = false;
     int mod = *model;
+
+    // Initialise background if model is cubic galileon or qcdm
+    if (mod == 15 || mod==14) {
+    // Number of logarithmically spaced steps from a=3e-5 to a=10 over which to spline the Hubble rate
+    int hubble_steps = 2000;
+    // initialise Hubble
+    iow.hubble_init(*Omega_m,extparsin,hubble_steps,mod);
+    }
+
     // initialise power spectrum normalisation before running 1-loop computations
     iow.initnorm(pars,extparsin,mod);
 
@@ -398,9 +407,9 @@ extern "C" {
         ploopp[i] = 0.;
     }
 
-    // Switch on 1-loop modified gravity correction if DGP or f(R)
+    // Switch on 1-loop modified gravity correction if DGP, f(R) or CG
     bool modg;
-    if (mod == 2 || mod == 3) {
+    if (mod == 2 || mod == 3 || mod==14) {
       // 1-loop computations at all redshifts @ k0 and store to ploopr and ploopp arrays
       spt.ploop_init(ploopr,ploopp, zvals , *N_z, pars, extparsin, k0, mod);
       // turn on 1-loop computation
@@ -592,7 +601,7 @@ int compute_reaction_nu_ext(int* N_pk_m, double* torpk_m,
 
       /* Which model ?*/
       int mod = *model;
-      if (mod == 2 || mod == 3) {
+      if (mod == 2 || mod == 3 || mod == 14) {
         modg = true;
       }
       else{
@@ -606,6 +615,15 @@ int compute_reaction_nu_ext(int* N_pk_m, double* torpk_m,
 
     // Special function class
     IOW iow;
+
+    // Initialise background if model is cubic galileon or qcdm
+    if (mod == 15 || mod==14) {
+    // Number of logarithmically spaced steps from a=3e-5 to a=10 over which to spline the Hubble rate
+    int hubble_steps = 2000;
+    // initialise Hubble
+    iow.hubble_init(*Omega_m,extparsin,hubble_steps,mod);
+    }
+
     // initialise power spectrum normalisation before running
     iow.initnorm(pars,extparsin,mod);
 
@@ -972,6 +990,14 @@ int compute_reaction_nu_ext(int* N_pk_m, double* torpk_m,
 
     int mod = *model;
     int rsd_mod = *rsd_model;
+
+    // Initialise background if model is cubic galileon or qcdm
+    if (mod == 15 || mod==14) {
+    // Number of logarithmically spaced steps from a=3e-5 to a=10 over which to spline the Hubble rate
+    int hubble_steps = 2000;
+    // initialise Hubble
+    iow.hubble_init(*Omega_m,extparsin,hubble_steps,mod);
+    }
 
     // initialise power spectrum normalisation before running 1-loop computations
     iow.initnorm(pars,extparsin,mod);

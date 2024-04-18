@@ -172,6 +172,10 @@ class ReACT:
             reaction_model = 12
         elif model.lower() == "minimal":
             reaction_model = 13
+        elif model.lower() == "cg":
+            reaction_model = 14
+        elif model.lower() == "qcdm":
+            reaction_model = 15
         else:
             raise ValueError(f"model '{model}' not supported.")
 
@@ -269,6 +273,10 @@ class ReACT:
             reaction_model = 12
         elif model.lower() == "minimal":
             reaction_model = 13
+        elif model.lower() == "cg":
+            reaction_model = 14
+        elif model.lower() == "qcdm":
+            reaction_model = 15
         else:
             raise ValueError(f"model '{model}' not supported.")
 
@@ -377,6 +385,10 @@ class ReACT:
             reaction_model = 12
         elif model.lower() == "minimal":
             reaction_model = 13
+        elif model.lower() == "cg":
+            reaction_model = 14
+        elif model.lower() == "qcdm":
+            reaction_model = 15
         else:
             raise ValueError(f"model '{model}' not supported.")
 

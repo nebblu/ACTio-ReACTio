@@ -58,8 +58,9 @@ Spline myhubbledd;
 
 void IOW::hubble_init(double omega0, double extpars[], int loop_N, int model){
 	double a_tab[loop_N],hub_tab[loop_N],hubd_tab[loop_N],hubdd_tab[loop_N];
+	double epsilon = 1e-4;
 	double amax = 10.; // need to go all the way to 1. for g_de irrespective of output. Setting to 2 to sample up to 1 more densely
-	double aini = AMIN; // make sure it is smaller than amin for all ODE solvers i.e, < 3e-5 (ANIT is in SCOL.h)
+	double aini = AMIN*(1.-epsilon); // make sure it is smaller than AMIN for all ODE solvers i.e, < 3e-5 (AMIN is in SCOL.h)
 	for(int i = 0; i< loop_N; i++){
 	  a_tab[i] =  aini * exp(i*log(amax/aini)/(loop_N-1.)); // maybe we want to sample linearly?
 	  hub_tab[i] = bespokehub(a_tab[i], omega0, extpars, model); // Hubble : see BeyondLCDM.cpp
@@ -67,7 +68,7 @@ void IOW::hubble_init(double omega0, double extpars[], int loop_N, int model){
 		hubdd_tab[i] = bespokehubdd(a_tab[i], omega0, extpars, model); // Hubble 2nd time derivative: see BeyondLCDM.cpp
 	    }
 
-	myhubble = LinearSpline(loop_N, a_tab , hub_tab);
+	myhubble = CubicSpline(loop_N, a_tab , hub_tab);
 	myhubbled = LinearSpline(loop_N, a_tab , hubd_tab);
 	myhubbledd = LinearSpline(loop_N, a_tab , hubdd_tab);
 

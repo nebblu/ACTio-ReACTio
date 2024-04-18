@@ -13,8 +13,6 @@
 #include <time.h>
 #include <cmath>
 
-#include <omp.h>
-
 #include <Copter/HALO.h>
 #include <Copter/Cosmology.h>
 #include <Copter/LinearPS.h>
@@ -33,38 +31,33 @@ vector<vector<double> > mypk;
 
 
 /* Example code to output the reaction and halo spectra for minimal parametrisation */
-
 int main(int argc, char* argv[]) {
+
 
 // Which gravity or dark energy model?
 // 1: GR  2: f(R) 3: DGP 4: quintessence 5: CPL, 6: Dark scattering with CPL
 // 7 -9 : EFTofDE k->infinity limit,  w PPF, unscreened, superscreened respectively
 // 10-12: EFTofDE with PPF, unscreened and Error function Phenomenological model respectively.
 // 13: Minimal model independent parametrisation : w0,wa for background, gamma for linear, Phenomenological for nonlinear
+// 14:  Cubic galileon
+// 15:  QCDM
 
-int mymodel = 13;
+int mymodel = 14;
 
 // target redshift
 double myz = 0.;
 
-// neutrino mass
-double mnu = 0.00;  // mv = 0.0ev
+// (sum of) neutrino mass
+double mnu = 0.00;
 
-// background
-double w0 = -1.;
-double wa = 0.;
 
-// linear
-double gamma = 0.5;
-
-// Non-linear
-double myp1 = 0.5; // Screening scale
-double myp2 = 0.5; // its mass dependence
-double myp3 = 0.5; // its environment dependence
-double myp4 = 0.0; // Yukawa suppression scale
+// CG or QCDM parameters
+double s = 2.;
+double q = 0.5;
 
 //output file name
-const char* output = "model_indep_z0.dat";
+const char* output = "cg_z0.dat";
+
 
 // number of bins between kmin and kmax
 int Nk = 300;
@@ -72,7 +65,7 @@ double kmin = 0.01;
 double kmax = 5.;
 
 // perform 1-loop corrections? This prompts the calculation of k_star and \mathcal{E}.
-bool modg = false;
+bool modg = true;
 
 // Is the transfer being fed to ReACT of the target cosmology?
 // If false, the transfer should be LCDM at z=0 and ReACT will rescale P_L using internally computed modified growth - see README.
@@ -80,19 +73,17 @@ bool modg = false;
 // Note that ReACT does not calculate growth factors for massive neutrino cosmologies and so the target transfer function should be supplied.
 bool mgcamb = false;
 
-// Load modified transfer function at with all species at some redshift
-// This is a LCDM z=0 transfer with the cosmology specified below
-ifstream fin("transfers/EFT/transfer_out0.dat");
+// Load  LCDM transfer function at z=0
+ifstream fin("transfers/cg/test_nl_transfer_00.dat");
 
 // Base cosmology associated with the transfer function
-double h  = 0.6737;
-double n_s = 0.96605; // spectral index
-double Omega_b  = 0.0491989; //  baryon fraction
-double Omega_c = 0.265373;
-
+double h  = 0.6732; // hubble constant
+double n_s = 0.9655; // spectral index
+double Omega_c = 0.264201; // cold dark matter
+double Omega_b  = 0.0490218; //  baryon fraction
 double Omega_nu = mnu/93.14/pow2(h);
 double pscale = 0.05;
-double As = 2.09681e-9;
+double As = 2.0095e-9; // initial amplitude of fluctuations
 
 double Omega_m = Omega_c + Omega_b + Omega_nu;
 
@@ -109,20 +100,15 @@ string line;
     }
 
 
-// Populate arrays and normalise to 1 at large scales for Cosmology class input
 int Nkr = mytrans.size();
 int* Nkt = &Nkr;
 array Tm(*Nkt);
-array Tcb(*Nkt);
-array Tnu(*Nkt);
 array ki(*Nkt);
 
-          for(int i = 0; i< Nkr; i++){
-                  ki[i] = mytrans[i][0];
-                  Tm[i] = mytrans[i][6];
-                  Tcb[i] = mytrans[i][7];
-                  Tnu[i] = mytrans[i][6]; // should be adjusted if this column is all 0s ....
-              }
+  for(int i = 0; i< Nkr; i++){
+           ki[i] = mytrans[i][0];
+           Tm[i] =  mytrans[i][6]; // total
+      }
 
 // integration error
 real epsrel = 1e-3;
@@ -139,38 +125,32 @@ double pars[7];
 
 // store beyond-LCDM parameters
 double extpars[maxpars];
-    // Linear and background
-    extpars[0] = w0;
-    extpars[1] = wa;
-    extpars[2] = gamma;
-
-    // non-linear
-    extpars[3] = myp1;
-    extpars[4] = myp2;
-    extpars[5] = myp3;
-    extpars[6] = myp4;
+    extpars[0] = s;
+    extpars[1] = q;
 
     // Load cosmology classes
     Cosmology Cm(h, n_s, Omega_m, Omega_b, As, pscale, ki, Tm);
-    Cosmology Ccb(h, n_s, Omega_m, Omega_b, As, pscale, ki, Tcb);
-    Cosmology Cnu(h, n_s, Omega_m, Omega_b, As, pscale, ki, Tnu);
-
     // Get linear P(k) from input transfer
     LinearPS_as P_l(Cm, 0.);
-    LinearPS_as P_cb(Ccb, 0.);
-    LinearPS_as P_nu(Cnu, 0.);
-    LinearPS_as P_cbl(Ccb, 0.);
-
+    // Load special function class (used for solving ODEs and initialising quantities)
     IOW iow;
 
     // Load halo class with all linear P(k)
-    HALO halo(Cm, P_l, P_cb, P_nu, P_cbl, epsrel);
+    HALO halo(Cm, P_l, P_l, P_l, P_l, epsrel);
 
+// Number of logarithmically spaced steps from a=3e-5 to a=10 over which to spline the Hubble rate
+int hubble_steps = 2000;
 
+// initialise Hubble
+printf("%s \n", "Starting initialisation");
+iow.hubble_init(Omega_m,extpars,hubble_steps,mymodel);
+printf("%s \n", "Initialised background ");
 //initialise spherical collapse quantities and reaction quantities
 halo.initialise(pars,extpars,mgcamb,modg,mymodel);
+printf("%s \n", "Initialised spherical collapse quantities and linear growth");
 // initialise halofit parameters
 halo.phinit_pseudo(pars,mgcamb);
+printf("%s \n", "Initialised halofit parameters");
 
 /* Output section */
 
@@ -179,14 +159,13 @@ FILE* fp = fopen(output, "w");
 
 real p1,p2,p3,p4,p5,p6;
 
-
  for(int i =0; i <Nk;  i ++) {
 
       real k = kmin* exp(i*log(kmax/kmin)/(Nk-1));
 
-      p1 = halo.plinear_cosmosis(k); // Linear spectrum
-      p2 = halo.reaction_nu(k,pars, mgcamb); // halo model reaction
-      p3 = halo.PHALO_pseudo(k,mgcamb); // halofit pseudo spectrum
+      p1 = halo.plinear_cosmosis(k);// mypk[i][1]; // Linear spectrum
+      p2 = halo.reaction_nu(k,pars, mgcamb);// mypk[i][2]; // halo model reaction
+      p3 = halo.PHALO_pseudo(k,mgcamb);// mypk[i][3]; // halofit pseudo spectrum
 
       printf("%e %e %e %e %e  \n", k, p1,p2, p3,p3*p2); // output to terminal
       fprintf(fp,"%e %e %e %e %e \n", k, p1,p2,p3,p3*p2); // output to file : k , P_linear, R, P_pseudo, P_nl = RxP_pseudo
