@@ -217,7 +217,7 @@ The pyreact wrapper allows the C++ code (the native language of ReACT) to be cal
 * pyreact_demo-neutrinos.ipynb : Demonstrates the implementation of the massive neutrinos halo model reaction [2105.12114](https://arxiv.org/abs/2105.12114).
 * pyreact_demo-rsd.ipynb : Demonstrates the implementation of the redshift space power spectrum multipoles [1606.02520](https://arxiv.org/abs/1606.02520).
 * pyreact_demo-bspt.ipynb : Demonstrates the implementation of the real space bispectrum [1808.01120](https://arxiv.org/abs/1808.01120).
-
+* pyreact_demo-cg.ipynb : Demonstrates the Cubic Galileon and QCDM implementations [2404.11471](https://arxiv.org/abs/2404.11471).
 
 ###  C++
 One can also run ReACT and MG-Copter in their native C++. Again, a number of example output C++ scripts have been included in `reactions/examples` as well as a number of cosmologies in `reactions/examples/transfers`. Specifically we have included : 
@@ -229,6 +229,7 @@ One can also run ReACT and MG-Copter in their native C++. Again, a number of exa
 * spt_rsd.cpp : Example code to output the 1-loop powerspectrum in real and redshift space.
 * spt.cpp : Example code to output the 1-loop powerspectrum in real space.
 * bs.cpp : Example code to output the real space bispectrum.
+* reaction_cg.cpp : Example code to output the reaction and pseudo spectrum (using halofit) in the Cubic Galileon model. 
 
 
 We can compile these examples with a command similar to : 
@@ -289,6 +290,10 @@ Full k-dependence in linear modification:
 
 13. minimal : CPL for background (**extpars[0-1] = {w0,wa}**), growth index for linear perturbations (**extpars[2] = $\gamma$**), phenomenological $G_{eff,non-linear}$ in spherical collapse (**extpars[3-6]** = $p_1,...,p_4$). 
 
+14. cg : Generalized Cubic Covariant Galileon background and perturbations: **extpars[0]** = s and **extpars[1]** = q. See [2404.11471](https://arxiv.org/abs/2404.11471) for more details.
+
+15. qcdm : Generalized Cubic Covariant Galileon background but $G_N$ in perturbations: **extpars[0]** = s and **extpars[1]** = q. See [2404.11471](https://arxiv.org/abs/2404.11471) for more details.
+
 In the C++ code the model is specified as the integer value of each model in the last argument of the functions , e.g. for the 1-loop real space power spectrum in f(R) gravity we would specify the following functional call 
 
 ```
@@ -337,7 +342,7 @@ The functions one should consider when adding in a new models are as follows:
 
 
 ### C) Functions to edit for custom background expansion: 
-**Note** to use these functions in your new model, you should initialise a spline with H(a) - run hubble_init : see SpecialFunctions.cpp
+**Note** to use these functions in your new model, you should initialise a spline with H(a) - run hubble_init : see reactions/src/SpecialFunctions.cpp for the function and reactions/examples/reaction_cg.cpp for an example
 
 * `bespokehub` : Normalised Hubble expansion: $\frac{H}{H_0}$ (this can involve a solution to some ODE)
 * `bespokehubd` : $aH \frac{dH}{da} \frac{1}{H_0^2}$
@@ -420,6 +425,8 @@ If you want to add in this model to the Pyreact wrapper, you will also need to a
 
 When using ReACT in a publication, please acknowledge the code by citing the relevant papers from the following:
 
+### Non-linear power spectra and halo model reaction: 
+
 [arXiv:1812.05594](https://arxiv.org/abs/1812.05594) : "On the road to percent accuracy I: non-linear reaction of the matter power spectrum to dark energy and modified gravity"
 
 [arXiv:1909.02561](https://arxiv.org/abs/1909.02561) : "On the road to percent accuracy III: non-linear reaction of the matter power spectrum to massive neutrinos"
@@ -428,10 +435,13 @@ When using ReACT in a publication, please acknowledge the code by citing the rel
 
 [arXiv:2105.12114](https://arxiv.org/abs/2105.12114) : "On the road to percent accuracy V: the non-linear power spectrum beyond LCDM with massive neutrinos and baryonic feedback"
 
-[arXiv:2111.13598](https://arxiv.org/abs/2111.13598)  : "On the road to per cent accuracy VI: the non-linear power spectrum for interacting dark energy with baryonic feedback and massive neutrinos
-"
+[arXiv:2111.13598](https://arxiv.org/abs/2111.13598)  : "On the road to per cent accuracy VI: the non-linear power spectrum for interacting dark energy with baryonic feedback and massive neutrinos"
 
 [arXiv:2210.01094](https://arxiv.org/abs/2210.01094) : "Fast and accurate predictions of the nonlinear matter power spectrum for general models of Dark Energy and Modified Gravity"
+
+[arXiv:2404.11471](https://arxiv.org/abs/2404.11471) : "Non-linear power spectrum and forecasts for Generalized Cubic Covariant Galileon"  
+
+### Perturbation theory and redshift space: 
 
 [arXiv:1606.02520](https://arxiv.org/abs/1606.02520) : "A Perturbative Approach to the Redshift Space Power Spectrum: Beyond the Standard Model"
 
@@ -529,6 +539,18 @@ Respective bibtex entries:
 ```
 
 ```
+@article{Atayde:2024tnr,
+    author = "Atayde, Lu\'\i{}s and Frusciante, Noemi and Bose, Benjamin and Casas, Santiago and Li, Baojiu",
+    title = "{Non-linear power spectrum and forecasts for Generalized Cubic Covariant Galileon}",
+    eprint = "2404.11471",
+    archivePrefix = "arXiv",
+    primaryClass = "astro-ph.CO",
+    month = "4",
+    year = "2024"
+}
+```
+
+```
 @article{Bose:2016qun,
     author = "Bose, Benjamin and Koyama, Kazuya",
     title = "{A Perturbative Approach to the Redshift Space Power Spectrum: Beyond the Standard Model}",
@@ -583,6 +605,8 @@ The relation accounts for the fact that the CLASS code only couples Dark Energy 
 
 ## 10. What is new ?
 
+### Update 10.2022 
+
 We have implemented the following to v.2:
 
 * Added in EFTofDE linear and background parametrisations for model independent predictions. 
@@ -598,4 +622,8 @@ We have implemented the following to v.2:
 * Created new example python notebooks for rsd multipoles and parametrised-beyond LCDM calculations. 
 * New option in compute_react_ext and compute_react_nu_ext (compute_pseudo) that computes the non-linear pseudo spectrum using Takahashi et al Halofit's prediction internally.
 * Added in a new function in SpecialFunctions.cpp (hubble_init) to initialise a spline of a Hubble function H(a) calculated using the bespokehub function in BeyondLCDM.cpp. This is useful if there is not an analytic form for the Hubble function.  
-* Added in Hu-Sawicki forms for $\alpha$ EFTofDE basis in BeyondLCDM.cpp. 
+* Added in Hu-Sawicki forms for $\alpha$ EFTofDE basis in BeyondLCDM.cpp.
+
+### Update 17.04.2024 
+
+* Added in the Generalised Covariant Cubic Galileon and QCDM models along with example python notebooks and c++ files. 
