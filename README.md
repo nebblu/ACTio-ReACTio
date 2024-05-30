@@ -342,7 +342,10 @@ The functions one should consider when adding in a new models are as follows:
 
 
 ### C) Functions to edit for custom background expansion: 
-**Note** to use these functions in your new model, you should initialise a spline with H(a) - run hubble_init : see reactions/src/SpecialFunctions.cpp for the function and reactions/examples/reaction_cg.cpp for an example
+**Notes**:
+1) To use these functions in your new model, you should initialise a spline with H(a) - run hubble_init : see reactions/src/SpecialFunctions.cpp for the function and reactions/examples/reaction_cg.cpp for an example
+2) If you have the analytic forms for Hubble and its derivative and they are not computationally expensive, you can add these directly to `HAg` and `HA1g`  (see point **A**). Use of bespokehub is useful when you need to solve some equation for Hubble (root finding or differential equations for example) and initialising once and for all (via hubble_init) becomes more efficient. 
+
 
 * `bespokehub` : Normalised Hubble expansion: $\frac{H}{H_0}$ (this can involve a solution to some ODE)
 * `bespokehubd` : $aH \frac{dH}{da} \frac{1}{H_0^2}$
