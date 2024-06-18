@@ -176,6 +176,10 @@ class ReACT:
             reaction_model = 14
         elif model.lower() == "qcdm":
             reaction_model = 15
+        elif model.lower() == "kmouflage":
+            reaction_model = 16
+        elif model.lower() == "kmouflageppf":
+            reaction_model = 17
         else:
             raise ValueError(f"model '{model}' not supported.")
 
@@ -277,6 +281,10 @@ class ReACT:
             reaction_model = 14
         elif model.lower() == "qcdm":
             reaction_model = 15
+        elif model.lower() == "kmouflage":
+            reaction_model = 16
+        elif model.lower() == "kmouflageppf":
+            reaction_model = 17
         else:
             raise ValueError(f"model '{model}' not supported.")
 
@@ -389,6 +397,10 @@ class ReACT:
             reaction_model = 14
         elif model.lower() == "qcdm":
             reaction_model = 15
+        elif model.lower() == "kmouflage":
+            reaction_model = 16
+        elif model.lower() == "kmouflageppf":
+            reaction_model = 17
         else:
             raise ValueError(f"model '{model}' not supported.")
 
