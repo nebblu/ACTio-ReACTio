@@ -70,6 +70,9 @@ initn_rsd  */
 // 13: Model independent parametrisation: CPL {w0,wa} for background, growth index gamma for linear perturbations, Phenomenological G_eff for nonlinear scales
 // 14: Cubic Galileon
 // 15: QCDM
+// 16: K-mouflage as in 1403.5424
+// 17: K-mouflage with nPPF [1608.00522]
+
 
 // Throughout the values of pars, extpars and model are:
 
@@ -119,6 +122,19 @@ initn_rsd  */
 // 0 : s
 // 1 : q
 
+// for model 16: K-mouflage
+// 0: n
+// 1: lambda
+// 2: K0
+// 3: beta0
+
+
+// for model 17: K-mouflage with nPPF
+// 0: n
+// 1: lambda
+// 2: K0
+// 3: beta0
+// 5+ - nPPF params
 
 /* A) Functions to edit for new models in Reaction computation: */
 
@@ -341,6 +357,209 @@ inline double ddalphai_eft(double a, double omega0, double alpha0, int model){
 		}
 }
 
+
+
+/* K-mouflage background equations - see 3.58,59,61 of 2110.00566, with various typos corrected (see notebooks/K-mouflage.nb) - derivative with respect to N=d/dlna  */
+
+// Exponential conformal factor as in Eq. 2.25
+double conf_fac(double phi, double beta0){
+	return exp(phi*beta0);
+//	return (1.+beta0*phi); // approximate exponential choice
+}
+
+/* Parameters passed to system of equations*/
+// omega0 = Omega_{m,0}
+// omeganu = Omega_{nu,0}
+// maxpars - maximum number of extended parameters - specified in SpecialFunctions.h
+
+struct param_type_km {
+  double omega0;
+	double omeganu;
+	double extpars[maxpars];
+};
+
+
+// ODE solver for scalar field and its derivative - Goal is to create splined functions
+Spline kmouflage_phi;
+Spline kmouflage_phid;
+
+
+//Jacobian of the system required when calling the system evolver, the below is not needed for solving
+int jac_sub (double a, const double G[], double *dfdy, double dfdt[], void *params)
+{
+	return GSL_SUCCESS;
+}
+
+// analytic solution to Eq. 3.58 for n=2 (see k-mouflage.nb)
+double kmouflage_hub2_n2(double a, double phid, double Omegam0, double lambda, double K0, double Aphi){
+	double a2 = pow2(a);
+	double a3 = a*a2;
+	double lam2 = pow2(lambda);
+	double phid2 = pow(phid,2.);
+	double phid4 = phid2 * phid2;
+
+	double denom = 3.*K0*phid4;
+	// including radiation from glam = ~9e-5
+	double Orad = 0.;
+	double term1 = 36.*K0/(lam2*a3)*(Aphi*Omegam0 + Orad/a);
+
+	double root = sqrt( 36. -12.*phid2 + phid4*(1. - 12.*K0 - term1) ) ;
+	double term2 = -6. + phid2;
+
+	return -a2 * lam2 * (term2 + root) / denom;
+}
+
+
+// Differential equations - all derivatives are with respect to ln[a]
+int funcn_kmouflage_lna(double lna, const double G[], double F[], void *params)
+{
+  param_type_km p = *(param_type_km *)(params);
+
+	// Cold dark matter + baryon fraction
+	double omegacb = p.omega0 - p.omeganu;
+
+	// K-mouflage parameters
+	double n = p.extpars[0];
+	double lambda = p.extpars[1];
+	double K0 = p.extpars[2];
+	double beta0 = p.extpars[3];
+
+	double lam2 = pow2(lambda);
+
+	// scale factor and square
+	double a = exp(lna);
+	double a2 = pow2(a);
+
+// Legend:
+	// G[0] = phi
+	// G[1] = phi'
+	// F[0] = phi'
+	// F[1] = phi''
+
+	// ' is a derivative with respect to ln[a]
+
+	F[0] = G[1];
+
+	// Background quantities:
+	// Conformal factor
+	double Aphi = conf_fac(G[0],beta0) ;
+	// Conformal factor derivative wrt scalar field
+	double Aphid = beta0*Aphi;
+
+	// phi'^2
+	double phid2 = pow2(G[1]);
+
+	// Eq. 3.58 Friedmann equation: (a H/H0)^2, i.e. normalised conformal Hubble factor
+	double myhub2 = kmouflage_hub2_n2(a, G[1], omegacb, lambda, K0, Aphi);
+
+	// Eq. 3.59 - Raychaudhuri equation for given phi and phi' and H/H0: d (aH/H0)/ d tau
+	// including radiation from glam = ~9e-5
+	double Orad = 0.;
+	double myhubd = - omegacb/2. * Aphi / a - Orad/a2
+									+ 1./3.*a2*lam2 // Typo in 2110.00566 : 1/3 not 2/3
+									- 1./3.*myhub2*phid2 // Typo in 2110.00566 : 1/3 not 2/3
+									- 1./3.*(n + 1.)*K0*a2*lam2 * pow( myhub2 * phid2 / (2.*lam2*a2)  , n) ; // Typo in 2110.00566 : 1/6 not 1/3
+
+	// Canonical kinetic term
+	double X = myhub2 / (2.*lam2*a2) * phid2;
+	// kinetic term derivative
+	double KX = 1. + n * K0 * pow(X,n-1.);
+	// kinetic term second derivative
+	double KXX = n * (n-1.) * K0 * pow(X,n-2.);
+
+	// Eq.3.61 - Klein-Gordon equation : phi''
+	double kfactor = (KX + 2.*X*KXX);
+	F[1] = ( (-2.*(KX - X * KXX)*myhub2*G[1] - 3.*Aphid * omegacb / a )/kfactor - myhubd*G[1] )/myhub2;
+
+	return GSL_SUCCESS;
+}
+
+void init_kmouflage_lna(double pars[], double extpars[], int Na)
+{
+				double omega0 = pars[1]; // total matter fraction
+				double omeganu = pars[2]; // massive neutrino fraction
+
+			// Initial conditions for scalar field and first scale factor derivative (MG-GLAM set both to 1e-30 but this gives strange results )
+				double phii =  1e-30;
+				double phidi = -1e-6;
+
+			// Our time variable is ln[a]
+				double lnavals[Na];
+			// Scale factor for final spline
+				double avals[Na];
+
+				double epsilon = 1e-4;
+				double amax = 1.+0.5; // Go higher than 1. to have full coverage - much higher for Jordan frame transforms
+				double amin = AMIN*(1.-epsilon); // Go a bit lower than AMIN to have full coverage
+
+					for(int i = 0; i< Na; i++){
+						 avals[i] = amin * exp(i*log(amax/amin)/(Na-1.));
+						 lnavals[i] = log(avals[i]);
+					}
+
+        // Non-Eds ICs
+			  double G[2] = {phii,phidi};
+
+			/*Parameters passed to system of equations */
+				struct param_type_km mypars;
+
+					// set all parameters
+					// total matter
+					mypars.omega0 = omega0;
+					// massive neutrinos
+				  mypars.omeganu = omeganu;
+					// model parameters
+					for (int i=0; i<maxpars;i++){
+						mypars.extpars[i] = 	extpars[i];
+					}
+
+
+				gsl_odeiv2_system sys = {funcn_kmouflage_lna, jac_sub, 2, &mypars};
+
+			//  this gives the system, the method, the initial interval step, the absolute error and the relative error.
+				gsl_odeiv2_driver * d =
+				gsl_odeiv2_driver_alloc_y_new (&sys, gsl_odeiv2_step_rk8pd,
+										   1e-8, 1e-8, 1e-8);
+
+				// evolve everything to redshift z=z_max and start sampling
+				int status1 = gsl_odeiv2_driver_apply (d, &lnavals[0], lnavals[1], G);
+
+				double phi[Na];
+				double phid[Na];
+
+				/*Allocation of array values */
+				phi[0] = phii;
+				phid[0] = phidi;
+				phi[1] = G[0];
+				phid[1] = G[1];
+
+					for(int i = 2; i < Na; i++){
+							status1 = gsl_odeiv2_driver_apply (d, &lnavals[i-1], lnavals[i], G);
+							/*Allocation of array values */
+							phi[i] = G[0];
+							phid[i] = G[1];
+						}
+						// free memory
+						gsl_odeiv2_driver_free(d);
+
+
+// Create Splines for phi and its ln[scale factor] derivative as functions of the scale factor
+ kmouflage_phi = LinearSpline(Na, avals , phi);
+ kmouflage_phid = LinearSpline(Na, avals , phid);
+
+}
+
+// Planck mass normalised K-mouflage scalar field
+double kmouflage_sf(double a){
+	return kmouflage_phi(a);
+}
+// Its d/dlna derivative
+double kmouflage_sf_der(double a){
+	return kmouflage_phid(a);
+}
+
+
+
 /* Background normalised hubble function: general solution for initialisation with hub_init in SpecialFunctions.cpp */
 // Useful if H(a) does not have a straight forward analytic form
 // e.g. if we need to solve some equation for H(a):
@@ -424,6 +643,17 @@ double bespokehub(double a, double omega0, double extpars[], int model){
 					}
 					return soluction;
 
+			case 16:
+			/* K-mouflage */
+				Aphi = conf_fac(kmouflage_phi(a),extpars[3]) ;
+				return sqrt(kmouflage_hub2_n2(a, kmouflage_phid(a), omega0, extpars[1], extpars[2], Aphi)/pow2(a));
+
+			case 17:
+			/* K-mouflage with nPPF */
+				Aphi = conf_fac(kmouflage_phi(a),extpars[3]) ;
+				return sqrt(kmouflage_hub2_n2(a, kmouflage_phid(a), omega0, extpars[1], extpars[2], Aphi)/pow2(a));
+
+
 		default:
 				warning("BeyondLCDM: invalid model choice, model = %d \n", model);
 				return 0;
@@ -453,6 +683,15 @@ double bespokehubd(double a, double omega0, double extpars[], int model){
 		/* QCDM  */
 			return 0; // we use analytic form - see below
 
+		case 16:
+  		/* K-mouflage  */
+ 			return 0; // we use analytic form - see below
+
+		case 17:
+  		/* K-mouflage with nPPF  */
+ 			return 0; // we use analytic form - see below
+
+
 		default:
 				warning("BeyondLCDM: invalid model choice, model = %d \n", model);
 				return 0;
@@ -479,6 +718,12 @@ double bespokehubdd(double a, double omega0, double extpars[], int model){
 
 		case 15:
 		 	return 0; // we use analytic form - see below
+
+		case 16:
+			return 0; // we use analytic form - see below
+
+		case 17:
+		 return 0; // we use analytic form - see below
 
 		default:
 				warning("BeyondLCDM: invalid model choice, model = %d \n", model);
@@ -562,6 +807,14 @@ double HAg(double a, double omega0, double extpars[], int model){
 
 			case 15:
 			/* QCDM */
+			return myhubble(a);
+
+			case 16:
+			/* K-mouflage */
+			return myhubble(a);
+
+			case 17:
+			/* K-mouflage with nPPF*/
 			return myhubble(a);
 
 
@@ -652,6 +905,40 @@ double HA1g(double a, double omega0, double extpars[], int model){
 		h2 = pow2(HAg(a,omega0,extpars,model));
 		return -h2*(omega0/pow(a,3)*(-3.-extpars[0])+(extpars[0]+2.)*h2)/(extpars[0]*omega0/pow(a,3)-(extpars[0]+2.)*h2)-h2;
 
+
+		case 16:
+		/* K-mouflage */
+		myhub = HAg(a,omega0,extpars,model);
+		// conformal hubble
+		h2 = pow2(a*myhub);
+		Aphi = conf_fac(kmouflage_phi(a),extpars[3]) ;
+		a2 = pow2(a);
+		a4 = pow2(a2);
+		// conformal Hubble conformal time derivative - See Eq. 3.59 of 2110.00566
+		Orad = 0.;//9e-5;
+
+		var1 = - omega0/2. * Aphi / a - Orad/a2
+					+ 1./3.*a2*pow2(extpars[1])
+					- 1./3.*h2*pow2(kmouflage_phid(a))
+					- 1./3.*(extpars[0] + 1.)*extpars[2]*a2*pow2(extpars[1]) * pow(h2*pow2(kmouflage_phid(a))/(2.*pow2(extpars[1])*a2) , extpars[0]);
+
+		return 1./ (a2) * (var1 - h2);
+
+		case 17:
+		/* K-mouflage with nPPF */
+		myhub = HAg(a,omega0,extpars,model);
+		// conformal hubble
+		h2 = pow2(a*myhub);
+		Aphi = conf_fac(kmouflage_phi(a),extpars[3]) ;
+		a2 = pow2(a);
+		a4 = pow2(a2);
+		// conformal Hubble conformal time derivative - See Eq. 3.59 of 2110.00566
+		var1 = - omega0/2. * Aphi / a
+					+ 1./3.*a2*pow2(extpars[1])
+					- 1./3.*h2*pow2(kmouflage_phid(a))
+					- 1./3.*(extpars[0] + 1.)*extpars[2]*a2*pow2(extpars[1]) * pow(h2*pow2(kmouflage_phid(a))/(2.*pow2(extpars[1])*a2) , extpars[0]);
+
+		return 1./ (a2) * (var1 - h2);
 
 
 		default:
@@ -759,6 +1046,15 @@ double myfricF(double a, double omega0, double extpars[], int model){
 		case 15:
 		/* QCDM */
 		return  0.;
+
+		case 16:
+		/* K-mouflage */
+		return   extpars[3] * kmouflage_phid(a) * HAg(a,omega0,extpars,model);
+
+		case 17:
+		/* K-mouflage with nPPF */
+		return   extpars[3] * kmouflage_phid(a) * HAg(a,omega0,extpars,model);
+
 
 		default:
 					warning("BeyondLCDM: invalid model choice, model = %d \n", model);
@@ -1280,6 +1576,31 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 	 		/* QCDM */
 	 			 return  1. ;
 
+			case 16:
+	 			/* K-mouflage */
+	 			// See Eq.61 of 1403.5424
+	 			// normalise conformal hubble =  a H/H0
+	 			hub = HAg(a,omega0,extpars,model)*a;
+	 			// Canonical kinetic term
+	 			var1 = pow2(hub*kmouflage_phid(a)/extpars[1]/a) / 2. ;
+	 			// kinetic term derivative
+	 			var2 = 1. + extpars[0] * extpars[2] * pow(var1,extpars[0]-1.);
+
+	 			return  conf_fac(kmouflage_phi(a),extpars[3]) * (1. + 2. * pow2(extpars[3])/var2) ;
+
+	 		case 17:
+	 		/* K-mouflage with nPPF */
+	 		// See Eq.61 of 1403.5424
+	 		// normalise conformal hubble =  a H/H0
+	 		hub = HAg(a,omega0,extpars,model)*a;
+	 		// Canonical kinetic term
+	 		var1 = pow2(hub*kmouflage_phid(a)/extpars[1]/a) / 2. ;
+	 		// kinetic term derivative
+	 		var2 = 1. + extpars[0] * extpars[2] * pow(var1,extpars[0]-1.);
+
+	 		return  conf_fac(kmouflage_phi(a),extpars[3]) * (1. + 2. * pow2(extpars[3])/var2);
+
+
 
 		default:
 				warning("BeyondLCDM: invalid model choice, model = %d \n", model);
@@ -1368,6 +1689,13 @@ double gamma2(double a, double omega0, double k0, double k1, double k2, double u
 			/* QCDM */
 			return  0. ;
 
+			case 16:
+			/* K-mouflage */
+			return 0;
+
+			case 17:
+			/* K-mouflage with nPPF */
+			return 0;
 
 		default:
 		warning("BeyondLCDM: invalid model choice, model = %d \n", model);
@@ -1466,6 +1794,56 @@ double gamma3(double a, double omega0, double k0, double k1, double k2, double k
 		/* QCDM */
 		return  0. ;
 
+		case 16:
+		/* K-mouflage */
+		// See Eq.78 of 1403.5424
+
+		// normalise conformal hubble =  a H/H0
+		hub = HAg(a,omega0,extpars,model)*a;
+
+		// Canonical kinetic term
+		var1 = pow2(hub*kmouflage_phid(a)/extpars[1]/a) / 2. ;
+		// kinetic term derivative
+		var2 = 1. + extpars[0] * extpars[2] * pow(var1,extpars[0]-1.);
+		// kinetic term 2nd derivative
+		var3 = extpars[0] * (extpars[0]-1.) * extpars[2] * pow(var1,extpars[0]-2.);
+
+		// Omega_m(a)
+		var4 = omega0/pow2(hub)/a;
+		// conformal factor
+		var5 = conf_fac(kmouflage_phi(a),extpars[3]);
+
+		// Symmetrised scale dependant piece x 3 k^2
+		var6 = (u2 + 2.*u3*u1)/k1/k2 + (u3 + 2.*u1*u2)/k1/k3 + (u1 + 2.*u2*u3)/k2/k3;
+
+
+		return -9./2. * var3 * pow3(var5 * var4) * pow(extpars[3]/var2,4.) * pow2(hub/extpars[1]) * pow2(hub*h0/a) *var6 ;
+
+
+		case 17:
+		/* K-mouflage with nPPF */
+		// See Eq.78 of 1403.5424
+
+		// normalise conformal hubble =  a H/H0
+		hub = HAg(a,omega0,extpars,model)*a;
+		// Canonical kinetic term
+		var1 = pow2(hub*kmouflage_phid(a)/extpars[1]/a) / 2. ;
+		// kinetic term derivative
+		var2 = 1. + extpars[0] * extpars[2] * pow(var1,extpars[0]-1.);
+		// kinetic term 2nd derivative
+		var3 = extpars[0] * (extpars[0]-1.) * extpars[2] * pow(var1,extpars[0]-2.);
+
+		// Omega_m(a)
+		var4 = omega0/pow2(hub)/a;
+		// conformal factor
+		var5 = conf_fac(kmouflage_phi(a),extpars[3]);
+
+		// Symmetrised scale dependant piece x 3 k^2
+		var6 = (u2 + 2.*u3*u1)/k1/k2 + (u3 + 2.*u1*u2)/k1/k3 + (u1 + 2.*u2*u3)/k2/k3;
+
+
+		return -9./2. * var3 * pow3(var5 * var4) * pow(extpars[3]/var2,4.) * pow2(hub/extpars[1]) * pow2(hub*h0/a) *var6 ;
+
 
 		default:
 		warning("BeyondLCDM: invalid model choice, model = %d \n", model);
@@ -1479,6 +1857,7 @@ double mymgF(double a, double yh, double yenv, double Rth, double omega0, double
 	double h0 = 1./2997.92;
 	double dod, dod2, dRRth, fr0, var1, var2, var3, term1, term2, term3,hub,hubd;
 	double betadgp,xm3,xterm,delta,Mvir;
+	double Aphi;
 	double alphaofa[5],dalphaofa[5],lambda2; //EFTofDE
 	switch(model) {
 	  case 1:
@@ -1646,6 +2025,36 @@ double mymgF(double a, double yh, double yenv, double Rth, double omega0, double
 			 return  0. ;
 
 
+			 case 16:
+				/* K-mouflage */
+				// See Eq. 115
+				 return  mu(a,1.,omega0,extpars,model)-1.;
+
+			case 17:
+			/* K-mouflage with nPPF  */
+			// extpars[i]:
+			// 0: n
+			// 1: lambda
+			// 2: K0
+			// 3: betaK
+			// 5-12 : p1-p8
+
+					var1 = extpars[5]/(extpars[5]-1.)*extpars[7]; // a
+					Mvir = pow3(Rth/0.1)*5.*omega0/Gnewton; // virial mass x Gnewton - see definition in scol_init in HALO.cpp
+
+					term1 = extpars[8]*pow(a,extpars[9]) * pow(2.*Gnewton*h0*Mvir/pow2(sofl),extpars[10])*pow(yenv/yh,extpars[11]); // y0
+
+					xm3 = pow(term1/yh,var1); // (y0/yh)^a
+
+					// Linear modification
+					var2 = pow(10.,extpars[12])/ (yh * pow2(a) * Rth); // Fourier transform of Rth with some calibration
+					Aphi = conf_fac(kmouflage_phi(a),extpars[3]) ;
+
+					term3 = mu(a,var2,omega0,extpars,model)-Aphi; // Linear G_effective/G_N corrected with conformal factor included
+
+					return extpars[5]*extpars[6]*(pow(1.+ xm3, 1./extpars[5])-1.) / xm3 * term3 - 1.;
+
+
 		default:
 					warning("BeyondLCDM: invalid model choice, model = %d \n", model);
 				  return 0;
@@ -1728,6 +2137,32 @@ double  WEFF(double a, double omega0, double extpars[], int model){
 		 hubd = HA2g(a,omega0,extpars,model);
 
 		return (2.+hubd*extpars[0])*(h2-omega0/pow3(a));
+
+
+		case 16:
+	 /* K-mouflage */
+		 h2 = pow2(HAg(a,omega0,extpars,model));
+		 // Canonical kinetic term
+		 var1 = h2*pow2(kmouflage_phid(a)/extpars[1]) / 2. ;
+		 // non-canonical kinetic term
+		 var2 = -1. + var1 + extpars[2]*pow(var1,extpars[0]);
+		 // kinetic term derivative
+		 var3 = 1. + extpars[0] * extpars[2] * pow(var1,extpars[0]-1.);
+
+		 return -pow2(extpars[1])/3. * (2.*var2 + h2*pow2(kmouflage_phid(a)/extpars[1])*var3);
+
+
+		case 17:
+	 /* K-mouflage with nPPF   */
+		 h2 = pow2(HAg(a,omega0,extpars,model));
+		 // Canonical kinetic term
+		 var1 = h2*pow2(kmouflage_phid(a)/extpars[1]) / 2. ;
+		 // non-canonical kinetic term
+		 var2 = -1. + var1 + extpars[2]*pow(var1,extpars[0]);
+		 // kinetic term derivative
+		 var3 = 1. + extpars[0] * extpars[2] * pow(var1,extpars[0]-1.);
+
+		 return -pow2(extpars[1])/3. * (2.*var2 + h2*pow2(kmouflage_phid(a)/extpars[1])*var3);
 
 
 		 default:

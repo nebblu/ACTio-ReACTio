@@ -6,6 +6,15 @@
 // maximum number of beyond-LCDM theory parameters: can easily adjust here.
 const int maxpars = 20;
 
+// K-mouflage scalar field solvers (initialise using this function before outputting any K-mouflage predictions)
+void init_kmouflage_lna(double pars[], double extpars[], int Na);
+
+double kmouflage_sf(double a);
+double kmouflage_sf_der(double a);
+
+double conf_fac(double phi, double beta0);
+
+
 // Background functions
 double bespokehub(double a, double omega0, double extpars[], int model);
 double bespokehubd(double a, double omega0, double extpars[], int model);

@@ -688,18 +688,26 @@ double SCOL::myscol(double myscolparams[], double acol, double omegacb, double o
       // potential energy (always the same):
        double prefac = -omegacb*pow2(myy/ainit)/ai;
 
-       // newtonian contribution
-       double wn =  prefac*(1.+mydelt);
-        // modified gravity, dark energy  and Kinetic energy contributions
-       double wphi, weff, ke, wds;
+        // modified gravity, dark energy, Kinetic energy, friction and Newtonian contributions
+       double wphi, weff, ke, wds, wn;
 
        if(model==1){
+         wn =  prefac*(1.+mydelt);
          wphi = 0.;
          weff = 2.*(1.-omega0)*pow2(myy/arat);
          ke =  pow2(HA(ai, omega0)*(myy + myp)/arat);
          wds = 0.;
        }
+       else if(model == 16 || model == 17){
+         // use Einstein frame density
+         wn = conf_fac(kmouflage_sf(ai),extpars[3])*prefac*(1.+mydelt);
+         wphi = prefac * (mymgF(ai, myy, myyenv, Rthp, omegacb, extpars, myscolparams[0],model)+1.-conf_fac(kmouflage_sf(ai),extpars[3]))*mydelt;
+         weff = WEFF(ai,omegacb,extpars,model)*pow2(myy/arat);
+         ke =  pow2(HAg(ai, omega0,extpars,model)*(myy + myp)/arat); // might need to change to cb TO CHECK
+         wds = - 2.*myfricF(ai,omega0,extpars,model)*HAg(ai, omega0,extpars,model)*pow2(1.0/arat)*myy*myp;
+       }
        else{
+         wn =  prefac*(1.+mydelt);
          wphi = prefac * mymgF(ai, myy, myyenv, Rthp, omegacb, extpars, myscolparams[0],model)*mydelt;
          weff = WEFF(ai,omegacb,extpars,model)*pow2(myy/arat);
          ke =  pow2(HAg(ai, omega0,extpars,model)*(myy + myp)/arat); // might need to change to cb TO CHECK
