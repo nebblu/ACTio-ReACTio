@@ -14,7 +14,7 @@
 7. [Parameter description](https://github.com/nebblu/ACTio-ReACTio#7-parameters)
 8. [Citation](https://github.com/nebblu/ACTio-ReACTio#8-citation)
 9. [Notes](https://github.com/nebblu/ACTio-ReACTio#9-notes)
-10. [What's new?](https://github.com/nebblu/ACTio-ReACTio#10-what-is-new)
+10. [Updates](https://github.com/nebblu/ACTio-ReACTio#10-what-is-new)
 
 
 ## 1. Introduction
@@ -218,6 +218,7 @@ The pyreact wrapper allows the C++ code (the native language of ReACT) to be cal
 * pyreact_demo-rsd.ipynb : Demonstrates the implementation of the redshift space power spectrum multipoles [1606.02520](https://arxiv.org/abs/1606.02520).
 * pyreact_demo-bspt.ipynb : Demonstrates the implementation of the real space bispectrum [1808.01120](https://arxiv.org/abs/1808.01120).
 * pyreact_demo-cg.ipynb : Demonstrates the Cubic Galileon and QCDM implementations [2404.11471](https://arxiv.org/abs/2404.11471).
+* pyreact_demo-kmouflage.ipynb : Demonstrates the K-mouflage implementations [arXiv:2406.13667](https://arxiv.org/abs/2406.13667).
 
 ###  C++
 One can also run ReACT and MG-Copter in their native C++. Again, a number of example output C++ scripts have been included in `reactions/examples` as well as a number of cosmologies in `reactions/examples/transfers`. Specifically we have included : 
@@ -230,6 +231,7 @@ One can also run ReACT and MG-Copter in their native C++. Again, a number of exa
 * spt.cpp : Example code to output the 1-loop powerspectrum in real space.
 * bs.cpp : Example code to output the real space bispectrum.
 * reaction_cg.cpp : Example code to output the reaction and pseudo spectrum (using halofit) in the Cubic Galileon model. 
+* reaction_kmouflage.cpp : Example code to output the reaction and pseudo spectrum (using halofit) in the K-mouflage model.
 
 
 We can compile these examples with a command similar to : 
@@ -290,9 +292,16 @@ Full k-dependence in linear modification:
 
 13. minimal : CPL for background (**extpars[0-1] = {w0,wa}**), growth index for linear perturbations (**extpars[2] = $\gamma$**), phenomenological $G_{eff,non-linear}$ in spherical collapse (**extpars[3-6]** = $p_1,...,p_4$). 
 
+### Newly (2024+) added theories:
+
 14. cg : Generalized Cubic Covariant Galileon background and perturbations: **extpars[0]** = s and **extpars[1]** = q. See [2404.11471](https://arxiv.org/abs/2404.11471) for more details.
 
 15. qcdm : Generalized Cubic Covariant Galileon background but $G_N$ in perturbations: **extpars[0]** = s and **extpars[1]** = q. See [2404.11471](https://arxiv.org/abs/2404.11471) for more details.
+
+16. kmouflage : K-mouflage model: **extpars[0]** =n ;  **extpars[1]** = $\lambda$; **extpars[2]** = $K_0$; **extpars[3]** = $\beta_K$. See [arXiv:2406.13667](https://arxiv.org/abs/2406.13667) for more details.
+    
+17. kmouflageppf : K-mouflage model: **extpars[0]** =n ;  **extpars[1]** = $\lambda$; **extpars[2]** = $K_0$; **extpars[3]** = $\beta_K$. This then has a [post parametrised friedmannian (nPPF)](https://arxiv.org/abs/1608.00522) $G_{eff,non-linear}$ in spherical collapse equations. **extpars[5-12]** = $p_1,...,p_8$. See Appendix B3 of [arXiv:2406.13667](https://arxiv.org/abs/2406.13667). 
+
 
 In the C++ code the model is specified as the integer value of each model in the last argument of the functions , e.g. for the 1-loop real space power spectrum in f(R) gravity we would specify the following functional call 
 
@@ -311,7 +320,7 @@ where the arguments are:
 
 See `reactions/src/examples` for more parameter and function details.  
 
-**Note** that all cases except 4,5,6 assume a LCDM background expansion. 
+**Note** that the following cases do **not** have a background LCDM expansion: 4,5,6,13,14,15,16,17.
 
 
 ## 6. Adding in new models
@@ -320,7 +329,7 @@ One can add in new models by going to the source code, `reactions/src/BeyondLCDM
 
 The functions one should consider when adding in a new models are as follows: 
 
-### A) Functions to edit for new models 
+### A) Basic functions to edit for new models 
 
 * `HAg` : Normalised Hubble expansion $\frac{H}{H_0}$
 * `HA1g` : Normalised scale factor derivative of Hubble  $aH \frac{dH}{da} \frac{1}{H_0^2}$
@@ -332,7 +341,7 @@ The functions one should consider when adding in a new models are as follows:
 * `WEFF` : Effective dark energy fluid contribution to virial theorem [Needed only for spherical collapse SCOL.cpp, not for 1-loop calculations]
 
 
-### B) Functions to edit for EFTofDE parametrisations (cases 7-12):
+### B) Extra functions to edit for EFTofDE parametrisations (cases 7-12):
 
 * `riccibackgroundp` : scale factor derivative of background Ricci scalar in FRLW
 * `alphai_eft` : scale factor dependence of parameter : $\alpha_i(a)$
@@ -341,20 +350,27 @@ The functions one should consider when adding in a new models are as follows:
 * `HA3g` : normalised 2nd scale factor derivative of Hubble : $\frac{d^2 H(a)}{da^2} \frac{1}{H_0}$
 
 
-### C) Functions to edit for custom background expansion: 
-**Notes**:
-1) To use these functions in your new model, you should initialise a spline with H(a) - run hubble_init : see reactions/src/SpecialFunctions.cpp for the function and reactions/examples/reaction_cg.cpp for an example
-2) If you have the analytic forms for Hubble and its derivative and they are not computationally expensive, you can add these directly to `HAg` and `HA1g`  (see point **A**). Use of bespokehub is useful when you need to solve some equation for Hubble (root finding or differential equations for example) and initialising once and for all (via hubble_init) becomes more efficient. 
+### C) Functions to edit for efficient calculation of custom background expansion: 
 
+Specify the solver or solution in the following functions (in BeyondLCDM.cpp):
 
 * `bespokehub` : Normalised Hubble expansion: $\frac{H}{H_0}$ (this can involve a solution to some ODE)
 * `bespokehubd` : $aH \frac{dH}{da} \frac{1}{H_0^2}$
 * `bespokehubdd` : $\frac{d^2 H(a)}{da^2} \frac{1}{H_0}$
 
-Once specified, you can use the following splines (initialised with hubble_init in SpecialFunctions class) in HAg and HA1g (and HA3g if EFTofDE is being considered)
+Once specified, you can use the following splines (initialised with the hubble_init function in SpecialFunctions class) in HAg and HA1g (and HA3g if EFTofDE is being considered)
+
 * `myhubble` : $\frac{H}{H_0}$
 * `myhubbled` : $aH \frac{dH}{da} \frac{1}{H_0^2}$
 * `myhubbledd` : $\frac{d^2 H(a)}{da^2}\frac{1}{H_0}$
+
+**Notes**:
+1) To use these functions in your new model, you should initialise them - run hubble_init : see reactions/src/SpecialFunctions.cpp for the function and reactions/examples/reaction_cg.cpp for an example
+2) If you have the analytic forms for Hubble and its derivative and they are not computationally expensive, you can add these directly to `HAg` and `HA1g`  (see point **A**). Use of bespokehub is useful when you need to solve some equation for Hubble (root finding or differential equations for example) and initialising once and for all (via hubble_init) becomes more efficient. This was the case for the QCDM and Generalised Cubic Galileon model which performs a root finding algorithm per value of scale factor a.
+
+### Models requiring a solution to the Klein-Gordon equation or additional differential equations:
+
+In this case, you can follow the K-mouflage model implementation. For this there is a commented instance of the Klein-Gordon equation being solved in BeyondLCDM.cpp (see funcn_kmouflage_lna for the explicit differential equations and init_kmouflage_lna for the solver). The scalar field and its derivative are saved in splines to be called in the Hubble functions. 
 
 
 Once you have added in the required functions you need to re-compile the source code by going to the `reactions` directory and running 
@@ -430,23 +446,46 @@ When using ReACT in a publication, please acknowledge the code by citing the rel
 
 ### Non-linear power spectra and halo model reaction: 
 
+
+#### Halo model reaction definition paper for modified gravity and dark energy 
+
 [arXiv:1812.05594](https://arxiv.org/abs/1812.05594) : "On the road to percent accuracy I: non-linear reaction of the matter power spectrum to dark energy and modified gravity"
+
+#### Extension of halo model reaction to massive neutrinos
 
 [arXiv:1909.02561](https://arxiv.org/abs/1909.02561) : "On the road to percent accuracy III: non-linear reaction of the matter power spectrum to massive neutrinos"
 
+#### ReACT code paper
+
 [arXiv:2005.12184](https://arxiv.org/abs/2005.12184) : "On the road to per-cent accuracy IV:  ReACT -- computing the non-linear power spectrum beyond LCDM"
+
+#### Combining modified gravity and massive neutrinos in halo model reaction and ReACT
 
 [arXiv:2105.12114](https://arxiv.org/abs/2105.12114) : "On the road to percent accuracy V: the non-linear power spectrum beyond LCDM with massive neutrinos and baryonic feedback"
 
+#### Extending halo model reaction to interacting dark energy
+
 [arXiv:2111.13598](https://arxiv.org/abs/2111.13598)  : "On the road to per cent accuracy VI: the non-linear power spectrum for interacting dark energy with baryonic feedback and massive neutrinos"
+
+#### Extending of halo model reaction formalism for parametrised modified gravity and ReACT v2 code 
 
 [arXiv:2210.01094](https://arxiv.org/abs/2210.01094) : "Fast and accurate predictions of the nonlinear matter power spectrum for general models of Dark Energy and Modified Gravity"
 
+#### Extending halo model reaction to Generalised Cubic Galileon and QCDM 
+
 [arXiv:2404.11471](https://arxiv.org/abs/2404.11471) : "Non-linear power spectrum and forecasts for Generalized Cubic Covariant Galileon"  
 
-### Perturbation theory and redshift space: 
+#### Extending halo model reaction to K-mouflage
+
+[arXiv:2406.13667](https://arxiv.org/abs/2406.13667) : "Matter Power Spectra in Modified Gravity: A Comparative Study of Approximations and N-Body Simulations"  
+
+### Perturbation theory and redshift space in modified gravity: 
+
+#### 2-point statistics 
 
 [arXiv:1606.02520](https://arxiv.org/abs/1606.02520) : "A Perturbative Approach to the Redshift Space Power Spectrum: Beyond the Standard Model"
+
+#### 3-point statistics 
 
 [arXiv:1808.01120](https://arxiv.org/abs/1808.01120) : "The one-loop matter bispectrum as a probe of gravity and dark energy"
 
@@ -554,6 +593,18 @@ Respective bibtex entries:
 ```
 
 ```
+@article{Bose:2024qbw,
+    author = "Bose, Benjamin and others",
+    title = "{Matter Power Spectra in Modified Gravity: A Comparative Study of Approximations and $N$-Body Simulations}",
+    eprint = "2406.13667",
+    archivePrefix = "arXiv",
+    primaryClass = "astro-ph.CO",
+    month = "6",
+    year = "2024"
+}
+```
+
+```
 @article{Bose:2016qun,
     author = "Bose, Benjamin and Koyama, Kazuya",
     title = "{A Perturbative Approach to the Redshift Space Power Spectrum: Beyond the Standard Model}",
@@ -606,7 +657,16 @@ The relation accounts for the fact that the CLASS code only couples Dark Energy 
 * Note if using the stand-alone version of ReACT, the reaction may have deviations away from unity of the order of ~0.1-0.3% for k<1e-3. Pyreact automatically sets it to unity at such large scales. 
 
 
-## 10. What is new ?
+## 10. Updates
+
+### Update 21.06.2024 
+
+* Added in the K-mouflage model along with example python notebooks and c++ files. 
+
+
+### Update 17.04.2024 
+
+* Added in the Generalised Covariant Cubic Galileon and QCDM models along with example python notebooks and c++ files. 
 
 ### Update 10.2022 
 
@@ -627,6 +687,3 @@ We have implemented the following to v.2:
 * Added in a new function in SpecialFunctions.cpp (hubble_init) to initialise a spline of a Hubble function H(a) calculated using the bespokehub function in BeyondLCDM.cpp. This is useful if there is not an analytic form for the Hubble function.  
 * Added in Hu-Sawicki forms for $\alpha$ EFTofDE basis in BeyondLCDM.cpp.
 
-### Update 17.04.2024 
-
-* Added in the Generalised Covariant Cubic Galileon and QCDM models along with example python notebooks and c++ files. 
