@@ -16,6 +16,7 @@
 9. [Notes](https://github.com/nebblu/ACTio-ReACTio#9-notes)
 10. [Updates](https://github.com/nebblu/ACTio-ReACTio#10-what-is-new)
 
+___
 
 ## 1. Introduction
 
@@ -47,6 +48,7 @@ ReACT can perform the follwing calculations for general theories beyond LCDM
 
 ** for LCDM, nDGP and f(R) gravity only. 
 
+___
 
 ## 2. Requirements
 
@@ -70,6 +72,8 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/bose/sundials/install_dir/lib64:${
 
 ### Python
 A recent version of python should be installed. I have worked with Python 3.6.8 without issue. 
+
+___
 
 ## 3. Installation 
 
@@ -206,6 +210,8 @@ exit
 
 You can later come back to your image in the individual container by opening the Docker app -> going to Containers, where you will see a list of all your containers -> choose and run a container with the 'mybuild'-image you used before (e.g. charming_faraday: mybuild RUNNING PORT:8888) -> open the command line (CLI-option in the Docker app when you hover over a container). Alternatively, there is a Docker extension in VS-code where you can (re-)start your container and see the files there all at ones, which makes the navigation easier.
 
+___
+
 ## 4. Running ReACT
 
 ### Python
@@ -252,6 +258,8 @@ All example files require the specification of a transfer function or linear pow
 2. Otherwise, you must create your own cosmology file as in `reactions/examples/transfers' within which you should specify the associated z=0 LCDM transfer function file with the following two column format: {k[h/Mpc], T(k)} with the transfer function normalised to 1 at small k. This is then assumed by the code to rescale the power spectrum to the target, beyond LCDM cosmology  using internally computed LCDM and non-standard growth factors.  
 
 The internal flag **modcamb** tells ReACT whether or not to treat the input transfer function/power spectrum as specifying a z=0 LCDM cosmology (false) or specifying a transfer function/ power spectrum at the target z and in the target beyond LCDM theory (true) (as produced by EFTCAMB, MGCAMB etc). We must set modcamb = false for option 2. Option 1 can have modcamb assume both false or true values depending on whether or not the specified function is LCDM z=0 or not. 
+
+___
 
 ## 5. Available Models
 
@@ -322,6 +330,8 @@ See `reactions/src/examples` for more parameter and function details.
 
 **Note** that the following cases do **not** have a background LCDM expansion: 4,5,6,13,14,15,16,17.
 
+___
+
 
 ## 6. Adding in new models
 
@@ -372,6 +382,8 @@ Once specified, you can use the following splines (initialised with the hubble_i
 
 In this case, you can follow the K-mouflage model implementation. For this there is a commented instance of the Klein-Gordon equation being solved in BeyondLCDM.cpp (see funcn_kmouflage_lna for the explicit differential equations and init_kmouflage_lna for the solver). The scalar field and its derivative are saved in splines to be called in the Hubble functions. 
 
+___
+
 
 Once you have added in the required functions you need to re-compile the source code by going to the `reactions` directory and running 
 
@@ -386,6 +398,8 @@ python setup.py clean && python setup.py develop
 ```
 
 If you want to add in this model to the Pyreact wrapper, you will also need to add in the nth model in `pyreact/react.py` to the appropriate function you want to call in python. 
+
+___
 
 ## 7. Parameters
 
@@ -439,6 +453,10 @@ If you want to add in this model to the Pyreact wrapper, you will also need to a
 **modg**: Tells ReACT to manually set $k_\star$ and $\mathcal{E}$ to LCDM values (1e-6 and 1. resp.). This is needed because of sensitivity of $\mathcal{E}$ to the ratio of 1-halo terms which may not be exactly equal at large scales for different cosmologies even when modified gravity isn't present. 
 
 **Note** the cosmoSIS module has not yet been extended to include massive neutrinos. 
+
+
+___
+
 
 ## 8. Citation
 
@@ -635,6 +653,9 @@ Respective bibtex entries:
 }
 ```
 
+___
+
+
 ## 9. Notes 
 
 ### Relation between $\xi$ in CLASS and ReACT 
@@ -655,6 +676,9 @@ The relation accounts for the fact that the CLASS code only couples Dark Energy 
 ### Miscellaneous (Updated: 28/05/20)
 * If errors in spherical collapse are experienced for non-f(R) theories, try setting yenvf=0 in the scol_init function in reactions/src/HALO.cpp.
 * Note if using the stand-alone version of ReACT, the reaction may have deviations away from unity of the order of ~0.1-0.3% for k<1e-3. Pyreact automatically sets it to unity at such large scales. 
+
+
+___
 
 
 ## 10. Updates
