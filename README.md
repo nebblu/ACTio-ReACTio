@@ -14,7 +14,7 @@
 7. [Parameter description](https://github.com/nebblu/ACTio-ReACTio#7-parameters)
 8. [Citation](https://github.com/nebblu/ACTio-ReACTio#8-citation)
 9. [Notes](https://github.com/nebblu/ACTio-ReACTio#9-notes)
-10. [Updates](https://github.com/nebblu/ACTio-ReACTio#10-what-is-new)
+10. [Updates](https://github.com/nebblu/ACTio-ReACTio#10-updates)
 
 ___
 
