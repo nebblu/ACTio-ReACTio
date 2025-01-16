@@ -2151,7 +2151,7 @@ switch (rsd_model) {
       myd2 = pow2(F1_nk/dnorm_spt);
       myf = -G1_nk/F1_nk;
       linear = (u0x[4]*myd2*pow2(bias[0])*P_L(k) + 2.*u0x[0]*myd2*myf*bias[0]*P_L(k) + u0x[1]*myd2*pow2(myf)*b2*P_L(k));
-      kaiser_term = -(u0x[5]*myd2*pow2(bias[0])*P_L(k) + 2.*u0x[6]*myd2*myf*bias[0]*P_L(k) + u0x[7]*myd2*pow2(myf)*b2*P_L(k));
+      kaiser_term = -(u0x[5]*myd2*pow2(bias[0])*P_L(k) + 2.*u0x[6]*myd2*myf*bias[0]*P_L(k) + u0x[7]*myd2*pow2(myf)*P_L(k));
 
       return linear + nonlinear +  kaiser_term;
 
