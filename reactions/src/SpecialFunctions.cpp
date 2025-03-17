@@ -2977,9 +2977,9 @@ static double kernel3(double k, double sigma_v, double F0, double anw, int n, in
 }
 }
 
-// a =1 : monopole
-// a =2 : quadrupole
-// a =3 : hexdecapole
+// e =1 : monopole
+// e =2 : quadrupole
+// e =3 : hexdecapole
 double factL(double k, double sigma_v, double F0, double anw, int n, int e, int a ){
   switch(e) {
         case 1:
