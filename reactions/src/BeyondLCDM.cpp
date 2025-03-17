@@ -1728,11 +1728,11 @@ double gamma3(double a, double omega0, double k0, double k1, double k2, double k
 						var10 = pow2(extpars[0]/var3);
 						var11 = pow2(var4);
 
-						  return 1./3.*(var8*pow2(1./HA(a,omega0))*pow3(omega0/var1)/(36.
+						  return  1./3.*(var8*pow2(1./HA(a,omega0))*pow3(omega0/var1)/(36.
 						 										*(var8+var5)
 						 										*(pow2(k1/a)+var5)
 						 										*(pow2(k2/a)+var5)
-						 										*(pow2(k3/a)+var5)
+						 									*(pow2(k3/a)+var5)
 						 				 					  *(var9+var5))
 						 		 								*(-45./8.*(var9+var5)/(var7*var10*(extpars[0]/var3))*pow(omega0-4.*var1*(omega0-1.),7)/var11/var4
 						 		   							+pow2(9./(4.*var6*var10)*pow(omega0-4.*var1*(omega0-1.),5)/var11)));

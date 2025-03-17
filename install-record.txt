@@ -1,0 +1,10 @@
+/home/bbose/.conda/envs/fkpt_react/lib/python3.8/site-packages/pyreact/react.py
+/home/bbose/.conda/envs/fkpt_react/lib/python3.8/site-packages/pyreact/__init__.py
+/home/bbose/.conda/envs/fkpt_react/lib/python3.8/site-packages/pyreact/libreact_wrapper.so
+/home/bbose/.conda/envs/fkpt_react/lib/python3.8/site-packages/pyreact/__pycache__/react.cpython-38.pyc
+/home/bbose/.conda/envs/fkpt_react/lib/python3.8/site-packages/pyreact/__pycache__/__init__.cpython-38.pyc
+/home/bbose/.conda/envs/fkpt_react/lib/python3.8/site-packages/pyreact-2.0.0-py3.8.egg-info/PKG-INFO
+/home/bbose/.conda/envs/fkpt_react/lib/python3.8/site-packages/pyreact-2.0.0-py3.8.egg-info/requires.txt
+/home/bbose/.conda/envs/fkpt_react/lib/python3.8/site-packages/pyreact-2.0.0-py3.8.egg-info/SOURCES.txt
+/home/bbose/.conda/envs/fkpt_react/lib/python3.8/site-packages/pyreact-2.0.0-py3.8.egg-info/top_level.txt
+/home/bbose/.conda/envs/fkpt_react/lib/python3.8/site-packages/pyreact-2.0.0-py3.8.egg-info/dependency_links.txt
