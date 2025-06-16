@@ -130,6 +130,17 @@ int main(int argc, char* argv[]) {
     rsdpars[2] = 10.;
     rsdpars[3] = 20.;
 
+  
+    // Calculate the linear growth for the EdS 1-loop RSD spectrum's velocity dispersion 
+    iow.initn_lin(pars,extpars,0.00001,mymodel);
+    fl_spt =-G1_nk/F1_nk;
+    Dl_spt = F1_nk;
+    // Calculate the LCDM velocity dispersion 
+    double sigveds = spt.sigmav_init_linear(); 
+
+    // Compare EdS vs Exact velocity dispersions 
+    printf("%e %e \n", rsdpars[0], sigveds);
+
 
     /* Output section */
     /* Open output file */

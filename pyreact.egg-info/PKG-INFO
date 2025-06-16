@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.2
 Name: pyreact
 Version: 2.0.0
 Summary: Python interface for the ReACT library
@@ -6,3 +6,7 @@ Author: Tilman Troester & Ben Bose
 Author-email: tilmantroester@gmail.com
 License-File: LICENSE
 Requires-Dist: numpy
+Dynamic: author
+Dynamic: author-email
+Dynamic: requires-dist
+Dynamic: summary

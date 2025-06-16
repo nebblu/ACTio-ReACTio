@@ -190,6 +190,37 @@ real SPT::PTNSMnDGPq(real k, double barr[], real sigma_v, int a) const {
 }
 
 
+/*  analytic 1-loop SPT multipoles for LCDM (EdS-approx) */
+// bl is linear bias
+// a = 1 : Monopole
+// a = 2 : Quadrupole
+// a = 3 : Hexdecapole
+// sigma_v should be the linear theory prediction (see sigmav_init_linear)
+
+real SPT::PRSDloop(real k, real bl, real sigma_v, int a) const {
+  // 1 loop pieces
+  double loop = pow2(bl)*factL(k,0.,1.,1.,0,a,7) *PLOOP(k,1) - 2.*factL(k,0.,1.,1.,1,a,7) *bl*PLOOP(k,2) + factL(k,0.,1.,1.,2,a,7) * PLOOP(k,3);
+  // RSD correction term pieces (A+B+C terms in EQ.23 of 1006.0699)
+  double corr_terms = ABC_lcdm_loop(k, bl, a);
+  // RSD Kaiser piece
+  double kaiser = -pow2(Dl_spt*bl/dnorm_spt)*(factL(k,sigma_v*k*k,1.,1.,0,a,8) + 2.*fl_spt/bl*factL(k,sigma_v*k*k,1.,1.,1,a,8) + pow2(fl_spt/bl)*factL(k,sigma_v*k*k,1.,1.,2,a,8))*P_L(k);
+
+	return  loop + corr_terms + kaiser;
+}
+
+
+// Velocity dispersion integrand for EdS
+static real vel_disp_lin_lcdm(const PowerSpectrum& P_L, double q){
+  IOW iow;
+  double growth = pow2(fl_spt*Dl_spt/dnorm_spt);
+  return  P_L(q)*growth/(6.*pow2(M_PI));
+}
+
+// sigma_v linear prediction for LCDM
+real SPT::sigmav_init_linear() const{
+    return Integrate(bind(vel_disp_lin_lcdm, cref(P_L), std::placeholders::_1), QMINp, QMAXp, epsrel);
+  }
+
 
 /*All functions below are the components used to construct the above spectra :
  In order of appearance :
@@ -1411,6 +1442,45 @@ static real ABC(int a, const PowerSpectrum& P_L, real k, real r, real x) {
 			case 39:
 				return D_spt*Fd_spt*r*(-1.+x*x)*(-2.*x+r*(-1.+3.*x*x))*P_L(k*r)*P_L(k)/(Dd_spt*d);
         break;
+      /* C terms for full SPT calculation */
+      case 40: // u^2f^2
+        return pow4(r)*(1-pow2(x))*P_L(k*r)*P_L(k*sqrt(d))/(2*pow2(d));
+      //    return (1-pow2(x))*P_L(k*r)*P_L(k*sqrt(d))/2.;
+      break;
+      case 41: // u^2f^3
+        return  pow4(r)*3.*(1-2*pow2(x)+pow4(x))*P_L(k*r)*P_L(k*sqrt(d))/(4*pow2(d));
+      //  return 3*(pow2(r)-2*pow2(r*x)+pow2(r*pow2(x)))*P_L(k*r)*P_L(k*sqrt(d))/(4*d);
+      break;
+      case 42: // u^2f^4
+      //  return 5*(pow4(r)-3*pow2(pow2(r)*x)+3*pow4(x*r)-pow4(r)*pow6(x))*P_L(k*r)*P_L(k*sqrt(d))/(16*pow2(d));
+        return pow4(r)*5.*(1-3*pow2(x)+3*pow4(x)-pow6(x))*P_L(k*r)*P_L(k*sqrt(d))/(16*pow2(d));
+      break;
+      case 43: // u^4f^2
+      //    return (-1+3*pow2(x))*P_L(k*r)*P_L(k*sqrt(d))/2.;
+        return pow2(r)*(16.-8*pow2(r)-32*r*x+24*pow2(x*r))*P_L(k*r)*P_L(k*sqrt(d))/(16*pow2(d));
+      break;
+      case 44: // u^4f^3
+      //    return (2-3*pow2(r)-12*r*x-2*pow2(x)+18*pow2(r*x)+12*r*pow3(x)-15*pow2(r*pow2(x)))*P_L(k*r)*P_L(k*sqrt(d))/(2*d);
+        return  pow2(r)*(16-24*pow2(r)-96*r*x-16*pow2(x)+144*pow2(r*x)+96*r*pow3(x)-120*pow2(r)*pow4(x))*P_L(k*r)*P_L(k*sqrt(d))/(16*pow2(d));
+      break;
+      case 45: // u^4f^4
+      //  return (-120*pow3(r)*x+240*pow3(r*x)-120*pow3(r)*pow5(x)+36*pow2(r)*(1-2*pow2(x)+pow4(x))+pow4(r)*(-15+135*pow2(x)-225*pow4(x)+105*pow6(x)))*P_L(k*r)*P_L(k*sqrt(d))/(16*pow2(d));
+        return  pow2(r)*(6-15*pow2(r)-60*r*x-12*pow2(x)+135*pow2(r*x)+120*r*pow3(x)+6*pow4(x)-225*pow2(r)*pow4(x)-60*r*pow5(x)+105*pow2(r)*pow6(x))*P_L(k*r)*P_L(k*sqrt(d))/(16*pow2(d));
+      break;
+      case 46: // u^6f^3
+      //    return (-4+3*pow2(r)+24*r*x+12*pow2(x)-30*pow2(r*x)-40*r*pow3(x)+35*pow2(r*pow2(x)))*P_L(k*r)*P_L(k*sqrt(d))/(4*d);
+        return pow2(r)*(-16+12*pow2(r)+96*r*x+48*pow2(x)-120*pow2(x*r)-160*r*pow3(x)+140*pow2(r)*pow4(x))*P_L(k*r)*P_L(k*sqrt(d))/(16*pow2(d));
+      break;
+      case 47: // u^6f^4
+      //      return (8-72*pow2(r)+15*pow4(r)-96*r*x+240*pow3(r)*x-8*pow2(x)+432*pow2(r*x)-225*pow2(pow2(r)*x)+96*r*pow3(x)-800*pow3(r*x)
+      //                -360*pow2(r*pow2(x))+525*pow4(r*x)+560*pow3(r)*pow5(x)-315*pow4(r)*pow6(x))*P_L(k*r)*P_L(k*sqrt(d))/(16*pow2(d));
+        return pow2(r)*(-12+15*pow2(r)+120*r*x+72*pow2(x)-225*pow2(x*r)-400*r*pow3(x)-60*pow4(x)+525*pow2(r)*pow4(x)+280*r*pow5(x)-315*pow2(r)*pow6(x))*P_L(k*r)*P_L(k*sqrt(d))/(16*pow2(d));
+      break;
+      case 48: // u^8f^4
+      //      return (-8+36*pow2(r)-5*pow4(r)+96*r*x-120*pow3(r)*x+24*pow2(x)-360*pow2(r*x)+105*pow2(pow2(r)*x)-160*r*pow3(x)+560*pow3(r*x)
+      //            +420*pow2(r*pow2(x))-315*pow4(r*x)-504*pow3(r)*pow5(x)+231*pow4(r)*pow6(x))*P_L(k*r)*P_L(k*sqrt(d))/(16*pow2(d));
+        return  pow2(r)*(6-5*pow2(r)-60*r*x-60*pow2(x)+105*pow2(x*r)+280*r*pow3(x)+70*pow4(x)-315*pow2(r)*pow4(x)-252*r*pow5(x)+231*pow2(r)*pow6(x))*P_L(k*r)*P_L(k*sqrt(d))/(16*pow2(d));
+      break;
 			default:
 			warning("SPT: invalid indices, a = %d\n", a);
 				return 0;
@@ -1568,6 +1638,80 @@ static real midintabc_dgp(double u0[],real bl, int a, const PowerSpectrum& P_L, 
 }
 
 
+static real midintabc_lcdm_loop(double u0[],real bl, int a, const PowerSpectrum& P_L, real k, real r) {
+  real KMAX = QMAXp/k;
+  real KMIN = QMINp/k;	
+  real YMIN = Max(-1., (1.+r*r-KMAX*KMAX)/2./r);
+  real YMAX = ATS(k,r);
+  real YMAX1 = Min(0.9999999999, (1.+r*r-KMIN*KMIN)/2./r);
+  real error_cterm = 1e-3;
+
+	real F0,D1;
+			F0 = fl_spt;
+			D1 = Dl_spt;
+      real u01 = u0[0];
+      real u02 = u0[1];
+      real u03 = u0[2];
+      real u04 = u0[3];
+
+	//A term
+		return   pow4(D1/dnorm_spt)*2.*(F0*u01*pow2(bl)*(Integrate(bind(ABC, 1, cref(P_L), k, r, std::placeholders::_1),  YMIN, YMAX ,  1e-3*P_L(k))
+										   + Integrate(bind(ABC, 5, cref(P_L), k,  r, std::placeholders::_1),  YMIN, YMAX ,  1e-3*P_L(k))
+										   + Integrate(bind(ABC, 10, cref(P_L), k, r, std::placeholders::_1),  YMIN, YMAX ,  1e-3*P_L(k)))
+
+							+ F0*F0*u01*bl*(Integrate(bind(ABC, 2, cref(P_L), k,  r, std::placeholders::_1),  YMIN, YMAX , 1e-3*P_L(k))
+										   + Integrate(bind(ABC, 6, cref(P_L), k,  r, std::placeholders::_1), YMIN, YMAX ,  1e-3*P_L(k))
+										   + Integrate(bind(ABC, 11, cref(P_L), k,  r, std::placeholders::_1), YMIN, YMAX ,  1e-3*P_L(k)))
+
+							+  F0*F0*u02*bl*(Integrate(bind(ABC, 3, cref(P_L), k,  r, std::placeholders::_1),   YMIN, YMAX , 1e-3*P_L(k))
+										   + Integrate(bind(ABC, 7, cref(P_L), k,  r, std::placeholders::_1),   YMIN, YMAX ,  1e-3*P_L(k))
+										   + Integrate(bind(ABC, 12, cref(P_L), k,  r, std::placeholders::_1),  YMIN, YMAX ,  1e-3*P_L(k)))
+
+					     + F0*F0*F0*u02*(Integrate(bind(ABC, 2, cref(P_L), k,  r, std::placeholders::_1),  YMIN, YMAX ,  1e-3*P_L(k))
+										   + Integrate(bind(ABC, 8, cref(P_L), k,  r, std::placeholders::_1),   YMIN, YMAX ,  1e-3*P_L(k))
+										   + Integrate(bind(ABC, 11, cref(P_L), k, r, std::placeholders::_1), YMIN, YMAX ,  1e-3*P_L(k)))
+
+						   + F0*F0*F0*u03*(Integrate(bind(ABC, 4, cref(P_L), k, r, std::placeholders::_1),   YMIN, YMAX , 1e-3*P_L(k))
+										   + Integrate(bind(ABC, 9, cref(P_L), k,  r, std::placeholders::_1),  YMIN, YMAX ,  1e-3*P_L(k))
+										   + Integrate(bind(ABC, 13, cref(P_L), k,  r, std::placeholders::_1),YMIN, YMAX ,  1e-3*P_L(k))))
+
+	//B term
+		  +      pow4(D1/dnorm_spt)*2.*(F0*F0*pow2(bl)*u01*Integrate(bind(ABC, 14,  cref(P_L), k, r, std::placeholders::_1), YMIN, YMAX , 1e-3* P_L(k))
+
+						  -F0*F0*F0*bl*u01*(Integrate(bind(ABC, 15, cref(P_L), k, r, std::placeholders::_1), YMIN, YMAX , 1e-3*P_L(k))
+											    +Integrate(bind(ABC, 16, cref(P_L),  k,  r, std::placeholders::_1),YMIN, YMAX , 1e-3*P_L(k)))
+
+						+F0*F0*F0*F0*u01*Integrate(bind(ABC, 17, cref(P_L),  k, r, std::placeholders::_1), YMIN, YMAX , 1e-3*P_L(k))
+
+							  +F0*F0*pow2(bl)*u02*Integrate(bind(ABC, 18,  cref(P_L), k,  r, std::placeholders::_1),YMIN, YMAX ,  1e-3*P_L(k))
+
+						 -F0*F0*F0*bl*u02*(Integrate(bind(ABC, 19, cref(P_L), k,  r, std::placeholders::_1), YMIN, YMAX , 1e-3*P_L(k))
+										      + Integrate(bind(ABC, 20, cref(P_L),  k,  r, std::placeholders::_1), YMIN, YMAX ,  1e-3*P_L(k)))
+
+					  +F0*F0*F0*F0*u02*Integrate(bind(ABC, 21, cref(P_L),  k,  r, std::placeholders::_1),YMIN, YMAX , 1e-3*P_L(k))
+
+					    - F0*F0*F0*bl*u03*(Integrate(bind(ABC, 22,  cref(P_L), k,  r, std::placeholders::_1), YMIN, YMAX ,  1e-3*P_L(k))
+											  + Integrate(bind(ABC, 23,  cref(P_L), k,  r, std::placeholders::_1), YMIN, YMAX , 1e-3*P_L(k)))
+
+					  + F0*F0*F0*F0*u03*Integrate(bind(ABC, 24,  cref(P_L), k,  r, std::placeholders::_1),YMIN, YMAX ,  1e-3*P_L(k))
+
+							+F0*F0*F0*F0*u04*Integrate(bind(ABC, 25,  cref(P_L), k,  r, std::placeholders::_1), YMIN, YMAX , 1e-3*P_L(k)))
+
+
+// C term- full SPT calculation @ tree level
+
+      + pow4(D1/dnorm_spt)*pow2(bl)*(pow2(F0)*u01*Integrate(bind(ABC,  40,  cref(P_L), k, r, std::placeholders::_1), YMIN, YMAX1 , error_cterm)
+                                  +pow3(F0)*u01*Integrate(bind(ABC,  41,  cref(P_L), k, r, std::placeholders::_1), YMIN, YMAX1 , error_cterm)
+                                  +pow4(F0)*u01*Integrate(bind(ABC,  42,  cref(P_L), k, r, std::placeholders::_1), YMIN, YMAX1 , error_cterm)
+                                  +pow2(F0)*u02*Integrate(bind(ABC,  43,  cref(P_L), k, r, std::placeholders::_1), YMIN, YMAX1 , error_cterm)
+                                  +pow3(F0)*u02*Integrate(bind(ABC,  44,  cref(P_L), k, r, std::placeholders::_1), YMIN, YMAX1 , error_cterm)
+                                  +pow4(F0)*u02*Integrate(bind(ABC,  45,  cref(P_L), k, r, std::placeholders::_1), YMIN, YMAX1 , error_cterm)
+                                  +pow3(F0)*u03*Integrate(bind(ABC,  46,  cref(P_L), k, r, std::placeholders::_1), YMIN, YMAX1 , error_cterm)
+                                  +pow4(F0)*u03*Integrate(bind(ABC,  47,  cref(P_L), k, r, std::placeholders::_1), YMIN, YMAX1 , error_cterm)
+                                  +pow4(F0)*u04*Integrate(bind(ABC,  48,  cref(P_L), k, r, std::placeholders::_1), YMIN, YMAX1 , error_cterm));
+
+
+}
 
 
 /* A and B correction term in LCDM*/
@@ -1678,6 +1822,37 @@ real SPT::AB_mu_lcdm(real k, real bl, real u, int a) const{
           }
         return  k*k*k/(4*M_PI*M_PI) * res;
         }
+
+
+
+
+/*Analytical A and B and C terms for 1-loop RSD prediction */
+// a = 1 : Monopole
+// a = 2 : Quadrupole
+// a = 3 : Hexdecapole
+
+real SPT::ABC_lcdm_loop(real k, real bl, int a) const{
+  int n3 = 300;
+  real KMAX = QMAXp/k;
+  real KMIN = QMINp/k;
+  double y[n3];
+  double integrand[n3];
+  double u0x[4];
+  u0x[0]=factL(k, 0., 1., 1., 1, a, 7);
+  u0x[1]=factL(k, 0., 1., 1., 2, a, 7);
+  u0x[2]=factL(k, 0., 1., 1., 3, a, 7);
+  u0x[3]=factL(k, 0., 1., 1., 4, a, 7);
+
+  for (int i = 0; i<n3; i++){
+  y[i] = KMIN * exp(i*log(KMAX/KMIN)/(n3-1.));
+  integrand[i] = midintabc_lcdm_loop(u0x, bl, a ,cref(P_L), k, y[i]);
+  }
+double res = 0.;
+  for( int i = 1; i < n3; ++ i ){
+res += 0.5 * (y[i] - y[i-1])*(integrand[i] + integrand[i-1]);
+    }
+  return  k*k*k/(4*M_PI*M_PI) * res;
+  }
 
 
 
@@ -2216,9 +2391,10 @@ static double pspt_hob( const PowerSpectrum& P_L, double u0[], double pars[], do
          // 22 Integral
          double bsg2 = prefac*D4*r2*plkmp*plkr*(b2/2. + bG2*Sb)*(u0[4]*Zb2u0 + u0[0]*fmg*Zb2u2 + u0[1]*pow2(fmg)*Zb2u4);
 
+         double renorm = 0.;
 
-         double Zb3u0 =  2./21.*(b2*(5.+2.*x2) - 2. * (5.*bG2 + 2.*bG3)*(1.+r2)*pow2(x2-1.)/(d*e));
-         double Zb3u2 =  b2/6.;
+         double Zb3u0 =  2./21.*(b2*(5.+2.*x2)*renorm - 2. * (5.*bG2 + 2.*bG3)*(1.+r2)*pow2(x2-1.)/(d*e));
+         double Zb3u2 =  b2/6.*renorm;
 
          // 13 Integral
          double bsg3 = 6.*prefac*D4*r2*plk*plkr*(bl*u0[4]*Zb3u0 + u0[0]*fmg*(bl*Zb3u2 + Zb3u0) + u0[1]*pow2(fmg)*Zb3u2);

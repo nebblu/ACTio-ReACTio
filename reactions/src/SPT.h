@@ -126,14 +126,20 @@ public:
       // qbias
       real PTNSMnDGPq(real k, double barr[], real sigma_v, int a) const;
 
+
+      // 1-loop RSD prediction for LCDM (see Eq. 29 of 2311.13529 for example)
+      real PRSDloop(real k, real bl, real sigma_v, int a) const;
+
+      // LCDM linear prediction for velocity dispersion
+      real sigmav_init_linear() const;
+
+
       // lagrangian bias terms
       real Lag_bias(int a, real k, real bias[]) const;
 
 
-
-      // Linear velocity dispersion
+      // Linear velocity dispersion (beyond-LCDM calculation)
       real sigmav_init(double pars[], double extpars[], int model = 1) const;
-
 
       // modified gravity 1-loop, TNS and Kaiser model - numerically calculated
       double PRSD_mg(int a, int b, double pars[], double extpars[], double rsdpars[], double bias[],  double k, double err, int model = 1) const;
@@ -203,6 +209,11 @@ public:
   // a = 3 : Hexdecapole
 	real AB_lcdm(real k, real bl, real sigmav, int a) const;
   real AB_dgp(real k, real bl, real sigmav, int a) const;
+
+
+  	/* A+B+C terms analytic for the 1-loop SPT prediction */
+  real ABC_lcdm_loop(real k, real bl, int a) const;
+
 
   // for 2d spectra
   real AB_mu_lcdm(real k, real bl, real u, int a) const;
