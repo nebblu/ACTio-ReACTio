@@ -61,6 +61,7 @@ int main(int argc, char* argv[]) {
 
       // Lagrangian bias params (See 1607.03149 for example) OR Q-bias params (see PRSD_mg in src/SPT.cpp).
       double bias[8];
+  
     /*  bias[0] = 1.5; // b1
       bias[1] = 0.7; // b2
       bias[2] = 0.3; // bG2
@@ -70,6 +71,8 @@ int main(int argc, char* argv[]) {
       bias[6] = 200.; // epsilon_2
       bias[7] = 0.001.; // nbar
       */
+
+      // CDM values 
       bias[0] = 1.; // b1
       bias[1] = 0.; // b2
       bias[2] = 0.; // bG2
@@ -148,13 +151,17 @@ for(int i =0; i <Nk;  i ++) {
       p5 = spt.PRSD_mg(5, 2, pars, extpars, rsdpars, bias, k, err, mymodel); // P2 ct+shot
       p6 = spt.PRSD_mg(5, 3, pars, extpars, rsdpars, bias, k, err, mymodel); // P4 ct+shot
 
+      // Set the linear growth factor and rate to their modified values 
+      Dl_spt = F1_nk;
+      fl_spt = -G1_nk/F1_nk;
+      
+      // Einstein-de Sitter 1-loop spectra 
+      p7 = spt.PRSDloop(k, bias[0], sigveds, 1); // P0 EdS SPT
+      p8 = spt.PRSDloop(k, bias[0], sigveds, 2); // P2 EdS SPT
+      p9 = spt.PRSDloop(k, bias[0], sigveds, 3); // P4 EdS SPT
 
-     printf("%e %e %e %e %e %e %e  \n", k, p1,p2,p3,p4,p5,p6); // print to terminal
-     fprintf(fp,"%e %e %e %e %e %e %e  \n", k, p1,p2,p3,p4,p5,p6); // print to file
-
-//	p1 = P_l(k);
-//	 printf("%e %e  \n", k, p1);
-//	 fprintf(fp,"%e %e  \n", k, p1);
+     printf("%e %e %e %e %e %e %e %e %e %e  \n", k, p1,p2,p3,p4,p5,p6,p7,p8,p9); // print to terminal
+     fprintf(fp,"%e %e %e %e %e %e %e %e %e %e  \n", k, p1,p2,p3,p4,p5,p6,p7,p8,p9); // print to file
 
 }
 
