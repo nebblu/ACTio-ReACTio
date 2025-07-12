@@ -189,15 +189,16 @@ real SPT::PTNSMnDGPq(real k, double barr[], real sigma_v, int a) const {
 	return  pow2(bk)*factL(k,sigma_v,1.,1.,0,a,7) *PLOOP(k,4) - 2.*factL(k,sigma_v,1.,1.,1,a,7) *bk*PLOOP(k,5) + factL(k,sigma_v,1.,1.,2,a,7) * PLOOP(k,6) +  AB_dgp(k, bk, sigma_v, a);
 }
 
-
 /*  analytic 1-loop SPT multipoles for LCDM (EdS-approx) */
 // bl is linear bias
 // a = 1 : Monopole
 // a = 2 : Quadrupole
 // a = 3 : Hexdecapole
 // sigma_v should be the linear theory prediction (see sigmav_init_linear)
+// bias[]: 0 = linear bias, 1 = b2, 2 = b_G2, 3 = b_G3 (see Eq.45 and 46 of https://arxiv.org/pdf/2311.13529)
 
-real SPT::PRSDloop(real k, real bl, real sigma_v, int a) const {
+real SPT::PRSDloop(real k, real bias[], real sigma_v, int a) const {
+  double bl = bias[0]; 
   // 1 loop pieces
   double loop = pow2(bl)*factL(k,0.,1.,1.,0,a,7) *PLOOP(k,1) - 2.*factL(k,0.,1.,1.,1,a,7) *bl*PLOOP(k,2) + factL(k,0.,1.,1.,2,a,7) * PLOOP(k,3);
   // RSD correction term pieces (A+B+C terms in EQ.23 of 1006.0699)
@@ -205,20 +206,21 @@ real SPT::PRSDloop(real k, real bl, real sigma_v, int a) const {
   // RSD Kaiser piece
   double kaiser = -pow2(Dl_spt*bl/dnorm_spt)*(factL(k,sigma_v*k*k,1.,1.,0,a,8) + 2.*fl_spt/bl*factL(k,sigma_v*k*k,1.,1.,1,a,8) + pow2(fl_spt/bl)*factL(k,sigma_v*k*k,1.,1.,2,a,8))*P_L(k);
 
-	return  loop + corr_terms + kaiser;
+  double bias2213 = bias_eds_loop(k,bias,a);
+
+	return  loop + corr_terms + kaiser + bias2213;
 }
 
 
 // Velocity dispersion integrand for EdS
 static real vel_disp_lin_lcdm(const PowerSpectrum& P_L, double q){
-  IOW iow;
-  double growth = pow2(fl_spt*Dl_spt/dnorm_spt);
-  return  P_L(q)*growth/(6.*pow2(M_PI));
+  return  P_L(q)/(6.*pow2(M_PI));
 }
 
 // sigma_v linear prediction for LCDM
 real SPT::sigmav_init_linear() const{
-    return Integrate(bind(vel_disp_lin_lcdm, cref(P_L), std::placeholders::_1), QMINp, QMAXp, epsrel);
+     double growth = pow2(fl_spt*Dl_spt/dnorm_spt);
+    return growth*Integrate(bind(vel_disp_lin_lcdm, cref(P_L), std::placeholders::_1), QMINp, QMAXp, epsrel);
   }
 
 
@@ -660,7 +662,6 @@ real SPT::Lag_bias(int a, real k, real bias[]) const {
 	real KMIN = QMINp/k;
     return k*k*k/(4*M_PI*M_PI) * pow4(Dl_spt/dnorm_spt) * Integrate<ExpSub>(bind(midpb2, cref(P_L), a, bias, k, std::placeholders::_1), KMIN, KMAX,epsrel);
 }
-
 
 
 
@@ -1265,10 +1266,10 @@ double SPT::PHALO(double k) const{
 
 
 ////////////////////////////////////////////////
-///////REDSHIFT SPACE MODEL-TNS Correction TERMS///////////
+///////REDSHIFT SPACE ///////////
 ///////////////////////////////////////////////
 
-/* Non vanishing A, B and DGP terms */
+/* Non vanishing A, B, C and DGP terms */
 
 // Notes for analytic AB + DGP terms : DEFINITION OF THETA= - DEL V / aHf (and is accounted for in definition of Cross Bispectrum)
 // See http://arxiv.org/pdf/1006.0699v1.pdf for derivation
@@ -1442,43 +1443,33 @@ static real ABC(int a, const PowerSpectrum& P_L, real k, real r, real x) {
 			case 39:
 				return D_spt*Fd_spt*r*(-1.+x*x)*(-2.*x+r*(-1.+3.*x*x))*P_L(k*r)*P_L(k)/(Dd_spt*d);
         break;
+
       /* C terms for full SPT calculation */
       case 40: // u^2f^2
         return pow4(r)*(1-pow2(x))*P_L(k*r)*P_L(k*sqrt(d))/(2*pow2(d));
-      //    return (1-pow2(x))*P_L(k*r)*P_L(k*sqrt(d))/2.;
       break;
       case 41: // u^2f^3
         return  pow4(r)*3.*(1-2*pow2(x)+pow4(x))*P_L(k*r)*P_L(k*sqrt(d))/(4*pow2(d));
-      //  return 3*(pow2(r)-2*pow2(r*x)+pow2(r*pow2(x)))*P_L(k*r)*P_L(k*sqrt(d))/(4*d);
       break;
       case 42: // u^2f^4
-      //  return 5*(pow4(r)-3*pow2(pow2(r)*x)+3*pow4(x*r)-pow4(r)*pow6(x))*P_L(k*r)*P_L(k*sqrt(d))/(16*pow2(d));
         return pow4(r)*5.*(1-3*pow2(x)+3*pow4(x)-pow6(x))*P_L(k*r)*P_L(k*sqrt(d))/(16*pow2(d));
       break;
       case 43: // u^4f^2
-      //    return (-1+3*pow2(x))*P_L(k*r)*P_L(k*sqrt(d))/2.;
         return pow2(r)*(16.-8*pow2(r)-32*r*x+24*pow2(x*r))*P_L(k*r)*P_L(k*sqrt(d))/(16*pow2(d));
       break;
       case 44: // u^4f^3
-      //    return (2-3*pow2(r)-12*r*x-2*pow2(x)+18*pow2(r*x)+12*r*pow3(x)-15*pow2(r*pow2(x)))*P_L(k*r)*P_L(k*sqrt(d))/(2*d);
         return  pow2(r)*(16-24*pow2(r)-96*r*x-16*pow2(x)+144*pow2(r*x)+96*r*pow3(x)-120*pow2(r)*pow4(x))*P_L(k*r)*P_L(k*sqrt(d))/(16*pow2(d));
       break;
       case 45: // u^4f^4
-      //  return (-120*pow3(r)*x+240*pow3(r*x)-120*pow3(r)*pow5(x)+36*pow2(r)*(1-2*pow2(x)+pow4(x))+pow4(r)*(-15+135*pow2(x)-225*pow4(x)+105*pow6(x)))*P_L(k*r)*P_L(k*sqrt(d))/(16*pow2(d));
         return  pow2(r)*(6-15*pow2(r)-60*r*x-12*pow2(x)+135*pow2(r*x)+120*r*pow3(x)+6*pow4(x)-225*pow2(r)*pow4(x)-60*r*pow5(x)+105*pow2(r)*pow6(x))*P_L(k*r)*P_L(k*sqrt(d))/(16*pow2(d));
       break;
       case 46: // u^6f^3
-      //    return (-4+3*pow2(r)+24*r*x+12*pow2(x)-30*pow2(r*x)-40*r*pow3(x)+35*pow2(r*pow2(x)))*P_L(k*r)*P_L(k*sqrt(d))/(4*d);
         return pow2(r)*(-16+12*pow2(r)+96*r*x+48*pow2(x)-120*pow2(x*r)-160*r*pow3(x)+140*pow2(r)*pow4(x))*P_L(k*r)*P_L(k*sqrt(d))/(16*pow2(d));
       break;
       case 47: // u^6f^4
-      //      return (8-72*pow2(r)+15*pow4(r)-96*r*x+240*pow3(r)*x-8*pow2(x)+432*pow2(r*x)-225*pow2(pow2(r)*x)+96*r*pow3(x)-800*pow3(r*x)
-      //                -360*pow2(r*pow2(x))+525*pow4(r*x)+560*pow3(r)*pow5(x)-315*pow4(r)*pow6(x))*P_L(k*r)*P_L(k*sqrt(d))/(16*pow2(d));
         return pow2(r)*(-12+15*pow2(r)+120*r*x+72*pow2(x)-225*pow2(x*r)-400*r*pow3(x)-60*pow4(x)+525*pow2(r)*pow4(x)+280*r*pow5(x)-315*pow2(r)*pow6(x))*P_L(k*r)*P_L(k*sqrt(d))/(16*pow2(d));
       break;
       case 48: // u^8f^4
-      //      return (-8+36*pow2(r)-5*pow4(r)+96*r*x-120*pow3(r)*x+24*pow2(x)-360*pow2(r*x)+105*pow2(pow2(r)*x)-160*r*pow3(x)+560*pow3(r*x)
-      //            +420*pow2(r*pow2(x))-315*pow4(r*x)-504*pow3(r)*pow5(x)+231*pow4(r)*pow6(x))*P_L(k*r)*P_L(k*sqrt(d))/(16*pow2(d));
         return  pow2(r)*(6-5*pow2(r)-60*r*x-60*pow2(x)+105*pow2(x*r)+280*r*pow3(x)+70*pow4(x)-315*pow2(r)*pow4(x)-252*r*pow5(x)+231*pow2(r)*pow6(x))*P_L(k*r)*P_L(k*sqrt(d))/(16*pow2(d));
       break;
 			default:
@@ -1497,6 +1488,9 @@ inline double ATS(real k, real r){
  return  Min(0.999999999, (1.+r*r-KMIN*KMIN)/2./r);
  }
 }
+
+
+// Integrand for TNS (A+B) prediction's correction terms
 
 static real midintabc_lcdm(double u0[],real bl, int a, const PowerSpectrum& P_L, real k, real r) {
   real KMAX = QMAXp/k;
@@ -1556,6 +1550,7 @@ static real midintabc_lcdm(double u0[],real bl, int a, const PowerSpectrum& P_L,
 
 }
 
+// Integrand for TNS (A+B) prediction's correction terms with additional DGP contributions
 
 static real midintabc_dgp(double u0[],real bl, int a, const PowerSpectrum& P_L, real k, real r) {
   real KMAX = QMAXp/k;
@@ -1638,6 +1633,8 @@ static real midintabc_dgp(double u0[],real bl, int a, const PowerSpectrum& P_L, 
 }
 
 
+// Integrand for full 1-loop SPT prediction's correction terms
+
 static real midintabc_lcdm_loop(double u0[],real bl, int a, const PowerSpectrum& P_L, real k, real r) {
   real KMAX = QMAXp/k;
   real KMIN = QMINp/k;	
@@ -1697,24 +1694,22 @@ static real midintabc_lcdm_loop(double u0[],real bl, int a, const PowerSpectrum&
 
 							+F0*F0*F0*F0*u04*Integrate(bind(ABC, 25,  cref(P_L), k,  r, std::placeholders::_1), YMIN, YMAX , 1e-3*P_L(k)))
 
-
-// C term- full SPT calculation @ tree level
-
-      + pow4(D1/dnorm_spt)*pow2(bl)*(pow2(F0)*u01*Integrate(bind(ABC,  40,  cref(P_L), k, r, std::placeholders::_1), YMIN, YMAX1 , error_cterm)
-                                  +pow3(F0)*u01*Integrate(bind(ABC,  41,  cref(P_L), k, r, std::placeholders::_1), YMIN, YMAX1 , error_cterm)
-                                  +pow4(F0)*u01*Integrate(bind(ABC,  42,  cref(P_L), k, r, std::placeholders::_1), YMIN, YMAX1 , error_cterm)
-                                  +pow2(F0)*u02*Integrate(bind(ABC,  43,  cref(P_L), k, r, std::placeholders::_1), YMIN, YMAX1 , error_cterm)
-                                  +pow3(F0)*u02*Integrate(bind(ABC,  44,  cref(P_L), k, r, std::placeholders::_1), YMIN, YMAX1 , error_cterm)
-                                  +pow4(F0)*u02*Integrate(bind(ABC,  45,  cref(P_L), k, r, std::placeholders::_1), YMIN, YMAX1 , error_cterm)
-                                  +pow3(F0)*u03*Integrate(bind(ABC,  46,  cref(P_L), k, r, std::placeholders::_1), YMIN, YMAX1 , error_cterm)
-                                  +pow4(F0)*u03*Integrate(bind(ABC,  47,  cref(P_L), k, r, std::placeholders::_1), YMIN, YMAX1 , error_cterm)
-                                  +pow4(F0)*u04*Integrate(bind(ABC,  48,  cref(P_L), k, r, std::placeholders::_1), YMIN, YMAX1 , error_cterm));
+    // C term- full SPT calculation @ tree level
+        + pow4(D1/dnorm_spt)*(pow2(F0*bl)*u01*Integrate(bind(ABC,  40,  cref(P_L), k, r, std::placeholders::_1), YMIN, YMAX1 , error_cterm)
+                              +bl*pow3(F0)*u01*Integrate(bind(ABC,  41,  cref(P_L), k, r, std::placeholders::_1), YMIN, YMAX1 , error_cterm)
+                            +pow4(F0)*u01*Integrate(bind(ABC,  42,  cref(P_L), k, r, std::placeholders::_1), YMIN, YMAX1 , error_cterm)
+                            +pow2(F0*bl)*u02*Integrate(bind(ABC,  43,  cref(P_L), k, r, std::placeholders::_1), YMIN, YMAX1 , error_cterm)
+                            +bl*pow3(F0)*u02*Integrate(bind(ABC,  44,  cref(P_L), k, r, std::placeholders::_1), YMIN, YMAX1 , error_cterm)
+                            +pow4(F0)*u02*Integrate(bind(ABC,  45,  cref(P_L), k, r, std::placeholders::_1), YMIN, YMAX1 , error_cterm)
+                            +bl*pow3(F0)*u03*Integrate(bind(ABC,  46,  cref(P_L), k, r, std::placeholders::_1), YMIN, YMAX1 , error_cterm)
+                            +pow4(F0)*u03*Integrate(bind(ABC,  47,  cref(P_L), k, r, std::placeholders::_1), YMIN, YMAX1 , error_cterm)
+                            +pow4(F0)*u04*Integrate(bind(ABC,  48,  cref(P_L), k, r, std::placeholders::_1), YMIN, YMAX1 , error_cterm));
 
 
 }
 
 
-/* A and B correction term in LCDM*/
+/* A and B correction term for TNS in LCDM*/
 
 /*Analytical A and B*/
 // a = 1 : Monopole
@@ -1824,69 +1819,166 @@ real SPT::AB_mu_lcdm(real k, real bl, real u, int a) const{
         }
 
 
-
-
+        
 /*Analytical A and B and C terms for 1-loop RSD prediction */
 // a = 1 : Monopole
 // a = 2 : Quadrupole
 // a = 3 : Hexdecapole
-
 real SPT::ABC_lcdm_loop(real k, real bl, int a) const{
-  int n3 = 300;
-  real KMAX = QMAXp/k;
-  real KMIN = QMINp/k;
-  double y[n3];
-  double integrand[n3];
-  double u0x[4];
-  u0x[0]=factL(k, 0., 1., 1., 1, a, 7);
-  u0x[1]=factL(k, 0., 1., 1., 2, a, 7);
-  u0x[2]=factL(k, 0., 1., 1., 3, a, 7);
-  u0x[3]=factL(k, 0., 1., 1., 4, a, 7);
+      int n3 = 300;
+      real KMAX = QMAXp/k;
+      real KMIN = QMINp/k;
+      double y[n3];
+      double integrand[n3];
+      double u0x[4];
+      u0x[0]=factL(k, 0., 1., 1., 1, a, 7);
+      u0x[1]=factL(k, 0., 1., 1., 2, a, 7);
+      u0x[2]=factL(k, 0., 1., 1., 3, a, 7);
+      u0x[3]=factL(k, 0., 1., 1., 4, a, 7);
 
-  for (int i = 0; i<n3; i++){
-  y[i] = KMIN * exp(i*log(KMAX/KMIN)/(n3-1.));
-  integrand[i] = midintabc_lcdm_loop(u0x, bl, a ,cref(P_L), k, y[i]);
+      for (int i = 0; i<n3; i++){
+      y[i] = KMIN * exp(i*log(KMAX/KMIN)/(n3-1.));
+      integrand[i] = midintabc_lcdm_loop(u0x, bl, a ,cref(P_L), k, y[i]);
+      }
+    double res = 0.;
+      for( int i = 1; i < n3; ++ i ){
+    res += 0.5 * (y[i] - y[i-1])*(integrand[i] + integrand[i-1]);
+        }
+      return  k*k*k/(4*M_PI*M_PI) * res;
+      }
+
+
+
+/* Higher order bias as in https://arxiv.org/pdf/2311.13529 */
+double bias_eds_integrand(const PowerSpectrum& P_L, double u0[], double bias[], double k, double r, double x){
+
+    // bias parameters
+    double bl = bias[0]; // linear bias
+    double b2 = bias[1]; // b2
+    double bG2 = bias[2]; // nonlocal bias 2
+    double bG3 = bias[3]; // nonlocal bias 3
+
+
+    double r2 = pow2(r);
+    double k2 = pow2(k); 
+    double x2 = pow2(x); 
+
+    double d = 1.+ r2 - 2.*r*x;
+    double e = 1.+ r2 + 2.*r*x;
+
+    if(d < 1e-5 || e < 1e-5){
+        return 0;
+      }
+
+    double kmq = sqrt(k2*d);
+
+    double plk = P_L(k);
+    double plkmp = P_L(kmq);
+    double plkr = P_L(k*r);
+
+  // Higher order bias terms (EdS approximated - see Eq.45,46 of 2311.13529)
+    // Linear growth at external momentum
+    double D4 = pow4(Dl_spt);
+    double fmg = fl_spt;
+
+  // u^2 -1 with u = q.k-q/ (|q||k-q|) = [x - r]/(Sqrt[1+r^2-2rx])
+    double Sb = pow2(x-r)/d -1.;
+  // EdS kernels for relevant momenta
+    double G2ker = G2eds(k*r,kmq,(x-r)/(kmq/k)); // G2eds(q, k-q)
+    double F2ker = F2eds(k*r,kmq,(x-r)/(kmq/k)); // F2eds(q, k-q)
+
+    // higher order bias terms proportional to different powers of mu = k.z/k
+    double Zb2u0 = 4. * bl * F2ker + b2 + 2. * bG2 * Sb; // Zb2 proportional to u^0
+    double Zb2u2 = 4. * G2ker + 1./(d*r) * (2.*bl*(r+x-2.*r*x2) + fmg*r*(x2-1.));  // Zb2 proportional to f u^2
+    double Zb2u4 =(r + 2.*x - 3.*r*x2)/(d*r);  // Zb2 proportional to f^2 u^4
+
+    // 22 Integral
+    double bsg2 = D4*r2*plkmp*plkr*(b2/2. + bG2*Sb)*(u0[2]*Zb2u0 + u0[0]*fmg*Zb2u2 + u0[1]*pow2(fmg)*Zb2u4);
+
+    double renorm = 0.;
+
+    double Zb3u0 =  2./21.*(b2*(5.+2.*x2)*renorm - 2. * (5.*bG2 + 2.*bG3)*(1.+r2)*pow2(x2-1.)/(d*e));
+    double Zb3u2 =  b2/6.*renorm;
+
+    // 13 Integral
+    double bsg3 = 6.*D4*r2*plk*plkr*(bl*u0[2]*Zb3u0 + u0[0]*fmg*(bl*Zb3u2 + Zb3u0) + u0[1]*pow2(fmg)*Zb3u2);
+
+  return  bsg3 + bsg2;
   }
-double res = 0.;
-  for( int i = 1; i < n3; ++ i ){
-res += 0.5 * (y[i] - y[i-1])*(integrand[i] + integrand[i-1]);
-    }
-  return  k*k*k/(4*M_PI*M_PI) * res;
-  }
 
 
+double SPT::bias_eds_loop(real k, real bias[], int a) const{
+        double err = 1e-3;
+        double KMAX = QMAXp/k;
+        double KMIN = QMINp/k;
+        double tol = 1e-8;
+        double c[2] = {KMIN,-1.+tol};
+        double d[2] = {KMAX, 1.-tol};
+        double u0x[3];
+        u0x[0] = factL(k,  0., 1., 1., 1 , a,  1); // u2
+        u0x[1] = factL(k,  0., 1., 1., 2 , a,  1); // u4
+        u0x[2] = factL(k,  0., 1., 1., 0 , a,  1); // u0
+      
+        double prefac = k*k*k/(4*M_PI*M_PI)/pow4(dnorm_spt);
+      
+        double biasloop = prefac*Integrate<2>(bind(bias_eds_integrand,cref(P_L), u0x, bias, k, std::placeholders::_1,std::placeholders::_2), c, d, err);
+      
+        // Subtract the IR-piece of the b2^2 term 
+        double b22k0 = pow4(Dl_spt)*u0x[2]*bias[1]*bias[1]*IRb22()/2.;
+      
+        return biasloop - b22k0;
+        }
+      
 
-/*NUMERICAL TNS WITH VARIOUS BIAS PRESCRIPTIONS */
 
-//// Integrands for numerical TNS //////
+/*NUMERICAL RSD MULTIPOLES FOR VARIOUS MODELS */
 
-// Q-bias
+//// Integrands for numerical TNS with Q-bias (bk) - see https://arxiv.org/abs/1507.01592 //////
 static double ptns_qb( const PowerSpectrum& P_L, double u0[], double pars[], double extpars[], int model, double bk, double k, double r, double x){
-  double kargs[4],kv[3],xv[3], abct, pdd, pdd22, pdd13, pdt, pdt22, pdt13, ptt, ptt22, ptt13, prefac, plk, plkmp, plkr,d,r2,r3,x2,x3,x4;
-  prefac = k*k*k/(4*M_PI*M_PI)/pow4(dnorm_spt);
-  d = 1.+ r*r - 2.*r*x;
+  double kargs[4],kv[3],xv[3], abct, pdd, pdd22, pdd13, pdt, pdt22, pdt13, ptt, ptt22, ptt13, plk, plkmp, plkr, d,e,k2,r2,r3,x2,x3,x4;
+
+  // The integrated |k'| is parametrised as k*r
+  
+  d = 1.+ r*r - 2.*r*x;    // |k-k'|/k^2
+  e = 1.+ r*r + 2.*r*x;    // |k+k'|/k^2
+
   // tolerance for ode solver (see SpecialFunctions.cpp, initn2). This encounters a singularity if k'.-k' = -1 exactly.
   double tol = 1e-8;
 
-
+  // Ensure no singularities when k=k' 
   if(d < 1e-5){
       return 0;
     }
 
-    // The integrated |k'| is parametrised as k*r
+  // SPT kernel ODE solver class 
   IOW iow;
+
+  // Useful quantities 
+  k2 = pow2(k);
+  r2 = pow2(r);
+  r3 = r2*r;
+  x2 = pow2(x);
+  x3 = x2*x;
+  x4 = x3*x;
+
+
+  // Populate arrays with magnitudes and angles 
         kv[0] = k;
         kv[1] = k*r;
-        kv[2] = kv[1];
+        kv[2] = k*r;
         xv[0] = -1. + tol ;
         xv[1] = x;
         xv[2] = -x;
-        kargs[0] = sqrt(kv[1]*kv[1]+kv[0]*kv[0]-2.*kv[1]*kv[0]*xv[1]);
-        kargs[2] = sqrt(kv[1]*kv[1]+2.*kv[1]*kv[2]*xv[0]+kv[2]*kv[2]);
-        kargs[1] = sqrt(kv[2]*kv[2]+2.*kv[2]*kv[0]*xv[2]+kv[0]*kv[0]);
-        kargs[3] = sqrt(kv[0]*kv[0]+2.*kv[0]*kv[1]*xv[1]+kv[1]*kv[1]);
+        kargs[0] = sqrt(k2*d); // |k - k'|
+        kargs[1] = kargs[0]; // |k - k'| 
+        kargs[2] = sqrt(2.*k2*r2*tol); // |k'-k'|
+        kargs[3] = sqrt(k2*e); // |k + k'|
+
+
+  // Solve for the kernels 
         iow.initn_rsd(pars,extpars,kv,xv,kargs,model);
 
+  // Set growth for the different loop terms
         pdd22 = pow2(F2_nk);
         pdd13 = F1_nk*F3_nk;
         pdt22 = G2_nk*F2_nk;
@@ -1894,23 +1986,19 @@ static double ptns_qb( const PowerSpectrum& P_L, double u0[], double pars[], dou
         ptt22 = pow2(G2_nk);
         ptt13 = G1_nk * G3_nk;
 
+    // Different linear spectra 
         plk = P_L(k);
         plkmp = P_L(kargs[0]);
         plkr = P_L(k*r);
-        r2 = pow2(r);
-        r3 = r2*r;
-        x2 = pow2(x);
-        x3 = x2*x;
-        x4 = x3*x;
 
 
 // 1-loop spectra
-         pdd = bk*bk*u0[4]*(prefac*r2*2.*plkr*(plkmp*pdd22+ 3.*plk*pdd13));
-         pdt = bk*u0[0]*(prefac*r2*2.*plkr*(plkmp*pdt22 + 3.*plk*pdt13));
-         ptt = u0[1]*(prefac*r2*2.*plkr*(plkmp*ptt22 + 3.*plk*ptt13));
+         pdd = bk*bk*u0[4]*(r2*2.*plkr*(plkmp*pdd22+ 3.*plk*pdd13));
+         pdt = bk*u0[0]*(r2*2.*plkr*(plkmp*pdt22 + 3.*plk*pdt13));
+         ptt = u0[1]*(r2*2.*plkr*(plkmp*ptt22 + 3.*plk*ptt13));
 
 
-// ab terms
+// AB terms
         double abc[10];
         // 1st order kernels F1/G1(k-p)
         abc[0] = F1kmp_nk;
@@ -1965,102 +2053,119 @@ static double ptns_qb( const PowerSpectrum& P_L, double u0[], double pars[], dou
                       +r3*(5.-105.*x2+315.*x4-231.*x3*x3))));
 
 
-      return  pdd - 2.*pdt + ptt + prefac*abct;
+      return  pdd - 2.*pdt + ptt + abct;
     }
 
 
-//// Lagrangian bias of Roy and Mac Donald (LCDM only)
 
+//// Lagrangian bias of Roy and Mac Donald (LCDM growth assumed for the higher order bias terms!) - see https://arxiv.org/abs/1607.03150 
 static double ptns_lagb( const PowerSpectrum& P_L, double u0[], double pars[], double extpars[], int model, double bias[], double k, double r, double x){
-    double kargs[4],kv[3],xv[3], abct, pdd, pdd22, pdd13, pdt, pdt22, pdt13, ptt, ptt22, ptt13, prefac, plk, plkmp, plkr,d,r2,r3,x2,x3,x4;
-    prefac = k*k*k/(4*M_PI*M_PI)/pow4(dnorm_spt);
-    d = 1.+ r*r - 2.*r*x;
-    // tolerance for ode solver (see SpecialFunctions.cpp, initn2). This encounters a singularity if k'.-k' = -1 exactly.
+    double kargs[4],kv[3],xv[3], abct, pdd, pdd22, pdd13, pdt, pdt22, pdt13, ptt, ptt22, ptt13, plk, plkmp, plkr, d,e,k2,r2,r3,x2,x3,x4;
+
+    // The integrated |k'| is parametrised as k*r
+    
+    d = 1.+ r*r - 2.*r*x;    // |k-k'|/k^2
+    e = 1.+ r*r + 2.*r*x;     // |k+k'|/k^2
+
+  // tolerance for ode solver (see SpecialFunctions.cpp, initn2). This encounters a singularity if k'.-k' = -1 exactly.
     double tol = 1e-8;
 
-    if(d < 1e-5){
-        return 0;
-      }
+    // Ensure no singularities when k=k' 
+        if(d < 1e-5){
+            return 0;
+          }
 
-      // The integrated |k'| is parametrised as k*r
-    IOW iow;
-          kv[0] = k;
-          kv[1] = k*r;
-          kv[2] = kv[1];
-          xv[0] = -1. + tol;
-          xv[1] = x;
-          xv[2] = -x;
-          kargs[0] = sqrt(kv[1]*kv[1]+kv[0]*kv[0]-2.*kv[1]*kv[0]*xv[1]);
-          kargs[2] = sqrt(kv[1]*kv[1]+2.*kv[1]*kv[2]*xv[0]+kv[2]*kv[2]);
-          kargs[1] = sqrt(kv[2]*kv[2]+2.*kv[2]*kv[0]*xv[2]+kv[0]*kv[0]);
-          kargs[3] = sqrt(kv[0]*kv[0]+2.*kv[0]*kv[1]*xv[1]+kv[1]*kv[1]);
-          iow.initn_rsd(pars,extpars,kv,xv,kargs,model);
+  // SPT kernel ODE solver class 
+        IOW iow;
 
-          pdd22 = pow2(F2_nk);
-          pdd13 = F1_nk*F3_nk;
-          pdt22 = G2_nk*F2_nk;
-          pdt13 = 0.5*(G1_nk*F3_nk + F1_nk*G3_nk);
-          ptt22 = pow2(G2_nk);
-          ptt13 = G1_nk * G3_nk;
-          plk = P_L(k);
-          plkmp = P_L(kargs[0]);
-          plkr = P_L(k*r);
-          r2 = pow2(r);
-          r3 = r2*r;
-          x2 = pow2(x);
-          x3 = x2*x;
-          x4 = x3*x;
-
-// 1-loop spectra
-       pdd = (prefac*r2*2.*plkr*(plkmp*pdd22+ 3.*plk*pdd13));
-       pdt = (prefac*r2*2.*plkr*(plkmp*pdt22 + 3.*plk*pdt13));
-       ptt = (prefac*r2*2.*plkr*(plkmp*ptt22 + 3.*plk*ptt13));
+  // Useful quantities 
+        k2 = pow2(k);
+        r2 = pow2(r);
+        r3 = r2*r;
+        x2 = pow2(x);
+        x3 = x2*x;
+        x4 = x3*x;
 
 
-// Lagrangian bias terms (need to adapt to beyond LCDM)
-
-      double sker = 2./3.-(1.-pow2((x-r)/(kargs[0]/k)));
-      double dker = -2./7.*(1.-x2);
-      double bs2 = -4./7.*(bias[0]-1.);
-      double b3n = 32./315.*(bias[0]-1.);
-      double G2ker = G2eds(k*r,kargs[0],(x-r)/(kargs[0]/k)); //
-      double F2ker = F2eds(k*r,kargs[0],(x-r)/(kargs[0]/k)); //
-
-      double lagdd =  prefac*pow4(Dl_spt)*((plkr*plkmp*r2*
-              (2.*bias[0]*bias[1]*F2ker // b2
-              +2.*bias[0]*bs2*F2ker*sker //bs2
-              +pow2(bias[1])/2. //b22 a
-              +bias[1]*bs2*sker //b2s2 a
-              +pow2(bs2)*pow2(sker)/2.) //bs22 a
-
-            - r2*pow2(plkr)*(pow2(bias[1])/2. //b22 b
-                            +2.*bias[1]*bs2/3. // b2s2 b
-                            +pow2(bs2)*2./9.))// bs22 b
-
-            +plk*b3n*bias[0]*plkr*2.*105./16.*r2*(dker*sker+8./63.)); // b3 terms
-
-      double lagdt = prefac*pow4(Dl_spt)*(-fl_spt*plkr*plkmp*r2*(bias[1]*G2ker //b2t
-                                                 +bs2*G2ker*sker) // bs2t
-              -fl_spt*plk*b3n*plkr*105./16.*r2*(dker*sker+8./63.));
+  // Populate arrays with magnitudes and angles 
+        kv[0] = k;
+        kv[1] = k*r;
+        kv[2] = k*r;
+        xv[0] = -1. + tol ;
+        xv[1] = x;
+        xv[2] = -x;
+        kargs[0] = sqrt(k2*d); // |k - k'|
+        kargs[1] = kargs[0]; // |k - k'| 
+        kargs[2] = sqrt(2.*k2*r2*tol); // |k'-k'|
+        kargs[3] = sqrt(k2*e); // |k + k'|
 
 
-// ab terms
-      double abc[10];
-      // 1st order kernels F1/G1(k-p)
-      abc[0] = F1kmp_nk;
-      abc[1] = G1kmp_nk/bias[0];
-      // 1st order kernels F1/G1(p)
-      abc[2] = F1p_nk;
-      abc[3] = G1p_nk/bias[0];
-      //symmetrized 2nd order kernels for ps F2/G2(p,k-p)
-      abc[4] = F2_nk;
-      abc[5] = G2_nk/bias[0];
-      //symmetrized 2nd order kernels F2/G2(-p,k)
-      abc[6] = F2B_nk;
-      abc[7] = G2B_nk/bias[0];
-      //symmetrized 2nd order kernels F2/G2(-k,k-p)
-      abc[8] = F2C_nk;
-      abc[9] = G2C_nk/bias[0];
+  // Solve for the kernels 
+        iow.initn_rsd(pars,extpars,kv,xv,kargs,model);
+
+  // Set growth for the different loop terms
+        pdd22 = pow2(F2_nk);
+        pdd13 = F1_nk*F3_nk;
+        pdt22 = G2_nk*F2_nk;
+        pdt13 = 0.5*(G1_nk*F3_nk + F1_nk*G3_nk);
+        ptt22 = pow2(G2_nk);
+        ptt13 = G1_nk * G3_nk;
+
+  // Different linear spectra 
+        plk = P_L(k);
+        plkmp = P_L(kargs[0]);
+        plkr = P_L(k*r);
+
+  // 1-loop spectra
+        pdd = (r2*2.*plkr*(plkmp*pdd22+ 3.*plk*pdd13));
+        pdt = (r2*2.*plkr*(plkmp*pdt22 + 3.*plk*pdt13));
+        ptt = (r2*2.*plkr*(plkmp*ptt22 + 3.*plk*ptt13));
+
+
+  // Lagrangian bias terms (need to adapt to beyond LCDM)
+
+        double sker = 2./3.-(1.-pow2((x-r)/(kargs[0]/k)));
+        double dker = -2./7.*(1.-x2);
+        double bs2 = -4./7.*(bias[0]-1.);
+        double b3n = 32./315.*(bias[0]-1.);
+        double G2ker = G2eds(k*r,kargs[0],(x-r)/(kargs[0]/k)); //
+        double F2ker = F2eds(k*r,kargs[0],(x-r)/(kargs[0]/k)); //
+
+        double lagdd =  pow4(Dl_spt)*((plkr*plkmp*r2*
+                (2.*bias[0]*bias[1]*F2ker // b2
+                +2.*bias[0]*bs2*F2ker*sker //bs2
+                +pow2(bias[1])/2. //b22 a
+                +bias[1]*bs2*sker //b2s2 a
+                +pow2(bs2)*pow2(sker)/2.) //bs22 a
+
+              - r2*pow2(plkr)*(pow2(bias[1])/2. //b22 b
+                              +2.*bias[1]*bs2/3. // b2s2 b
+                              +pow2(bs2)*2./9.))// bs22 b
+
+              +plk*b3n*bias[0]*plkr*2.*105./16.*r2*(dker*sker+8./63.)); // b3 terms
+
+        double lagdt = pow4(Dl_spt)*(-fl_spt*plkr*plkmp*r2*(bias[1]*G2ker //b2t
+                                                  +bs2*G2ker*sker) // bs2t
+                -fl_spt*plk*b3n*plkr*105./16.*r2*(dker*sker+8./63.));
+
+
+  // ab terms
+        double abc[10];
+        // 1st order kernels F1/G1(k-p)
+        abc[0] = F1kmp_nk;
+        abc[1] = G1kmp_nk/bias[0];
+        // 1st order kernels F1/G1(p)
+        abc[2] = F1p_nk;
+        abc[3] = G1p_nk/bias[0];
+        //symmetrized 2nd order kernels for ps F2/G2(p,k-p)
+        abc[4] = F2_nk;
+        abc[5] = G2_nk/bias[0];
+        //symmetrized 2nd order kernels F2/G2(-p,k)
+        abc[6] = F2B_nk;
+        abc[7] = G2B_nk/bias[0];
+        //symmetrized 2nd order kernels F2/G2(-k,k-p)
+        abc[8] = F2C_nk;
+        abc[9] = G2C_nk/bias[0];
 
 
 
@@ -2101,63 +2206,77 @@ static double ptns_lagb( const PowerSpectrum& P_L, double u0[], double pars[], d
 
 
 
-    return u0[4]*(pow2(bias[0])*pdd + lagdd) - 2.*u0[0]*(bias[0]*pdt + lagdt) + u0[1]*ptt + prefac*abct;  // in other code multiply abc by 2
+    return u0[4]*(pow2(bias[0])*pdd + lagdd) - 2.*u0[0]*(bias[0]*pdt + lagdt) + u0[1]*ptt + abct;  
 
   }
 
 
   //// Integrands for numerical RSD SPT 1-loop spectrum //////
   static double pspt( const PowerSpectrum& P_L, double u0[], double pars[], double extpars[], int model, double bk, double k, double r, double x){
-    double kargs[4],kv[3],xv[3], abct, pdd, pdd22, pdd13, pdt, pdt22, pdt13, ptt, ptt22, ptt13, prefac, plk, plkmp, plkr;
-    double d,d2,r2,r3,x2,x3,x4,r4,x6,x5;
-    prefac = k*k*k/(4*M_PI*M_PI)/pow4(dnorm_spt);
-    d = 1.+ r*r - 2.*r*x;
-    // tolerance for ode solver (see SpecialFunctions.cpp, initn2). This encounters a singularity if k'.-k' = -1 exactly.
+    double kargs[4],kv[3],xv[3], abct, pdd, pdd22, pdd13, pdt, pdt22, pdt13, ptt, ptt22, ptt13, plk, plkmp, plkr;
+    double e,d,d2,k2,r2,r3,x2,x3,x4,r4,x5,x6;
+
+    // The integrated |k'| is parametrised as k*r
+      d = 1.+ r*r - 2.*r*x;    // |k-k'|/k^2
+      e = 1.+ r*r + 2.*r*x;     // |k+k'|/k^2
+
+
+  // tolerance for ode solver (see SpecialFunctions.cpp, initn2). This encounters a singularity if k'.-k' = -1 exactly.
     double tol = 1e-8;
 
-    if(d < 1e-5){
-        return 0;
-      }
+    // Ensure no singularities when k=k' 
+        if(d < 1e-5){
+            return 0;
+          }
 
-      // The integrated |k'| is parametrised as k*r
-    IOW iow;
-          kv[0] = k;
-          kv[1] = k*r;
-          kv[2] = kv[1];
-          xv[0] = -1. + tol ;
-          xv[1] = x;
-          xv[2] = -x;
-          kargs[0] = sqrt(kv[1]*kv[1]+kv[0]*kv[0]-2.*kv[1]*kv[0]*xv[1]);
-          kargs[2] = sqrt(kv[1]*kv[1]+2.*kv[1]*kv[2]*xv[0]+kv[2]*kv[2]);
-          kargs[1] = sqrt(kv[2]*kv[2]+2.*kv[2]*kv[0]*xv[2]+kv[0]*kv[0]);
-          kargs[3] = sqrt(kv[0]*kv[0]+2.*kv[0]*kv[1]*xv[1]+kv[1]*kv[1]);
-          iow.initn_rsd(pars,extpars,kv,xv,kargs,model);
+  // SPT kernel ODE solver class 
+        IOW iow;
 
-          pdd22 = pow2(F2_nk);
-          pdd13 = F1_nk*F3_nk;
-          pdt22 = G2_nk*F2_nk;
-          pdt13 = 0.5*(G1_nk*F3_nk + F1_nk*G3_nk);
-          ptt22 = pow2(G2_nk);
-          ptt13 = G1_nk * G3_nk;
+  // Useful quantities 
+      d2 = pow2(d);
+      k2 = pow2(k);
+      r2 = pow2(r);
+      r3 = r2*r;
+      r4 = r2*r2;
+      x2 = pow2(x);
+      x3 = x2*x;
+      x4 = x3*x;
+      x5 = x4*x;
+      x6 = x5*x;
 
-          plk = P_L(k);
-          plkmp = P_L(kargs[0]);
-          plkr = P_L(k*r);
+  // Populate arrays with magnitudes and angles 
+        kv[0] = k;
+        kv[1] = k*r;
+        kv[2] = k*r;
+        xv[0] = -1. + tol ;
+        xv[1] = x;
+        xv[2] = -x;
+        kargs[0] = sqrt(k2*d); // |k - k'|
+        kargs[1] = kargs[0]; // |k - k'| 
+        kargs[2] = sqrt(2.*k2*r2*tol); // |k'-k'|
+        kargs[3] = sqrt(k2*e); // |k + k'|
 
-          d2 = pow2(d);
-          r2 = pow2(r);
-          r3 = r2*r;
-          r4 = r2*r2;
-          x2 = pow2(x);
-          x3 = x2*x;
-          x4 = x3*x;
-          x5 = x4*x;
-          x6 = x5*x;
+
+  // Solve for the kernels 
+        iow.initn_rsd(pars,extpars,kv,xv,kargs,model);
+
+  // Set growth for the different loop terms
+        pdd22 = pow2(F2_nk);
+        pdd13 = F1_nk*F3_nk;
+        pdt22 = G2_nk*F2_nk;
+        pdt13 = 0.5*(G1_nk*F3_nk + F1_nk*G3_nk);
+        ptt22 = pow2(G2_nk);
+        ptt13 = G1_nk * G3_nk;
+
+  // Different linear spectra 
+        plk = P_L(k);
+        plkmp = P_L(kargs[0]);
+        plkr = P_L(k*r);
 
   // 1-loop spectra
-           pdd = bk*bk*u0[4]*(prefac*r2*2.*plkr*(plkmp*pdd22+ 3.*plk*pdd13));
-           pdt = bk*u0[0]*(prefac*r2*2.*plkr*(plkmp*pdt22 + 3.*plk*pdt13));
-           ptt = u0[1]*(prefac*r2*2.*plkr*(plkmp*ptt22 + 3.*plk*ptt13));
+           pdd = bk*bk*u0[4]*(r2*2.*plkr*(plkmp*pdd22+ 3.*plk*pdd13));
+           pdt = bk*u0[0]*(r2*2.*plkr*(plkmp*pdt22 + 3.*plk*pdt13));
+           ptt = u0[1]*(r2*2.*plkr*(plkmp*ptt22 + 3.*plk*ptt13));
 
 
   // ab terms
@@ -2233,57 +2352,42 @@ static double ptns_lagb( const PowerSpectrum& P_L, double u0[], double pars[], d
                                         105.*r4*x2 - 160.*r*x3 + 560.*r3*x3 + 420.*r2*x4 - 315.*r4*x4 -
                                         504.*r3*x5 + 231.*r4*x6));
 
-        return  pdd - 2.*pdt + ptt + prefac*abct;
+        return  pdd - 2.*pdt + ptt + abct;
       }
 
 
 
 
-//// Integrands for numerical RSD SPT 1-loop spectrum //////
+//// Integrands for numerical RSD SPT 1-loop spectrum  with higher order bias (see Eq. 44-47 of https://arxiv.org/abs/2311.13529) //////
 static double pspt_hob( const PowerSpectrum& P_L, double u0[], double pars[], double extpars[], int model, double bias[], double k, double r, double x){
-  double kargs[4],kv[3],xv[3], abct, pdd, pdd22, pdd13, pdt, pdt22, pdt13, ptt, ptt22, ptt13, prefac, plk, plkmp, plkr;
-  double e,d,d2,r2,r3,x2,x3,x4,r4,x6,x5;
-  prefac = k*k*k/(4*M_PI*M_PI)/pow4(dnorm_spt);
-  d = 1.+ r*r - 2.*r*x;
-  e = 1.+ r*r + 2.*r*x;
+  double kargs[4],kv[3],xv[3], abct, pdd, pdd22, pdd13, pdt, pdt22, pdt13, ptt, ptt22, ptt13, plk, plkmp, plkr;
+  double e,d,d2,k2,r2,r3,x2,x3,x4,r4,x6,x5;
+
   // tolerance for ode solver (see SpecialFunctions.cpp, initn2). This encounters a singularity if k'.-k' = -1 exactly.
   double tol = 1e-8;
+
   // bias parameters
   double bl = bias[0]; // linear bias
   double b2 = bias[1]; // b2
   double bG2 = bias[2]; // nonlocal bias 2
   double bG3 = bias[3]; // nonlocal bias 3
 
-  if(d < 1e-5){
-      return 0;
-    }
+      // The integrated |k'| is parametrised as k*r
+    d = 1.+ r*r - 2.*r*x;  // |k-k'|/k^2
+    e = 1.+ r*r + 2.*r*x;  // |k-k'|/k^2
 
-    // The integrated |k'| is parametrised as k*r
-  IOW iow;
-        kv[0] = k;
-        kv[1] = k*r;
-        kv[2] = kv[1];
-        xv[0] = -1. + tol ;
-        xv[1] = x;
-        xv[2] = -x;
-        kargs[0] = sqrt(kv[1]*kv[1]+kv[0]*kv[0]-2.*kv[1]*kv[0]*xv[1]);
-        kargs[2] = sqrt(kv[1]*kv[1]+2.*kv[1]*kv[2]*xv[0]+kv[2]*kv[2]);
-        kargs[1] = sqrt(kv[2]*kv[2]+2.*kv[2]*kv[0]*xv[2]+kv[0]*kv[0]);
-        kargs[3] = sqrt(kv[0]*kv[0]+2.*kv[0]*kv[1]*xv[1]+kv[1]*kv[1]);
-        iow.initn_rsd(pars,extpars,kv,xv,kargs,model);
-
-        pdd22 = pow2(F2_nk);
-        pdd13 = F1_nk*F3_nk;
-        pdt22 = G2_nk*F2_nk;
-        pdt13 = 0.5*(G1_nk*F3_nk + F1_nk*G3_nk);
-        ptt22 = pow2(G2_nk);
-        ptt13 = G1_nk * G3_nk;
-
-        plk = P_L(k);
-        plkmp = P_L(kargs[0]);
-        plkr = P_L(k*r);
-
+  
+    // Ensure no singularities when k=k' 
+          if(d < 1e-5){
+              return 0;
+            }
+  
+    // SPT kernel ODE solver class 
+          IOW iow;
+  
+    // Useful quantities 
         d2 = pow2(d);
+        k2 = pow2(k);
         r2 = pow2(r);
         r3 = r2*r;
         r4 = r2*r2;
@@ -2293,10 +2397,40 @@ static double pspt_hob( const PowerSpectrum& P_L, double u0[], double pars[], do
         x5 = x4*x;
         x6 = x5*x;
 
+  
+    // Populate arrays with magnitudes and angles 
+          kv[0] = k;
+          kv[1] = k*r;
+          kv[2] = k*r;
+          xv[0] = -1. + tol ;
+          xv[1] = x;
+          xv[2] = -x;
+          kargs[0] = sqrt(k2*d); // |k - k'|
+          kargs[1] = kargs[0]; // |k - k'| 
+          kargs[2] = sqrt(2.*k2*r2*tol); // |k'-k'|
+          kargs[3] = sqrt(k2*e); // |k + k'|
+  
+  
+    // Solve for the kernels 
+          iow.initn_rsd(pars,extpars,kv,xv,kargs,model);
+  
+    // Set growth for the different loop terms
+          pdd22 = pow2(F2_nk);
+          pdd13 = F1_nk*F3_nk;
+          pdt22 = G2_nk*F2_nk;
+          pdt13 = 0.5*(G1_nk*F3_nk + F1_nk*G3_nk);
+          ptt22 = pow2(G2_nk);
+          ptt13 = G1_nk * G3_nk;
+  
+    // Different linear spectra 
+          plk = P_L(k);
+          plkmp = P_L(kargs[0]);
+          plkr = P_L(k*r);
+
 // 1-loop spectra
-         pdd = bl*bl*u0[4]*(prefac*r2*2.*plkr*(plkmp*pdd22+ 3.*plk*pdd13)); // Pdd 1-loop part
-         pdt = bl*u0[0]*(prefac*r2*2.*plkr*(plkmp*pdt22 + 3.*plk*pdt13));// Pdt 1-loop part
-         ptt = u0[1]*(prefac*r2*2.*plkr*(plkmp*ptt22 + 3.*plk*ptt13));// Ptt 1-loop part
+         pdd = bl*bl*u0[4]*(r2*2.*plkr*(plkmp*pdd22+ 3.*plk*pdd13)); // Pdd 1-loop part
+         pdt = bl*u0[0]*(r2*2.*plkr*(plkmp*pdt22 + 3.*plk*pdt13));// Pdt 1-loop part
+         ptt = u0[1]*(r2*2.*plkr*(plkmp*ptt22 + 3.*plk*ptt13));// Ptt 1-loop part
 
 // A,B,C terms
         double abc[10];
@@ -2373,7 +2507,7 @@ static double pspt_hob( const PowerSpectrum& P_L, double u0[], double pars[], do
 
 
     // Higher order bias terms (EdS approximated - see Eq.45,46 of 2311.13529)
-        // Linear growth at external momentum
+        // Linear growth factor and rate at external momentum
          double D4 = pow4(F1_nk);
          double fmg = -G1_nk/F1_nk;
 
@@ -2389,19 +2523,47 @@ static double pspt_hob( const PowerSpectrum& P_L, double u0[], double pars[], do
          double Zb2u4 =(r + 2.*x - 3.*r*x2)/(d*r);  // Zb2 proportional to f^2 u^4
 
          // 22 Integral
-         double bsg2 = prefac*D4*r2*plkmp*plkr*(b2/2. + bG2*Sb)*(u0[4]*Zb2u0 + u0[0]*fmg*Zb2u2 + u0[1]*pow2(fmg)*Zb2u4);
+         double bsg2 = D4*r2*plkmp*plkr*(b2/2. + bG2*Sb)*(u0[4]*Zb2u0 + u0[0]*fmg*Zb2u2 + u0[1]*pow2(fmg)*Zb2u4);
 
+         // renormalisation kills the b2 terms
          double renorm = 0.;
 
          double Zb3u0 =  2./21.*(b2*(5.+2.*x2)*renorm - 2. * (5.*bG2 + 2.*bG3)*(1.+r2)*pow2(x2-1.)/(d*e));
          double Zb3u2 =  b2/6.*renorm;
 
          // 13 Integral
-         double bsg3 = 6.*prefac*D4*r2*plk*plkr*(bl*u0[4]*Zb3u0 + u0[0]*fmg*(bl*Zb3u2 + Zb3u0) + u0[1]*pow2(fmg)*Zb3u2);
+         double bsg3 = 6.*D4*r2*plk*plkr*(bl*u0[4]*Zb3u0 + u0[0]*fmg*(bl*Zb3u2 + Zb3u0) + u0[1]*pow2(fmg)*Zb3u2);
 
 
-      return  pdd - 2.*pdt + ptt + prefac*abct + bsg2 + bsg3;
+      return  pdd - 2.*pdt + ptt + abct + bsg2 + bsg3;
     }
+
+
+
+//// IR subtraction to b2^2 term //////  [NEED TO GENERALISE TO SCALE DEPENDENT GROWTH]
+  static double IRb22_integrand( const PowerSpectrum& P_L, double k0, double r, double x){
+  double kmq = sqrt(k0*k0*r*r + k0*k0 - 2.*k0*k0*r*x);
+
+  double plkmp = P_L(kmq);
+  double plkr = P_L(k0*r);
+
+  double b2t2_k0 = r*r*plkmp*plkr;
+
+  return  b2t2_k0; 
+}
+
+
+real SPT::IRb22() const{
+  double k0 = 0.001; 
+  double KMAX = QMAXp/k0;
+  double KMIN = QMINp/k0;
+  double tol = 1e-8;
+  double c[2] = {KMIN,-1.+tol};
+  double d[2] = {KMAX, 1.-tol};
+  double prefac = k0*k0*k0/(4*M_PI*M_PI)/pow4(dnorm_spt);
+
+  return prefac*Integrate<2>(bind(IRb22_integrand,cref(P_L), k0, std::placeholders::_1,std::placeholders::_2), c, d, 1e-3);
+}
 
 
 
@@ -2421,12 +2583,19 @@ real SPT::sigmav_init(double pars[], double extpars[], int model) const{
     return Integrate(bind(vel_disp_lin, cref(P_L), pars, extpars, model, std::placeholders::_1), QMINp, QMAXp, epsrel);
   }
 
+
+
+
 /////// REDSHIFT SPACE MODIFIED GRAVITY SPECTRUM ////////
-// a {0,..,3}  : 0=Kaiser with FoG Lorentzian form damping (set rsdpars[0]=0 for pure Kaiser), 1 = TNS q-bias [1507.01592], 2 = TNS lag bias (MG) - incomplete!
+// rsd_model: 
+//  0 = Kaiser with FoG Lorentzian form damping (set rsdpars[0]=0 for pure Kaiser),
+//  1 = TNS q-bias [1507.01592]
+//  2 = TNS lag bias (MG) - incomplete - currently using LCDM growth for higher order bias terms
 //  3 = 1-loop SPT (MG) [see Eq.23 of 1006.0699 for example]
 //  4 = 1-loop SPT (MG) with higher order bias as in Eq. 44 of 2311.13529 (PBJ equivalent)
 //  5 = EFTofLSS counter and shot noise terms as in Eq.32 and 42 of 2311.13529 (PBJ equivalent)
-// For the EFTofLSS prediction we just add case 4 and case 5
+
+// Note: For the full EFTofLSS prediction we just add case 4 and case 5 
 
 // b {1,2,3} :  1 = monopole, 2 = quadrupole, 3 = hexdecapole
 // pars: 0 =  scale factor, 1= omega_m(z=0)
@@ -2442,9 +2611,14 @@ real SPT::sigmav_init(double pars[], double extpars[], int model) const{
 // err -  absolute error in differential equation solver
 double SPT::PRSD_mg(int rsd_model, int b, double pars[], double extpars[], double rsdpars[],  double bias[], double k, double err, int model) const{
 IOW iow;
-double linear, nonlinear, u0x[8], bk, bl, stoch, kaiser_term, myd2, myf, k2, b2, shot, counter;
-real KMAX = QMAXp/k;
-real KMIN = QMINp/k;
+double prefac, linear, nonlinear, u0x[8], bk, bl, stoch, kaiser_term, myd2, myf, k2, b2, b22k0, shot, counter;
+
+// Prefactor for nonlinear integral
+prefac = k*k*k/(4*M_PI*M_PI)/pow4(dnorm_spt);
+
+// loop integral limits 
+double KMAX = QMAXp/k;
+double KMIN = QMINp/k;
 double tol = 1e-8;
 double c[2] = {KMIN,-1.+tol};
 double d[2] = {KMAX, 1.-tol};
@@ -2463,7 +2637,7 @@ switch (rsd_model) {
     u0x[2]=factL(k, rsdpars[0], 1., 1., 3, b, 7);
     u0x[3]=factL(k, rsdpars[0], 1., 1., 4, b, 7);
     u0x[4]=factL(k, rsdpars[0], 1., 1., 0, b, 7);
-    nonlinear = Integrate<2>(bind(ptns_qb,cref(P_L), u0x, pars, extpars, model, bk, k, std::placeholders::_1,std::placeholders::_2), c, d, err);
+    nonlinear = prefac*Integrate<2>(bind(ptns_qb,cref(P_L), u0x, pars, extpars, model, bk, k, std::placeholders::_1,std::placeholders::_2), c, d, err);
     linear = pow2(F1_nk*bk/dnorm_spt)*(u0x[4]*P_L(k) - 2.*(G1_nk/F1_nk/bk)*u0x[0]*P_L(k) + pow2(G1_nk/F1_nk/bk)*u0x[1]*P_L(k));
 
     return linear + nonlinear;
@@ -2475,7 +2649,7 @@ switch (rsd_model) {
     u0x[2]=factL(k, rsdpars[0], 1., 1., 3, b, 7);
     u0x[3]=factL(k, rsdpars[0], 1., 1., 4, b, 7);
     u0x[4]=factL(k, rsdpars[0], 1., 1., 0, b, 7);
-    nonlinear = Integrate<2>(bind(ptns_lagb,cref(P_L), u0x, pars, extpars, model, bias, k,std::placeholders::_1,std::placeholders::_2), c, d, err);
+    nonlinear = prefac*Integrate<2>(bind(ptns_lagb,cref(P_L), u0x, pars, extpars, model, bias, k,std::placeholders::_1,std::placeholders::_2), c, d, err);
     linear = pow2(F1_nk*bias[0]/dnorm_spt)*(u0x[4]*P_L(k) - 2.*(G1_nk/F1_nk/bias[0])*u0x[0]*P_L(k) + pow2(G1_nk/F1_nk/bias[0])*u0x[1]*P_L(k));
     stoch =  u0x[4]*bias[2];
 
@@ -2498,7 +2672,7 @@ switch (rsd_model) {
       u0x[6] = factL(k, rsdpars[0]*k2, 1., 1., 1 , b,  8); // u2i : (k sigmav mu)^2 u^2
       u0x[7] = factL(k, rsdpars[0]*k2, 1., 1., 2 , b,  8); // u4i : (k sigmav mu)^2 u^4
 
-      nonlinear = Integrate<2>(bind(pspt,cref(P_L), u0x, pars, extpars, model, bias[0], k, std::placeholders::_1,std::placeholders::_2), c, d, err);
+      nonlinear = prefac*Integrate<2>(bind(pspt,cref(P_L), u0x, pars, extpars, model, bias[0], k, std::placeholders::_1,std::placeholders::_2), c, d, err);
       myd2 = pow2(F1_nk/dnorm_spt);
       myf = -G1_nk/F1_nk;
       linear = (u0x[4]*myd2*pow2(bias[0])*P_L(k) + 2.*u0x[0]*myd2*myf*bias[0]*P_L(k) + u0x[1]*myd2*pow2(myf)*P_L(k));
@@ -2524,7 +2698,11 @@ switch (rsd_model) {
       u0x[7] = factL(k, rsdpars[0]*k2, 1., 1., 2 , b,  8); // u4i : (k sigmav mu)^2 u^4
 
       // 1-loop dd, dt, tt terms with linear bias + A + B + C terms + higher order bias terms (see eq. 44 of 2311.13529)
-      nonlinear = Integrate<2>(bind(pspt_hob,cref(P_L), u0x, pars, extpars, model, bias, k, std::placeholders::_1,std::placeholders::_2), c, d, err);
+      nonlinear = prefac*Integrate<2>(bind(pspt_hob,cref(P_L), u0x, pars, extpars, model, bias, k, std::placeholders::_1,std::placeholders::_2), c, d, err);
+     
+      // Subtract the IR-piece of the b2^2 term 
+      b22k0 = pow4(F1_nk)*u0x[4]*bias[1]*bias[1]*IRb22()/2.;
+
       myd2 = pow2(F1_nk/dnorm_spt);
       myf = -G1_nk/F1_nk;
       // D^2 b^2 P_L + 2 u^2 D^2 f b P_L + u^4 D^2 f^2 P_L
@@ -2532,7 +2710,7 @@ switch (rsd_model) {
       // -  (k sigmav mu)^2 D^2 b^2 P_L - 2 u^2 (k sigmav mu)^2 D^2 f P_L - u^4 (k sigmav mu)^2 D^2 f^2 b^2 P_L
       kaiser_term = -(u0x[5]*myd2*b2*P_L(k) + 2.*u0x[6]*myd2*myf*bias[0]*P_L(k) + u0x[7]*myd2*pow2(myf)*P_L(k));
 
-      return linear + nonlinear +  kaiser_term;
+      return linear + (nonlinear - b22k0) +  kaiser_term;
 
     case 5:
         k2 = pow2(k);

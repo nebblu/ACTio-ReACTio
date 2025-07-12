@@ -39,10 +39,10 @@ int main(int argc, char* argv[]) {
     // chosen omega_matter (total)
       double omega0 = 0.3132;
      // MG parameter (for f(R) this is |fr0| and for nDGP this is Omega_rc)
-      double mgpar = 1e-4;
+      double mgpar = 1e-5;
 
       //output file name
-      const char* output = "EFTofLSS_f4_P024_cdm_z0.dat";
+      const char* output = "EFTofLSS_f5_P024_halo_z0.dat";
 //	const char* output = "PL_z0.dat";
 
       // number of bins between kmin and kmax
@@ -62,25 +62,27 @@ int main(int argc, char* argv[]) {
       // Lagrangian bias params (See 1607.03149 for example) OR Q-bias params (see PRSD_mg in src/SPT.cpp).
       double bias[8];
   
-    /*  bias[0] = 1.5; // b1
+      // Halos 
+      bias[0] = 1.5; // b1
       bias[1] = 0.7; // b2
       bias[2] = 0.3; // bG2
       bias[3] = -0.7; // bG3
-      bias[4] = 200.; // N
+      // Shot noise terms
+      bias[4] = 1/5e-3; // N
       bias[5] = 5.; // epsilon_0
-      bias[6] = 200.; // epsilon_2
-      bias[7] = 0.001.; // nbar
-      */
+      bias[6] = 10.; // epsilon_2
+      bias[7] = 1/bias[4]; // nbar
+      
 
       // CDM values 
-      bias[0] = 1.; // b1
-      bias[1] = 0.; // b2
-      bias[2] = 0.; // bG2
-      bias[3] = 0.; // bG3
-      bias[4] = 0.; // N
-      bias[5] = 0.; // epsilon_0
-      bias[6] = 0.; // epsilon_2
-      bias[7] = 0.001; // nbar
+      // bias[0] = 1.; // b1
+      // bias[1] = 0.; // b2
+      // bias[2] = 0.; // bG2
+      // bias[3] = 0.; // bG3
+      // bias[4] = 0.; // N
+      // bias[5] = 0.; // epsilon_0
+      // bias[6] = 0.; // epsilon_2
+      // bias[7] = 0.001; // nbar
 
       // absolute error in RSD integrals
       double err = 1e-3;
@@ -128,20 +130,22 @@ int main(int argc, char* argv[]) {
     rsdpars[0] = spt.sigmav_init(pars, extpars, mymodel); // calculates linear theory dispersion
     rsdpars[1] = 5.;
     rsdpars[2] = 10.;
-    rsdpars[3] = 20.;
+    rsdpars[3] = 20.1;
 
   
-    // Calculate the linear growth for the EdS 1-loop RSD spectrum's velocity dispersion 
+    // Calculate the linear growth for the large scale limit
     iow.initn_lin(pars,extpars,0.00001,mymodel);
+    // set rate and factor to these limits
     fl_spt =-G1_nk/F1_nk;
     Dl_spt = F1_nk;
-    // Calculate the LCDM velocity dispersion 
+
+    // Calculate the velocity dispersion using these limits
     double sigveds = spt.sigmav_init_linear(); 
 
-    // Compare EdS vs Exact velocity dispersions 
+    // Compare exact dispersion (scale dep growth rate /factor inside integral) vs the large scale limit (D(k) set to D(0.001), similarly for f)
     printf("%e %e \n", rsdpars[0], sigveds);
 
-
+  
     /* Output section */
     /* Open output file */
     FILE* fp = fopen(output, "w");
@@ -162,14 +166,15 @@ for(int i =0; i <Nk;  i ++) {
       p5 = spt.PRSD_mg(5, 2, pars, extpars, rsdpars, bias, k, err, mymodel); // P2 ct+shot
       p6 = spt.PRSD_mg(5, 3, pars, extpars, rsdpars, bias, k, err, mymodel); // P4 ct+shot
 
-      // Set the linear growth factor and rate to their modified values 
+      // Set the linear growth factor and rate to their modified values - F1_nk and f=-G1_nk/F1_nk (these are calculated automatrically in PRSD_mg)
       Dl_spt = F1_nk;
       fl_spt = -G1_nk/F1_nk;
       
       // Einstein-de Sitter 1-loop spectra 
-      p7 = spt.PRSDloop(k, bias[0], sigveds, 1); // P0 EdS SPT
-      p8 = spt.PRSDloop(k, bias[0], sigveds, 2); // P2 EdS SPT
-      p9 = spt.PRSDloop(k, bias[0], sigveds, 3); // P4 EdS SPT
+      p7 = spt.PRSDloop(k, bias, sigveds, 1); // P0 EdS SPT
+      p8 = spt.PRSDloop(k, bias, sigveds, 2); // P2 EdS SPT
+      p9 = spt.PRSDloop(k, bias, sigveds, 3); // P4 EdS SPT
+
 
      printf("%e %e %e %e %e %e %e %e %e %e  \n", k, p1,p2,p3,p4,p5,p6,p7,p8,p9); // print to terminal
      fprintf(fp,"%e %e %e %e %e %e %e %e %e %e  \n", k, p1,p2,p3,p4,p5,p6,p7,p8,p9); // print to file

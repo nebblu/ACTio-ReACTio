@@ -128,22 +128,26 @@ public:
 
 
       // 1-loop RSD prediction for LCDM (see Eq. 29 of 2311.13529 for example)
-      real PRSDloop(real k, real bl, real sigma_v, int a) const;
+      real PRSDloop(real k, real bias[], real sigma_v, int a) const;
 
-      // LCDM linear prediction for velocity dispersion
+      // LCDM linear prediction for velocity dispersion (make sure to initialise the growth (see examples/eftoflss.cpp) - Dl_spt, fl_spt and normalisation dnorm_spt before running this)
       real sigmav_init_linear() const;
-
 
       // lagrangian bias terms
       real Lag_bias(int a, real k, real bias[]) const;
 
+      // Higher order bias as in https://arxiv.org/pdf/2311.13529 
+      double bias_eds_loop(real k, real bias[], int a) const;
 
-      // Linear velocity dispersion (beyond-LCDM calculation)
-      real sigmav_init(double pars[], double extpars[], int model = 1) const;
 
       // modified gravity 1-loop, TNS and Kaiser model - numerically calculated
       double PRSD_mg(int a, int b, double pars[], double extpars[], double rsdpars[], double bias[],  double k, double err, int model = 1) const;
 
+      // Linear velocity dispersion (beyond-LCDM calculation)
+      real sigmav_init(double pars[], double extpars[], int model = 1) const;
+
+      // IR subtraction to b2^2 term [NEED TO GENERALISE TO SCALE DEPENDENT GROWTH]
+      real IRb22() const;
 
 
 

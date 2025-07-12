@@ -2893,84 +2893,84 @@ double F2fitsc(double vars[], double k1, double k2, double x){
 /* multipole factors : Example for TNS (case 6) (2l+1)/2 * integ dmu  e^(-(k*f*sigma_v*mu)^2) * mu^(2n) * P_l(mu)*/
 
 static double kernel1(double k, double sigma_v, double F0, double anw, int n, int a, double u1) {
-switch(a) {
-  case 1:
-	return pow(u1,2*n) * (1.-sigma_v*pow2(u1*F0));//RESUM
-  case 2:
-  return pow(u1,2*n) * (1.-sigma_v*pow2(u1*F0)) * exp(-0.5*pow2(k)*anw*(1.+F0*(2.+F0)*pow2(u1)));//RESUM
-  case 3:
-  return pow(u1,2*n) * 0.5 * pow2(k)*anw*(1.+F0*(2.+F0)*pow2(u1)) * exp(-0.5*pow2(k)*anw*(1.+F0*(2+F0)*pow2(u1))); //RESUM
-  case 4:
-  return pow(u1,2*n) * pow2(1.+pow2(u1)*F0); // MATSUBARA
-  case 5:
-  return pow(u1,2*n) * (1.+pow2(u1)*F0); // MATSUBARA
-  case 6:
-  return pow(u1,2*n) *exp(-k*k*u1*u1*sigma_v*sigma_v) ; // TNS Gaussian
-  case 7:
-  return pow(u1,2*n) * 1./(1.+(k*k*u1*u1*sigma_v*sigma_v)/2.)  ; // TNS Lorentzian
-	case 8:
-	return pow(u1,2*n) * (sigma_v*pow2(u1*F0)); // ( f sigmav mu)^2 u1^2n
-	case 9:
-	return pow(u1,2*n) * pow2(sigma_v*pow2(u1*F0)); // ( f sigmav mu)^4 u1^2n
-	case 10:
-	return pow(u1,2*n) * (sigma_v*pow2(u1*F0)) * exp(-0.5*pow2(k)*anw*(1.+F0*(2.+F0)*pow2(u1))); // u^2n (sv u f )^2 e^[-k^2/2  Anw (1+2u^2f + f^2)]
-	default:
-	warning("SpecialFunctions: invalid indices, a = %d \n", a );
-			return 0;
-}
-}
+  switch(a) {
+    case 1:
+    return pow(u1,2.*n) * (1.-sigma_v*pow2(u1*F0));//RESUM
+    case 2:
+    return pow(u1,2*n) * (1.-sigma_v*pow2(u1*F0)) * exp(-0.5*pow2(k)*anw*(1.+F0*(2.+F0)*pow2(u1)));//RESUM
+    case 3:
+    return pow(u1,2*n) * 0.5 * pow2(k)*anw*(1.+F0*(2.+F0)*pow2(u1)) * exp(-0.5*pow2(k)*anw*(1.+F0*(2+F0)*pow2(u1))); //RESUM
+    case 4:
+    return pow(u1,2*n) * pow2(1.+pow2(u1)*F0); // MATSUBARA
+    case 5:
+    return pow(u1,2*n) * (1.+pow2(u1)*F0); // MATSUBARA
+    case 6:
+    return pow(u1,2*n) *exp(-k*k*u1*u1*sigma_v*sigma_v) ; // TNS Gaussian
+    case 7:
+    return pow(u1,2*n) * 1./(1.+(k*k*u1*u1*sigma_v*sigma_v)/2.)  ; // TNS Lorentzian
+    case 8:
+    return pow(u1,2*n) * (sigma_v*pow2(u1*F0)); // ( f sigmav mu)^2 u1^2n
+    case 9:
+    return pow(u1,2*n) * pow2(sigma_v*pow2(u1*F0)); // ( f sigmav mu)^4 u1^2n
+    case 10:
+    return pow(u1,2*n) * (sigma_v*pow2(u1*F0)) * exp(-0.5*pow2(k)*anw*(1.+F0*(2.+F0)*pow2(u1))); // u^2n (sv u f )^2 e^[-k^2/2  Anw (1+2u^2f + f^2)]
+    default:
+    warning("SpecialFunctions: invalid indices, a = %d \n", a );
+        return 0;
+  }
+  }
 
 
 static double kernel2(double k, double sigma_v, double F0, double anw, int n, int a, double u1) {
-   switch(a) {
-     case 1:
-     return 3.*pow(u1,2*n+2.)*(1.-sigma_v*pow2(u1*F0)) - pow(u1,2*n)*(1.-sigma_v*pow2(u1*F0));
-     case 2:
-     return (3.*pow(u1,2*n+2.)*(1.-sigma_v*pow2(u1*F0)) - pow(u1,2*n)*(1.-sigma_v*pow2(u1*F0)))* exp(-0.5*pow2(k)*anw*(1.+F0*(2.+F0)*pow2(u1)));
-     case 3:
-     return (3.*pow(u1,2*n+2.) - pow(u1,2*n))* 0.5 * pow2(k)*anw*(1.+F0*(2.+F0)*pow2(u1)) * exp(-0.5*pow2(k)*anw*(1.+F0*(2.+F0)*pow2(u1)));
-     case 4:
-     return 3.*pow(u1,2*n+2.)* pow2(1.+pow2(u1)*F0) - pow(u1,2*n)* pow2(1.+pow2(u1)*F0);
-     case 5:
-     return 3.*pow(u1,2*n+2.)* (1.+pow2(u1)*F0) - pow(u1,2*n)* (1.+pow2(u1)*F0);
-     case 6:
-     return (3.*pow(u1,2*n+2.)*exp(-k*k*u1*u1*sigma_v*sigma_v) - pow(u1,2*n)*exp(-k*k*u1*u1*sigma_v*sigma_v));
-     case 7:
-     return (3.*pow(u1,2*n+2.)* 1./(1.+(k*k*u1*u1*sigma_v*sigma_v)/2.)  - pow(u1,2*n)* 1./(1.+(k*k*u1*u1*sigma_v*sigma_v)/2.));
-		 case 8:
-		 return 3.*pow(u1,2*n+2.)*(sigma_v*pow2(u1*F0)) - pow(u1,2*n)*(sigma_v*pow2(u1*F0));
-		 case 9:
-		 return 3.*pow(u1,2*n+2.)*pow2(sigma_v*pow2(u1*F0)) - pow(u1,2*n)*pow2(sigma_v*pow2(u1*F0));
-		 case 10:
-		 return (3.*pow(u1,2*n+2.)*(sigma_v*pow2(u1*F0)) - pow(u1,2*n)*(sigma_v*pow2(u1*F0)))* exp(-0.5*pow2(k)*anw*(1.+F0*(2.+F0)*pow2(u1)));
-		 default:
- 		warning("SpecialFunctions: invalid indices, a = %d \n", a );
- 				return 0;
-        }
+  switch(a) {
+    case 1:
+    return 3.*pow(u1,2.*n+2.)*(1.-sigma_v*pow2(u1*F0)) - pow(u1,2.*n)*(1.-sigma_v*pow2(u1*F0));
+    case 2:
+    return (3.*pow(u1,2*n+2.)*(1.-sigma_v*pow2(u1*F0)) - pow(u1,2*n)*(1.-sigma_v*pow2(u1*F0)))* exp(-0.5*pow2(k)*anw*(1.+F0*(2.+F0)*pow2(u1)));
+    case 3:
+    return (3.*pow(u1,2*n+2.) - pow(u1,2*n))* 0.5 * pow2(k)*anw*(1.+F0*(2.+F0)*pow2(u1)) * exp(-0.5*pow2(k)*anw*(1.+F0*(2.+F0)*pow2(u1)));
+    case 4:
+    return 3.*pow(u1,2*n+2.)* pow2(1.+pow2(u1)*F0) - pow(u1,2*n)* pow2(1.+pow2(u1)*F0);
+    case 5:
+    return 3.*pow(u1,2*n+2.)* (1.+pow2(u1)*F0) - pow(u1,2*n)* (1.+pow2(u1)*F0);
+    case 6:
+    return (3.*pow(u1,2*n+2.)*exp(-k*k*u1*u1*sigma_v*sigma_v) - pow(u1,2*n)*exp(-k*k*u1*u1*sigma_v*sigma_v));
+    case 7:
+    return (3.*pow(u1,2*n+2.)* 1./(1.+(k*k*u1*u1*sigma_v*sigma_v)/2.)  - pow(u1,2*n)* 1./(1.+(k*k*u1*u1*sigma_v*sigma_v)/2.));
+    case 8:
+    return 3.*pow(u1,2*n+2.)*(sigma_v*pow2(u1*F0)) - pow(u1,2*n)*(sigma_v*pow2(u1*F0));
+    case 9:
+    return 3.*pow(u1,2*n+2.)*pow2(sigma_v*pow2(u1*F0)) - pow(u1,2*n)*pow2(sigma_v*pow2(u1*F0));
+    case 10:
+    return (3.*pow(u1,2*n+2.)*(sigma_v*pow2(u1*F0)) - pow(u1,2*n)*(sigma_v*pow2(u1*F0)))* exp(-0.5*pow2(k)*anw*(1.+F0*(2.+F0)*pow2(u1)));
+    default:
+    warning("SpecialFunctions: invalid indices, a = %d \n", a );
+        return 0;
+       }
 }
 
 static double kernel3(double k, double sigma_v, double F0, double anw, int n, int a, double u1) {
   switch(a){
     case 1:
-    return  (35*pow(u1,4)-30.*u1*u1+3.)*pow(u1,2*n)*(1.-sigma_v*pow2(u1*F0));
+    return  (35.*pow(u1,4.)-30.*u1*u1+3.)*pow(u1,2.*n)*(1.-sigma_v*pow2(u1*F0));
     case 2:
-    return  ((35*pow(u1,4)-30.*u1*u1+3.)*pow(u1,2*n)*(1.-sigma_v*pow2(u1*F0)))* exp(-0.5*pow2(k)*anw*(1+F0*(2+F0)*pow2(u1)));
+    return  ((35.*pow(u1,4)-30.*u1*u1+3.)*pow(u1,2*n)*(1.-sigma_v*pow2(u1*F0)))* exp(-0.5*pow2(k)*anw*(1+F0*(2+F0)*pow2(u1)));
     case 3:
-    return  ((35*pow(u1,4)-30.*u1*u1+3.)*pow(u1,2*n))*0.5*pow2(k)*anw*(1.+F0*(2.+F0)*pow2(u1))*exp(-0.5*pow2(k)*anw*(1.+F0*(2.+F0)*pow2(u1)));
+    return  ((35.*pow(u1,4)-30.*u1*u1+3.)*pow(u1,2*n))*0.5*pow2(k)*anw*(1.+F0*(2.+F0)*pow2(u1))*exp(-0.5*pow2(k)*anw*(1.+F0*(2.+F0)*pow2(u1)));
     case 4:
-    return  ((35*pow(u1,4)-30.*u1*u1+3.)*pow(u1,2*n)) * pow2(1+pow2(u1)*F0);
+    return  ((35.*pow(u1,4)-30.*u1*u1+3.)*pow(u1,2*n)) * pow2(1+pow2(u1)*F0);
     case 5:
-    return  ((35*pow(u1,4)-30.*u1*u1+3.)*pow(u1,2*n)) * (1+pow2(u1)*F0);
+    return  ((35.*pow(u1,4)-30.*u1*u1+3.)*pow(u1,2*n)) * (1+pow2(u1)*F0);
     case 6:
-    return  (35*pow(u1,4)-30.*u1*u1+3.)*pow(u1,2*n)*exp(-k*k*u1*u1*sigma_v*sigma_v);
+    return  (35.*pow(u1,4)-30.*u1*u1+3.)*pow(u1,2*n)*exp(-k*k*u1*u1*sigma_v*sigma_v);
     case 7:
-    return  (35*pow(u1,4)-30.*u1*u1+3.)*pow(u1,2*n)* 1./(1.+(k*k*u1*u1*sigma_v*sigma_v)/2.);
+    return  (35.*pow(u1,4)-30.*u1*u1+3.)*pow(u1,2*n)* 1./(1.+(k*k*u1*u1*sigma_v*sigma_v)/2.);
 		case 8:
-		return  (35*pow(u1,4)-30.*u1*u1+3.)*pow(u1,2*n)*(sigma_v*pow2(u1*F0));
+		return  (35.*pow(u1,4)-30.*u1*u1+3.)*pow(u1,2*n)*(sigma_v*pow2(u1*F0));
 		case 9:
-		return  (35*pow(u1,4)-30.*u1*u1+3.)*pow(u1,2*n)*pow2(sigma_v*pow2(u1*F0));
+		return  (35.*pow(u1,4)-30.*u1*u1+3.)*pow(u1,2*n)*pow2(sigma_v*pow2(u1*F0));
 		case 10:
-		return  ((35*pow(u1,4)-30.*u1*u1+3.)*pow(u1,2*n)*(sigma_v*pow2(u1*F0)))* exp(-0.5*pow2(k)*anw*(1.+F0*(2.+F0)*pow2(u1)));
+		return  ((35.*pow(u1,4)-30.*u1*u1+3.)*pow(u1,2*n)*(sigma_v*pow2(u1*F0)))* exp(-0.5*pow2(k)*anw*(1.+F0*(2.+F0)*pow2(u1)));
 		default:
 		warning("SpecialFunctions: invalid indices, a = %d \n", a );
 				return 0;

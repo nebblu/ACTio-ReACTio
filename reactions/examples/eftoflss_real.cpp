@@ -24,7 +24,7 @@
 using namespace std;
 vector<vector<double> > allDatamult;
 
-/* Example code to output the 1-loop powerspectrum for modified gravity in real space : exact numerical and EdS approximation */
+/* Example code to output the 1-loop powerspectrum for modified gravity in real space, exact numerical and EdS approximation, using EFTofLSS RSD model */
 
 int main(int argc, char* argv[]) {
 
@@ -52,7 +52,6 @@ int main(int argc, char* argv[]) {
       // error in 1-loop integrals
       double err = 1e-2;
 
-
     // cosmo file for P_L(k)
     const char* cstr = "transfers/planck";
 
@@ -68,14 +67,14 @@ int main(int argc, char* argv[]) {
     SPT spt(C, P_l, epsrel);
     IOW iow;
 
-  // base parameter values
+  // base cosmological parameter values
   double pars[7];
   pars[0] = 1./(1.+myz);
   pars[1] =  omega0;
   pars[2] =  0.;
 
   // extended model parameters
-  double extpars[maxpars]; // Currently maxed out at 20 extra params
+  double extpars[maxpars]; // Currently capped at 20 extra params
   extpars[0] = mgpar;
 
 // normalise the growth + calculate all growth factors
@@ -86,7 +85,7 @@ int main(int argc, char* argv[]) {
  /* Open output file */
  FILE* fp = fopen(output, "w");
 
-real p1,p2,p3,p4,p5,p6,p7,p8,p9;
+real p1,p2,p3;
 
 for(int i =0; i <Nk;  i ++) {
 
@@ -98,14 +97,14 @@ for(int i =0; i <Nk;  i ++) {
   p1 = spt.PLOOPn2(0, k, pars, extpars, err, mymodel); // linear spectrum
   p2 = spt.PLOOPn2(1, k, pars, extpars, err, mymodel); // 1-loop dd spectrum
 
-  // EdS approximated equivalents
-  p3 = pow2(F1_nk/dnorm_spt)*P_l(k);
+  // EdS approximated equivalent
+  // Set LCDM growth factor (Dl_spt) to exact (possibly scale dependent) value (F1_nk) - this is initialised in PLOOPn2 automatically 
   Dl_spt= F1_nk;
- 
-  p4 = spt.PLOOP(k,1);
+  // 1-loop spectrum
+  p3 = spt.PLOOP(k,1); // 1-loop dd spectrum 
 
-   printf("%e %e %e %e %e %e \n", k, p1,p2,p3,p4, Dl_spt); // print to terminal
-   fprintf(fp,"%e %e %e %e %e  \n", k, p1,p2,p3,p4); // print to file
+   printf("%e %e %e %e  \n", k, p1,p2,p3); // print to terminal
+   fprintf(fp,"%e %e %e %e \n", k, p1,p2,p3); // print to file
 
   }
 
