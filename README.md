@@ -711,3 +711,7 @@ We have implemented the following to v.2:
 * Added in a new function in SpecialFunctions.cpp (hubble_init) to initialise a spline of a Hubble function H(a) calculated using the bespokehub function in BeyondLCDM.cpp. This is useful if there is not an analytic form for the Hubble function.  
 * Added in Hu-Sawicki forms for $\alpha$ EFTofDE basis in BeyondLCDM.cpp.
 
+### Update 07.2025 
+* Added in SPT 1-loop RSD multipole prediction to PRSD_mg function in SPT.cpp. This includes higher order bias as in [this paper](https://arxiv.org/abs/2311.13529). 
+* Added in Einstein-de Sitter SPT 1-loop RSD multipole prediction with higher order bias. 
+* Added EFTofLSS counter terms & shot noise terms to PRSD_mg function in SPT.cpp (case 5).  
