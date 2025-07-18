@@ -1025,8 +1025,8 @@ int compute_reaction_nu_ext(int* N_pk_m, double* torpk_m,
 
     /* PART 3: main loop to initialise multipoles */
 
-    //linear vel dispersion for 1-loop (rsd_model = 3)
-    if (rsd_mod==3) {
+    //linear vel dispersion for 1-loop (rsd_model = 3 and 4)
+    if (rsd_mod==3 || rsd_mod=4) {
       rsdparsin[0] = spt.sigmav_init(pars, extparsin, mod); // calculates linear theory dispersion
     }
 
@@ -1044,6 +1044,7 @@ int compute_reaction_nu_ext(int* N_pk_m, double* torpk_m,
           output_p4[i] = spt.PRSD_mg(rsd_mod, 3, pars, extparsin, rsdparsin, biasparsin, kvals_out[i], errpars[0], mod);
         }
 
+        
         output_growth[i] = F1_nk/dnorm_spt;
         output_growth_rate[i] =  -G1_nk/F1_nk;
         if(*verbose > 1) {

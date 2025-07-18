@@ -72,6 +72,7 @@ initn_rsd  */
 // 15: QCDM
 // 16: K-mouflage as in 1403.5424
 // 17: K-mouflage with nPPF [1608.00522]
+// 18: Model independent parametrisation: CPL {w0,wa} for background, mu(k,z) for linear perturbations (see https://arxiv.org/pdf/2411.12026 for default form), Phenomenological G_eff for nonlinear scales (q1,q2,q3,q4) 
 
 
 // Throughout the values of pars, extpars and model are:
@@ -135,6 +136,19 @@ initn_rsd  */
 // 2: K0
 // 3: beta0
 // 5+ - nPPF params
+
+// for model 18: Model independent parametrisation with CPL background
+// See Eq. 3.6 of https://arxiv.org/pdf/2411.12026 for linear Geff(k,z) parametrisation and Eq.41 of https://arxiv.org/pdf/2210.01094 nonlinear Geff(k,z) 
+// 0: w0
+// 1: wa
+// 2: mu0 
+// 3: c1 
+// 4: lambda 
+// 5: size of screening scale
+// 6: mass dependence of screening scale
+// 7: y_environment dependence of screening scale
+// 8: Yukawa suppression scale mass dependence
+ 
 
 /* A) Functions to edit for new models in Reaction computation: */
 
@@ -748,75 +762,81 @@ double HAg(double a, double omega0, double extpars[], int model){
 		 /* DGP */
 			return HA( a, omega0);
 
-			case 4:
-			/* QUINTESSENCE */
-			A = -3.*(1.+extpars[0]);
-			omegaf = pow(a,A);
-			omegaL= (1.-omega0)*omegaf;
-			return  sqrt(omega0/pow(a,3)+omegaL);
+		case 4:
+		/* QUINTESSENCE */
+		A = -3.*(1.+extpars[0]);
+		omegaf = pow(a,A);
+		omegaL= (1.-omega0)*omegaf;
+		return  sqrt(omega0/pow(a,3)+omegaL);
 
-			case 5:
-			/* CPL */
-			A = -3.*(1.+extpars[0]+extpars[1]);
-			omegaf = pow(a,A)*exp(3.*(-1.+a)*extpars[1]);
-			omegaL= (1.-omega0)*omegaf;
-			return  sqrt(omega0/pow(a,3)+omegaL);
+		case 5:
+		/* CPL */
+		A = -3.*(1.+extpars[0]+extpars[1]);
+		omegaf = pow(a,A)*exp(3.*(-1.+a)*extpars[1]);
+		omegaL= (1.-omega0)*omegaf;
+		return  sqrt(omega0/pow(a,3)+omegaL);
 
-			case 6:
-			/* Dark Scattering with CPL  */
-			A = -3.*(1.+extpars[0]+extpars[1]);
-			omegaf = pow(a,A)*exp(3.*(-1.+a)*extpars[1]);
-			omegaL= (1.-omega0)*omegaf;
-			return  sqrt(omega0/pow(a,3)+omegaL);
+		case 6:
+		/* Dark Scattering with CPL  */
+		A = -3.*(1.+extpars[0]+extpars[1]);
+		omegaf = pow(a,A)*exp(3.*(-1.+a)*extpars[1]);
+		omegaL= (1.-omega0)*omegaf;
+		return  sqrt(omega0/pow(a,3)+omegaL);
 
-			case 7:
-			/* EFTofDE: nPPF - set to LCDM background for now  */
-			return HA( a, omega0);
+		case 7:
+		/* EFTofDE: nPPF - set to LCDM background for now  */
+		return HA( a, omega0);
 
-			case 8:
-			/* EFTofDE: unscreened approx */
-			return  HA( a, omega0);
+		case 8:
+		/* EFTofDE: unscreened approx */
+		return  HA( a, omega0);
 
-			case 9:
-			/* EFTofDE: superscreened approx */
-			return  HA( a, omega0);
+		case 9:
+		/* EFTofDE: superscreened approx */
+		return  HA( a, omega0);
 
-			case 10:
-			/* EFTofDE with nPPF and full k-dependence in linear modification */
-			return HA( a, omega0); //myhubble(a);
+		case 10:
+		/* EFTofDE with nPPF and full k-dependence in linear modification */
+		return HA( a, omega0); //myhubble(a);
 
-			case 11:
-			/* EFTofDE: unscreened approx and full k-dependence in linear modification */
-			return  HA( a, omega0);
+		case 11:
+		/* EFTofDE: unscreened approx and full k-dependence in linear modification */
+		return  HA( a, omega0);
 
-			case 12:
-			/* EFTofDE: Phenomenological non-linear model */
-			return  HA( a, omega0);
+		case 12:
+		/* EFTofDE: Phenomenological non-linear model */
+		return  HA( a, omega0);
 
-			case 13:
-			/* Minimal model independent : CPL + Gamma + Erf */
-			A = -3.*(1.+extpars[0]+extpars[1]);
-			omegaf = pow(a,A)*exp(3.*(-1.+a)*extpars[1]);
-			omegaL= (1.-omega0)*omegaf;
-			return  sqrt(omega0/pow(a,3)+omegaL);
+		case 13:
+		/* Minimal model independent : CPL + Gamma + Erf */
+		A = -3.*(1.+extpars[0]+extpars[1]);
+		omegaf = pow(a,A)*exp(3.*(-1.+a)*extpars[1]);
+		omegaL= (1.-omega0)*omegaf;
+		return  sqrt(omega0/pow(a,3)+omegaL);
 
 
-			case 14:
-			/* CG */
-			return myhubble(a);
+		case 14:
+		/* CG */
+		return myhubble(a);
 
-			case 15:
-			/* QCDM */
-			return myhubble(a);
+		case 15:
+		/* QCDM */
+		return myhubble(a);
 
-			case 16:
-			/* K-mouflage */
-			return myhubble(a);
+		case 16:
+		/* K-mouflage */
+		return myhubble(a);
 
-			case 17:
-			/* K-mouflage with nPPF*/
-			return myhubble(a);
+		case 17:
+		/* K-mouflage with nPPF*/
+		return myhubble(a);
 
+		case 18:
+		/*  Model independent Poisson equation parametrisation as in https://arxiv.org/pdf/2411.12026 with CPL background  */
+		A = -3.*(1.+extpars[0]+extpars[1]);
+		omegaf = pow(a,A)*exp(3.*(-1.+a)*extpars[1]);
+		omegaL= (1.-omega0)*omegaf;
+		return  sqrt(omega0/pow(a,3)+omegaL);
 
 			default:
 					warning("BeyondLCDM: invalid model choice, model = %d \n", model);
@@ -940,6 +960,13 @@ double HA1g(double a, double omega0, double extpars[], int model){
 
 		return 1./ (a2) * (var1 - h2);
 
+		case 18:
+		/*  Model independent Poisson equation parametrisation as in https://arxiv.org/pdf/2411.12026 with CPL background  */
+		A = -3.*(1.+extpars[0]+extpars[1]);
+		omegaf = pow(a,A)*exp(3*(-1.+a)*extpars[1]);
+		  omegaL= (1.-omega0)*omegaf;
+		return -3.*omega0/(2.*pow(a,3)) + (A+3.*a*extpars[1])*omegaL/2.;
+  
 
 		default:
 				warning("BeyondLCDM: invalid model choice, model = %d \n", model);
@@ -1055,6 +1082,9 @@ double myfricF(double a, double omega0, double extpars[], int model){
 		/* K-mouflage with nPPF */
 		return   extpars[3] * kmouflage_phid(a) * HAg(a,omega0,extpars,model);
 
+		case 18:
+		/*  Model independent Poisson equation parametrisation as in https://arxiv.org/pdf/2411.12026 with CPL background  */
+		return 0.; 
 
 		default:
 					warning("BeyondLCDM: invalid model choice, model = %d \n", model);
@@ -1600,7 +1630,18 @@ double mu(double a, double k0, double omega0, double extpars[], int model){
 
 	 		return  conf_fac(kmouflage_phi(a),extpars[3]) * (1. + 2. * pow2(extpars[3])/var2);
 
+		case 18:
+		/*  Model independent Poisson equation parametrisation as in Eq. 3.6 of https://arxiv.org/pdf/2411.12026 with CPL background  */
+	
+		// time dependency
+		hub = HAg(a,omega0,extpars,model); // H/H0 
+		var1 = -3.*(1.+extpars[0]+extpars[1]);
+		var2 = pow(a,var1)*exp(3.*(-1.+a)*extpars[1]) / pow2(hub); // Omega_DE / Omega_DE(z=0)  
 
+		// scale dependency
+		var3  = (1. + extpars[3] * pow2(extpars[4]* hub / k0 ) ) /  (1. +  pow2(extpars[4]* hub / k0 ) );  
+
+			return 1. + extpars[2] * var2 * var3; 
 
 		default:
 				warning("BeyondLCDM: invalid model choice, model = %d \n", model);
@@ -1689,13 +1730,17 @@ double gamma2(double a, double omega0, double k0, double k1, double k2, double u
 			/* QCDM */
 			return  0. ;
 
-			case 16:
+		case 16:
 			/* K-mouflage */
 			return 0;
 
-			case 17:
+		case 17:
 			/* K-mouflage with nPPF */
 			return 0;
+
+		case 18:
+		/*  Model independent Poisson equation parametrisation as in Eq. 3.6 of https://arxiv.org/pdf/2411.12026 with CPL background  */
+			return 0.; 
 
 		default:
 		warning("BeyondLCDM: invalid model choice, model = %d \n", model);
@@ -1794,7 +1839,7 @@ double gamma3(double a, double omega0, double k0, double k1, double k2, double k
 		/* QCDM */
 		return  0. ;
 
-		case 16:
+	case 16:
 		/* K-mouflage */
 		// See Eq.78 of 1403.5424
 
@@ -1820,7 +1865,7 @@ double gamma3(double a, double omega0, double k0, double k1, double k2, double k
 		return -9./2. * var3 * pow3(var5 * var4) * pow(extpars[3]/var2,4.) * pow2(hub/extpars[1]) * pow2(hub*h0/a) *var6 ;
 
 
-		case 17:
+	case 17:
 		/* K-mouflage with nPPF */
 		// See Eq.78 of 1403.5424
 
@@ -1844,6 +1889,10 @@ double gamma3(double a, double omega0, double k0, double k1, double k2, double k
 
 		return -9./2. * var3 * pow3(var5 * var4) * pow(extpars[3]/var2,4.) * pow2(hub/extpars[1]) * pow2(hub*h0/a) *var6 ;
 
+	case 18:
+		/*  Model independent Poisson equation parametrisation as in Eq. 3.6 of https://arxiv.org/pdf/2411.12026 with CPL background  */
+		return 0.; 
+			
 
 		default:
 		warning("BeyondLCDM: invalid model choice, model = %d \n", model);
@@ -2055,6 +2104,23 @@ double mymgF(double a, double yh, double yenv, double Rth, double omega0, double
 					return extpars[5]*extpars[6]*(pow(1.+ xm3, 1./extpars[5])-1.) / xm3 * term3 - 1.;
 
 
+			case 18:
+			/*  Model independent Poisson equation parametrisation as in Eq. 3.6 of https://arxiv.org/pdf/2411.12026 with CPL background  */
+				var1 = extpars[5] - extpars[6]*log(Rth); // Screening scale and mass dependence : Erf [ yh (R_scr/R_th)^p2 ] with R_scr = 10^(p1/p2)
+				term1 = yh * a * pow(10,var1); // Argument for mass dependant error function
+
+				if (yenv<=1.) {
+				term2 = pow(yenv * a, extpars[7]);  // yenv dependence - power law
+				}
+				else{
+					term2 = 1.;
+				}
+
+				var2 = pow(10.,extpars[8])/ (yh * pow2(a) * Rth); // Fourier transform of Rth with some calibration
+				term3 = mu(a,var2,omega0,extpars,model)-1.; // Linear G_effective
+
+				return term3 * erf(term1*term2);
+
 		default:
 					warning("BeyondLCDM: invalid model choice, model = %d \n", model);
 				  return 0;
@@ -2164,6 +2230,12 @@ double  WEFF(double a, double omega0, double extpars[], int model){
 
 		 return -pow2(extpars[1])/3. * (2.*var2 + h2*pow2(kmouflage_phid(a)/extpars[1])*var3);
 
+
+		 case 18:
+	 	/*  Model independent Poisson equation parametrisation as in Eq. 3.6 of https://arxiv.org/pdf/2411.12026 with CPL background  */		
+		 h2 = pow2(HAg(a,omega0,extpars,model));
+		return -(1.+3.*(extpars[0]+(1.-a)*extpars[1]))*(h2-omega0/pow3(a));
+ 
 
 		 default:
 				 warning("BeyondLCDM: invalid model choice, model = %d \n", model);

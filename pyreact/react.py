@@ -180,6 +180,8 @@ class ReACT:
             reaction_model = 16
         elif model.lower() == "kmouflageppf":
             reaction_model = 17
+        elif model.lower() == "muscreened":
+            reaction_model = 18
         else:
             raise ValueError(f"model '{model}' not supported.")
 
@@ -285,6 +287,8 @@ class ReACT:
             reaction_model = 16
         elif model.lower() == "kmouflageppf":
             reaction_model = 17
+        elif model.lower() == "muscreened":
+            reaction_model = 18
         else:
             raise ValueError(f"model '{model}' not supported.")
 
@@ -401,6 +405,8 @@ class ReACT:
             reaction_model = 16
         elif model.lower() == "kmouflageppf":
             reaction_model = 17
+        elif model.lower() == "muminimal":
+            reaction_model = 18
         else:
             raise ValueError(f"model '{model}' not supported.")
 
