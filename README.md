@@ -310,6 +310,7 @@ Full k-dependence in linear modification:
     
 17. kmouflageppf : K-mouflage model: **extpars[0]** =n ;  **extpars[1]** = $\lambda$; **extpars[2]** = $K_0$; **extpars[3]** = $\beta_K$. This then has a [post parametrised friedmannian (nPPF)](https://arxiv.org/abs/1608.00522) $G_{eff,non-linear}$ in spherical collapse equations. **extpars[5-12]** = $p_1,...,p_8$. See Appendix B3 of [arXiv:2406.13667](https://arxiv.org/abs/2406.13667). 
 
+18. muscreened : mu(k,z) as in (DESI)[https://arxiv.org/abs/2411.12026] with CPL background and screening parameters as in [this paper](https://arxiv.org/abs/2210.01094): **extpars[0]** = $w_0$ ;  **extpars[1]** = $w_a$; **extpars[2]** = $\mu_0$; **extpars[3]** = $c_1$; **extpars[4]** = $\lambda$; **extpars[5]** = $p_1$; **extpars[6]** = $p_2$; **extpars[7]** = $p_3$.
 
 In the C++ code the model is specified as the integer value of each model in the last argument of the functions , e.g. for the 1-loop real space power spectrum in f(R) gravity we would specify the following functional call 
 
