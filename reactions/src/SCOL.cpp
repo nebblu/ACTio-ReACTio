@@ -629,8 +629,9 @@ double SCOL::myscol(double myscolparams[], double acol, double omegacb, double o
        arrays_T3 xxyyzz = (arrays_T3)malloc( sizeof(struct arrays3D) );
 
          double mydelta;
-	
-         if (model == 2) {
+
+	     // Add in model to this OR set if it uses environmental screening! 
+         if (model == 2 || 7 || 10 || 12 || 13) {
            // If modified gravity is active, set initial condition for SC to 10% higher than y_{env,initial} if we need to use y_env in spherical collapse as in f(R)
            // This guess allows us to solve for extreme cases (e.g. fr0=10^{-4}, m_nu>0.3eV).
            mydelta = m/d*1.1/acol;
