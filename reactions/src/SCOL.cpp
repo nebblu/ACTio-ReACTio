@@ -631,7 +631,7 @@ double SCOL::myscol(double myscolparams[], double acol, double omegacb, double o
          double mydelta;
 
 	     // Add in model to this OR set if it uses environmental screening! 
-         if (model == 2 || 7 || 10 || 12 || 13) {
+         if (model == 2 || model == 7 || model == 10 || model == 12 || model == 13) {
            // If modified gravity is active, set initial condition for SC to 10% higher than y_{env,initial} if we need to use y_env in spherical collapse as in f(R)
            // This guess allows us to solve for extreme cases (e.g. fr0=10^{-4}, m_nu>0.3eV).
            mydelta = m/d*1.1/acol;
