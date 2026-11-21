@@ -337,6 +337,9 @@ ___
 
 One can add in new models by going to the source code, `reactions/src/BeyondLCDM.cpp` and adding in a new `case n:` in the relevant functions. The array extpars stores the theory parameters. The default size of this array is 20 and can be increased by changing the maxpars parameter in `reactions/src/BeyondLCDM.h`. 
 
+**Note** For any models that want to include some sort of environmental screening or dependence in the spherical collapse, one also needs to add their model to the if statement at line ~634 of `reactions/src/SCOL.cpp` in the `myscol` function which gives the initial guess for the collapse density which can depend on the environment. Any model that makes use of the $p_2$ parameter (see  model 13 above for example) will need to be added to this if statement for example. 
+
+
 The functions one should consider when adding in a new models are as follows: 
 
 ### A) Basic functions to edit for new models 
