@@ -1973,9 +1973,16 @@ double mymgF(double a, double yh, double yenv, double Rth, double omega0, double
 					}
 
 					var2 = pow(10.,extpars[8])/ (yh * pow2(a) * Rth); // Fourier transform of Rth with some calibration
-					term3 = mu(a,var2,omega0,extpars,model)-1.; // Linear G_effective
 
-					return term3 * erf(term1*term2);
+
+					// Screening in Vainshtein only screens the fifth force part and preserves time dependent Planck Mass. 
+					// We separate these effects below. 
+					double M2 = alphai_eft(a,omega0,extpars[4],5); //  M2(a)/m_planck 
+					double n = 1./M2;
+					term3 = mu(a,var2,omega0,extpars,model) - n; // Linear G_effective without time-dep Planck Mass
+
+					// For Vainshtein models the prefactor is preserved (time-dependent Newton's constant)
+					return n - 1. + term3 * erf(term1*term2);
 
 			case 13:
 			/* Minimal model independent : CPL + Gamma + Erf */
